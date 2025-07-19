@@ -1,0 +1,18 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Commande réussie{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto py-6 px-6 xl:px-0">
+    <h1 class="text-3xl font-bold mb-6">Félicitations, votre commande a été passée avec succès !</h1>
+
+    <div class="bg-green-100 p-6 rounded-xl shadow-md mb-6">
+        <h2 class="text-xl">Résumé de la commande :</h2>
+        <p>Votre paiement a été effectué avec succès. Vous recevrez bientôt un email de confirmation.</p>
+    </div>
+
+    <div class="text-center">
+        <a href="/" class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600">Retour à l'accueil</a>
+    </div>
+</div>
+{% endblock %}

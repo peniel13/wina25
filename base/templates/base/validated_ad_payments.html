@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mx-auto p-6">
+    <h1 class="text-2xl font-bold mb-4">📢 Vos paiements de publicité validés</h1>
+
+    {% if payments %}
+        <ul class="divide-y divide-gray-200">
+            {% for pay in payments %}
+                <li class="py-4">
+                    <p><strong>Titre de la pub :</strong> {{ pay.advertisement.title }}</p>
+                    <p><strong>Transaction :</strong> {{ pay.transaction_id }}</p>
+                    <p><strong>Numéro :</strong> {{ pay.phone_number }}</p>
+                    <p><strong>Date :</strong> {{ pay.created_at|date:"d/m/Y à H:i" }}</p>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-gray-600">Aucun paiement validé trouvé.</p>
+    {% endif %}
+</div>
+{% endblock %}

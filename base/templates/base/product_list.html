@@ -1,0 +1,469 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+  <h2 class="text-2xl font-bold mb-6">Tous les produits et services </h2>
+
+  <!-- 🔍 Barre de recherche + bouton filtre -->
+  <!-- 🔍 Barre de recherche + bouton filtre -->
+  <div class="px-4 mb-6 w-full">
+    <!-- ✅ Barre mobile -->
+    <div class="sm:hidden flex items-center justify-between mb-4">
+      <form method="get" action="#produits" class="w-full mr-2">
+        <input type="text" name="name" value="{{ search_name }}" placeholder="Rechercher un produit..." class="w-full px-4 py-2 border rounded-lg">
+      </form>
+      <button onclick="toggleSlide()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 rounded-md text-sm flex items-center ml-2">
+        <i class="bx bx-filter-alt text-lg"></i>
+      </button>
+    </div>
+  
+    <!-- ✅ Formulaire Desktop -->
+    <form method="get" action="#produits" class="hidden sm:flex items-end gap-4 flex-wrap">
+      <!-- Nom -->
+      <div class="flex flex-col">
+        <label class="text-sm font-semibold">Nom</label>
+        <input type="text" name="name" value="{{ search_name }}" placeholder="Entrer un nom du produit" class="px-4 py-2 border rounded-lg w-56">
+      </div>
+  
+      <!-- Catégorie -->
+      <div class="flex flex-col">
+        <label class="text-sm font-semibold">Catégorie</label>
+        <select name="category" class="px-4 py-2 border rounded-lg w-56">
+          <option value="">Toutes les catégories</option>
+          {% for category in categories %}
+            <option value="{{ category.id }}" {% if category.id|stringformat:"s" == selected_category %}selected{% endif %}>{{ category.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+  
+      <!-- Type -->
+      <div class="flex flex-col">
+        <label class="text-sm font-semibold">Type</label>
+        <select name="type_product" class="px-4 py-2 border rounded-lg w-56">
+          <option value="">Tous les types</option>
+          {% for t in typeproducts %}
+  <option value="{{ t.id }}" {% if t.id|stringformat:"s" == selected_type_product %}selected{% endif %}>
+    {{ t.nom }}
+  </option>
+{% endfor %}
+
+        </select>
+      </div>
+  
+      <!-- Pays -->
+      <div class="flex flex-col">
+        <label class="text-sm font-semibold">Pays</label>
+        <select name="country" class="px-4 py-2 border rounded-lg w-56">
+          <option value="">Tous les pays</option>
+          {% for country in countries %}
+            <option value="{{ country.id }}" {% if country.id|stringformat:"s" == selected_country %}selected{% endif %}>{{ country.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+  
+      <!-- Ville -->
+      <div class="flex flex-col">
+        <label class="text-sm font-semibold">Ville</label>
+        <select name="city" class="px-4 py-2 border rounded-lg w-56">
+          <option value="">Toutes les villes</option>
+          {% for city in cities %}
+            <option value="{{ city.id }}" {% if city.id|stringformat:"s" == selected_city %}selected{% endif %}>{{ city.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+  
+      <div>
+        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700">Rechercher</button>
+      </div>
+    </form>
+  </div>
+  
+  <!-- 📱 Slide mobile des filtres -->
+  <section id="search-slide" class="sm:hidden fixed inset-0 bg-black bg-opacity-60 z-50 hidden">
+    <div class="bg-white h-full overflow-y-auto p-6 relative">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-bold">Filtres de recherche</h2>
+        <button onclick="toggleSlide()" class="text-gray-700 text-xl font-bold">X</button>
+      </div>
+  
+      <form method="GET" action="#produits" class="space-y-4">
+        <!-- Nom -->
+        <div class="flex flex-col">
+          <label class="text-sm font-semibold">Nom</label>
+          <input type="text" name="name" value="{{ search_name }}" placeholder="Entrer un nom du produit" class="px-4 py-2 border rounded-lg">
+        </div>
+  
+        <!-- Catégorie -->
+        <div class="flex flex-col">
+          <label class="text-sm font-semibold">Catégorie</label>
+          <select name="category" class="px-4 py-2 border rounded-lg">
+            <option value="">Toutes les catégories</option>
+            {% for category in categories %}
+              <option value="{{ category.id }}" {% if category.id|stringformat:"s" == selected_category %}selected{% endif %}>{{ category.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+  
+        <!-- Type -->
+        <div class="flex flex-col">
+          <label class="text-sm font-semibold">Type</label>
+          <select name="type_product" class="px-4 py-2 border rounded-lg">
+            <option value="">Tous les types</option>
+            {% for t in typeproducts %}
+            <option value="{{ t.id }}" {% if t.id|stringformat:"s" == selected_type_product %}selected{% endif %}>
+              {{ t.nom }}
+            </option>
+          {% endfor %}
+          
+          </select>
+        </div>
+  
+        <!-- Pays -->
+        <div class="flex flex-col">
+          <label class="text-sm font-semibold">Pays</label>
+          <select name="country" class="px-4 py-2 border rounded-lg">
+            <option value="">Tous les pays</option>
+            {% for country in countries %}
+              <option value="{{ country.id }}" {% if country.id|stringformat:"s" == selected_country %}selected{% endif %}>{{ country.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+  
+        <!-- Ville -->
+        <div class="flex flex-col">
+          <label class="text-sm font-semibold">Ville</label>
+          <select name="city" class="px-4 py-2 border rounded-lg">
+            <option value="">Toutes les villes</option>
+            {% for city in cities %}
+              <option value="{{ city.id }}" {% if city.id|stringformat:"s" == selected_city %}selected{% endif %}>{{ city.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+  
+        <!-- Bouton -->
+        <div>
+          <button type="submit" class="w-full px-4 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700">Appliquer les filtres</button>
+        </div>
+      </form>
+    </div>
+  </section>
+  
+  
+  
+<section id="produits_scrollables" class="py-4 bg-gray-100">
+   
+    <p class="text-center mb-8">Faites défiler horizontalement pour découvrir vos articles ou services populaires.</p>
+  
+    <div class="overflow-x-auto px-4">
+      <div class="flex space-x-6 w-max">
+        {% for product in featured_products %}
+        <div class="flex-shrink-0 w-64 border-2 border-secondary bg-slate-100 text-black rounded-xl cursor-pointer 
+                    hover:scale-105 hover:shadow-lg transition-transform duration-300 ease-in-out flex flex-col h-full">
+          <!-- Drapeau du pays -->
+{% if product.store.country.flag %}
+<div class="flex justify-center items-center mb-2">
+  <img src="{{ product.store.country.flag.url }}" alt="{{ product.store.country.name }}" class="w-6 h-4 object-cover mr-2 rounded-sm">
+  <span class="text-sm text-gray-700">{{ product.store.country.name }}</span>
+</div>
+{% endif %}
+    
+        <!-- ✅ Image ou Vidéo -->
+        <div>
+          {% if product.video %}
+            <video autoplay muted loop playsinline
+                   class="rounded-t-xl w-full h-40 object-cover cursor-pointer"
+                   onclick="this.muted = !this.muted; this.controls = true;">
+              <source src="{{ product.video.url }}" type="video/mp4">
+              Votre navigateur ne supporte pas la lecture vidéo.
+            </video>
+          {% elif product.image %}
+            <img src="{{ product.image.url }}" alt="{{ product.name }}"
+                 class="rounded-t-xl w-full h-40 object-cover"
+                 onclick="showImagePopup('{{ product.image.url }}')" />
+          {% else %}
+            <div class="rounded-t-xl w-full h-40 bg-gray-300 flex items-center justify-center text-gray-600 text-sm">
+              Pas de média
+            </div>
+          {% endif %}
+        </div>
+  
+          <!-- Contenu -->
+          <div class="flex flex-col justify-between flex-grow p-4 space-y-3">
+            <!-- Ajout au panier -->
+            <form id="add-to-cart-form-{{ product.id }}" action="{% url 'add_to_cart_ajax' product.id %}" method="POST">
+              {% csrf_token %}
+              <button type="submit" class="w-full px-4 py-2 bg-blue-500 text-white rounded-full text-sm hover:bg-blue-600 transition">
+                Ajouter au panier
+              </button>
+            </form>
+  
+            <!-- Nom et prix -->
+            <div class="text-center">
+              <h1 class="font-semibold text-lg text-primary">{{ product.name }}</h1>
+              <h2 class="font-medium text-md">{{ product.price_with_commission }} {{ product.store.country.devise_info.devise }}</h2>
+            </div>
+  
+            <!-- Étoiles et note -->
+            <div class="flex items-center justify-center space-x-2">
+                <div class="flex text-yellow-500 text-sm">
+                    {% with rating=product.average_rating|default:0 %}
+                      {% for i in "12345" %}
+                        {% if rating >= forloop.counter %}
+                          <i class="bx bxs-star text-yellow-400 text-xs"></i>
+                        {% elif rating >= forloop.counter0|add:"0.5" %}
+                          <i class="bx bxs-star-half text-yellow-400 text-xs"></i>
+                        {% else %}
+                          <i class="bx bx-star text-yellow-400 text-xs"></i>
+                        {% endif %}
+                      {% endfor %}
+                    {% endwith %}
+                  </div>
+                  
+           
+            </div>
+  
+            <!-- Détails -->
+            <a href="{% url 'product_detail_wina' product.id %}" class="block text-center mt-auto px-4 py-2 bg-blue-500 text-white rounded-full text-sm hover:bg-blue-600 transition">
+              Voir les détails
+            </a>
+            
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  
+   
+  </section>
+
+  <section id="produits" class="pb-10 pt-12 bg-gray-100">
+    <p class="text-center mb-8">Faites défiler verticalement pour découvrir vos articles ou services  populaires.</p>
+    <div class="flex flex-wrap gap-6 justify-center">
+        {% for product in products %}
+        <div class="flex-shrink-0 border-2 border-secondary bg-slate-100 text-black rounded-xl mb-6 cursor-pointer hover:scale-95 hover:bg-slate-200 transition duration-200 ease-linear w-64 h-full flex flex-col">
+        <!-- Drapeau du pays -->
+{% if product.store.country.flag %}
+<div class="flex justify-center items-center mb-2">
+  <img src="{{ product.store.country.flag.url }}" alt="{{ product.store.country.name }}" class="w-6 h-4 object-cover mr-2 rounded-sm">
+  <span class="text-sm text-gray-700">{{ product.store.country.name }}</span>
+</div>
+{% endif %}
+    
+        <!-- ✅ Image ou Vidéo -->
+        <div>
+          {% if product.video %}
+            <video autoplay muted loop playsinline
+                   class="rounded-t-xl w-full h-40 object-cover cursor-pointer"
+                   onclick="this.muted = !this.muted; this.controls = true;">
+              <source src="{{ product.video.url }}" type="video/mp4">
+              Votre navigateur ne supporte pas la lecture vidéo.
+            </video>
+          {% elif product.image %}
+            <img src="{{ product.image.url }}" alt="{{ product.name }}"
+                 class="rounded-t-xl w-full h-40 object-cover"
+                 onclick="showImagePopup('{{ product.image.url }}')" />
+          {% else %}
+            <div class="rounded-t-xl w-full h-40 bg-gray-300 flex items-center justify-center text-gray-600 text-sm">
+              Pas de média
+            </div>
+          {% endif %}
+        </div>
+            <div class="flex flex-col justify-between flex-grow p-4">
+                <!-- Formulaire d'ajout au panier -->
+                <form id="add-to-cart-form-{{ product.id }}" action="{% url 'add_to_cart_ajax' product.id %}" method="POST">
+                  {% csrf_token %}
+                  <button type="submit" class="w-full px-4 py-2 bg-blue-500 text-white rounded-full text-sm hover:bg-blue-600 transition">
+                    Ajouter au panier
+                  </button>
+                </form>
+
+                <!-- Nom du produit et prix -->
+                <div class="flex flex-col items-center my-4">
+                    <h1 class="font-semibold text-xl text-primary pt-2 text-center">{{ product.name }}</h1>
+                    <h2 class="font-medium text-lg text-center">{{ product.price_with_commission }} {{ product.store.country.devise_info.devise }}</h2>
+                </div>
+
+                <!-- Affichage des étoiles de la note moyenne -->
+                <div class="flex items-center justify-center my-2">
+                    <div class="flex text-yellow-500 text-sm">
+                        {% with rating=product.average_rating|default:0 %}
+                          {% for i in "12345" %}
+                            {% if rating >= forloop.counter %}
+                              <i class="bx bxs-star text-yellow-400 text-xs"></i>
+                            {% elif rating >= forloop.counter0|add:"0.5" %}
+                              <i class="bx bxs-star-half text-yellow-400 text-xs"></i>
+                            {% else %}
+                              <i class="bx bx-star text-yellow-400 text-xs"></i>
+                            {% endif %}
+                          {% endfor %}
+                        {% endwith %}
+                      </div>
+                      
+            
+                </div>
+
+                <!-- Bouton "Voir les détails" -->
+                <a href="{% url 'product_detail_wina' product.id %}" class="block text-center mt-auto px-4 py-2 bg-blue-500 text-white rounded-full text-sm hover:bg-blue-600 transition">
+                  Voir les détails
+                </a>
+                
+            </div>
+        </div>
+        {% empty %}
+        <p>Aucun produit ou service trouvé pour cette recherche.</p>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if products.has_other_pages %}
+    <div class="mt-8">
+        <nav aria-label="Pagination des produits" class="flex justify-center">
+            <ul class="flex space-x-4">
+                
+                {% if products.has_previous %}
+                <li>
+                    <a href="?page=1#produits" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        &laquo; Première
+                    </a>
+                </li>
+                <li>
+                    <a href="?page={{ products.previous_page_number }}#produits" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        
+                    </a>
+                </li>
+                {% endif %}
+                
+                <!-- Affichage de la page actuelle -->
+                <li>
+                    <span class="px-4 py-2 bg-blue-600 text-white rounded-lg">
+                        {{ products.number }}
+                    </span>
+                </li>
+    
+                {% if products.number < products.paginator.num_pages %}
+                <li>
+                    <a href="?page={{ products.paginator.num_pages }}#produits" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-blue-600 hover:text-white">
+                        {{ products.paginator.num_pages }}
+                    </a>
+                </li>
+                {% endif %}
+    
+                {% if products.has_next %}
+                <li>
+                    <a href="?page={{ products.next_page_number }}#produits" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        >
+                    </a>
+                </li>
+                <li>
+                    <a href="?page={{ products.paginator.num_pages }}#produits" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        Dernière &raquo;
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+    
+
+</section>  
+  <section id="favorite_stores" class="pt-4 pb-10 bg-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="text-3xl font-semibold mt-6 mb-6 text-center">Stores favoris</h2>
+  
+  
+      <div class="relative w-full glide-01">
+        <!-- Glide Track -->
+        <div class="overflow-hidden" data-glide-el="track">
+          <ul class="flex gap-6">
+            {% for featured in featured_stores %}
+              {% with store=featured.store %}
+                <li class="min-w-[250px] md:w-[calc(33.33%-24px)]">
+                  <a href="{% url 'store_detail' store.slug %}" class="block bg-white rounded-lg shadow-lg hover:shadow-2xl overflow-hidden relative">
+                    <div class="h-40 bg-cover bg-center" style="background-image: url('{% if store.thumbnail %}{{ store.thumbnail.url }}{% else %}{% static 'img/default-thumbnail.jpg' %}{% endif %}')">
+                      {% if store.country.flag %}
+                        <div class="absolute top-2 right-2">
+                          <img src="{{ store.country.flag.url }}" class="w-5 h-5 rounded-full border border-white shadow" alt="{{ store.country.name }}">
+                        </div>
+                      {% endif %}
+                    </div>
+                    <div class="bg-black bg-opacity-60 text-white p-3 text-sm">
+                      <h3 class="font-semibold truncate">{{ store.name }}</h3>
+                      <p class="text-xs text-blue-200 italic">{{ store.typestore.nom }}</p>
+                      <div class="flex items-center space-x-1 text-xs mt-1">
+                        {% with rating=store.average_rating|default:0 %}
+                          {% for i in "12345" %}
+                            {% if rating >= forloop.counter %}
+                              <i class="bx bxs-star text-yellow-400 text-xs"></i>
+                            {% elif rating >= forloop.counter0|add:"0.5" %}
+                              <i class="bx bxs-star-half text-yellow-400 text-xs"></i>
+                            {% else %}
+                              <i class="bx bx-star text-yellow-400 text-xs"></i>
+                            {% endif %}
+                          {% endfor %}
+                        {% endwith %}
+                      </div>
+                      <p class="truncate mt-1">{{ store.adresse }}</p>
+                      <p class="text-xs">{{ store.city.name }}, {{ store.country.name }}</p>
+                    </div>
+                  </a>
+                </li>
+              {% endwith %}
+            {% endfor %}
+          </ul>
+        </div>
+  
+        <!-- Contrôles -->
+        <div class="absolute left-0 flex items-center justify-between w-full h-0 px-4 top-1/2" data-glide-el="controls">
+          <button class="inline-flex items-center justify-center w-8 h-8 transition duration-300 border rounded-full lg:w-12 lg:h-12 text-slate-700 border-slate-700 hover:text-slate-900 hover:border-slate-900 bg-white/20" data-glide-dir="<">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 15.75L3 12m0 0l3.75-3.75M3 12h18"/>
+            </svg>
+          </button>
+          <button class="inline-flex items-center justify-center w-8 h-8 transition duration-300 border rounded-full lg:w-12 lg:h-12 text-slate-700 border-slate-700 hover:text-slate-900 hover:border-slate-900 bg-white/20" data-glide-dir=">">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12H3"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  
+  </div>
+  
+  <script>
+    function toggleSlide() {
+      const slide = document.getElementById('search-slide');
+      slide.classList.toggle('hidden');
+    }
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Glide.js/3.0.2/glide.js"></script>
+  <script>
+    var glide01 = new Glide('.glide-01', {
+      type: 'carousel',
+      focusAt: 'center',
+      perView: 3,
+      autoplay: 3000,
+      animationDuration: 700,
+      gap: 24,
+      breakpoints: {
+        1024: { perView: 2 },
+        640: { perView: 1 }
+      }
+    });
+    glide01.mount();
+  </script>
+  
+  
+{% comment %} <script>
+    function toggleSlide() {
+      const el = document.getElementById('search-slide');
+      el.classList.toggle('hidden');
+    }
+  </script> {% endcomment %}
+  
+{% endblock %}

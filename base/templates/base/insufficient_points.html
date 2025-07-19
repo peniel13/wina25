@@ -1,0 +1,15 @@
+<!-- insufficient_points.html -->
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+    <div class="container mx-auto mt-8 text-center">
+        <!-- Image centrée -->
+        <div class="mb-4">
+            <img src="{% static 'img/error.png' %}" alt="Erreur" class="mx-auto">
+        </div>
+        
+        <h1 class="text-3xl font-bold text-red-600">Erreur : Points insuffisants</h1>
+        <p class="text-xl">Désolé, vous n'avez pas assez de points pour effectuer cet achat.</p>
+    </div>
+{% endblock %}
+

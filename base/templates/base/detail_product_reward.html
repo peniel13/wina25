@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mx-auto mt-8">
+    <div class="bg-white p-8 rounded-lg shadow-lg">
+        <h2 class="text-3xl font-semibold mb-6">{{ product.name }}</h2>
+        
+        <!-- Affichage du prix en points et en USD -->
+        <p class="text-lg text-gray-800"><strong>Prix : </strong> {{ product.points_required }} points</p>
+        <p class="text-blue-500 font-bold text-lg">💵 Valeur en dollars : ${{ price_in_usd|floatformat:2 }}</p>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div>
+                <img src="{{ product.image.url }}" alt="Image principale" class="w-full h-80 object-cover rounded-lg mb-4">
+            </div>
+            <div>
+                <p class="text-gray-600"><strong>Description : </strong>{{ product.description }}</p>
+            </div>
+        </div>
+
+        <!-- Galerie photo -->
+        <h2 class="text-4xl font-semibold text-center mb-6">Galerie d'images du produit</h2>
+
+        <!-- Conteneur de la galerie avec padding -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 p-4">
+            {% if product.photos.all.count == 0 %}
+                <p class="col-span-4 text-center text-gray-500">Aucune photo dans la galerie</p>
+            {% else %}
+                {% for photo in product.photos.all %}
+                    <div class="photo">
+                        <img src="{{ photo.image.url }}" alt="Image de la galerie" class="rounded-lg cursor-pointer" onclick="openGallery('{{ photo.image.url }}')">
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+       
+
+        <!-- Bouton d'achat -->
+        <!-- Bouton Acheter -->
+    <div class="text-center">
+        <button id="buyButton" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            Acheter avec vos points
+        </button>
+    </div>
+    </div>
+</div>
+
+
+
+<!-- Modal pour afficher l'image en grand -->
+<div id="imageModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden">
+    <span class="absolute top-4 right-4 text-white text-3xl cursor-pointer" onclick="closeGallery()">×</span>
+    <img id="modalImage" class="max-w-full max-h-screen p-4">
+    
+    <!-- Bouton Suivant (flèche droite) -->
+    <button class="absolute bottom-4 right-1/4 transform translate-x-1/4 text-white px-4 py-2 bg-blue-500 rounded" onclick="nextImage()"> > </button>
+    
+    <!-- Bouton Précédent (flèche gauche) -->
+    <button class="absolute bottom-4 left-1/4 transform -translate-x-1/4 text-white px-4 py-2 bg-blue-500 rounded" onclick="previousImage()"> < </button>
+</div>
+
+    <!-- Popup de confirmation d'achat -->
+    <div id="confirmationPopup" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white p-8 rounded-xl w-96">
+            <h2 class="text-xl font-semibold text-center">Confirmer l'achat</h2>
+            <p class="my-4 text-center">Vous allez acheter {{ product.name }} pour {{ product.points_required }} points. Voulez-vous confirmer cet achat ?</p>
+            <div class="flex justify-between">
+                <button class="px-6 py-2 bg-gray-400 text-white rounded-lg" onclick="hidePopup()">Annuler</button>
+                <form action="{% url 'detail_product_reward' product.id %}" method="POST">
+                    {% csrf_token %}
+                    <button type="submit" class="px-6 py-2 bg-green-600 text-white rounded-lg">Confirmer</button>
+                </form>
+            </div>
+        </div>
+    </div>
+<script>
+    // JavaScript pour la lecture des images en galerie
+    
+    let images = [];
+    let currentIndex = 0;
+    
+    // Fonction pour ouvrir la galerie et afficher une image en grand
+    function openGallery(imageUrl) {
+        // Crée un tableau des URL des images
+        images = [{% for photo in product.photos.all %}'{{ photo.image.url }}',{% endfor %}];
+        
+        // Récupère l'index de l'image cliquée
+        currentIndex = images.indexOf(imageUrl);
+        
+        // Met l'URL de l'image dans le modal
+        document.getElementById('modalImage').src = imageUrl;
+        
+        // Affiche le modal
+        document.getElementById('imageModal').classList.remove('hidden');
+    }
+    
+    // Fonction pour fermer la galerie
+    function closeGallery() {
+        document.getElementById('imageModal').classList.add('hidden');
+    }
+    
+    // Fonction pour afficher l'image suivante dans la galerie
+    function nextImage() {
+        currentIndex = (currentIndex + 1) % images.length;
+        document.getElementById('modalImage').src = images[currentIndex];
+    }
+    
+    // Fonction pour afficher l'image précédente dans la galerie
+    function previousImage() {
+        currentIndex = (currentIndex - 1 + images.length) % images.length;
+        document.getElementById('modalImage').src = images[currentIndex];
+    }
+    // Afficher le popup de confirmation d'achat
+    function showPopup() {
+        document.getElementById('confirmationPopup').classList.remove('hidden');
+    }
+
+    // Masquer le popup de confirmation
+    function hidePopup() {
+        document.getElementById('confirmationPopup').classList.add('hidden');
+    }
+
+    // Événement pour afficher le popup lors du clic sur le bouton "Acheter"
+    document.getElementById('buyButton').addEventListener('click', function() {
+        showPopup();
+    });
+    </script>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-lg mx-auto mt-20 text-center bg-red-100 border border-red-300 text-red-800 px-6 py-8 rounded-lg shadow">
+    <h1 class="text-3xl font-bold mb-4">❌ Échec du transfert</h1>
+
+    {% if reason == 'no_points' %}
+        <p class="text-lg mb-6">Vous n'avez pas assez de points pour effectuer ce transfert.</p>
+    
+    {% elif reason == 'receiver_limit' %}
+        <p class="text-lg mb-6">Le destinataire a déjà reçu le nombre maximum de transferts (5). Il ne peut plus recevoir d'autres points.</p>
+
+    {% elif reason == 'already_received' %}
+        <p class="text-lg mb-6">Vous avez déjà reçu des points. Vous ne pouvez plus en transférer à d'autres utilisateurs.</p>
+    
+    {% else %}
+        <p class="text-lg mb-6">Une erreur inconnue s'est produite. Veuillez réessayer plus tard.</p>
+    {% endif %}
+
+    <a href="{% url 'transfer_points' %}" class="inline-block mt-4 px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+        Retour au formulaire
+    </a>
+</div>
+{% endblock %}
+

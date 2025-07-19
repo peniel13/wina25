@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<body class="bg-gray-100 text-gray-900 font-sans">
+
+    <div class="max-w-7xl mx-auto p-6">
+        <h1 class="text-3xl font-bold text-center mb-8">Guide en vidéo </h1>
+
+        <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {% for video in videos %}
+                <li class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <!-- Image Thumbnail -->
+                    <div class="relative">
+                        {% if video.thumbnail %}
+                            <!-- Lien cliquable sur l'image -->
+                            <a href="{% url 'fetch_video' slug=video.slug %}">
+                                <img src="{{ video.thumbnail.url }}" alt="{{ video.title }}" class="w-full h-56 object-cover cursor-pointer">
+                                <!-- Superposition de l'image de lecture -->
+                                <div class="absolute top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50">
+                                    <img src="{% static 'img/playvideo.jpg' %}" alt="Play" class="w-16 h-16">
+                                </div>
+                            </a>
+                        {% else %}
+                            <div class="w-full h-56 bg-gray-300 flex items-center justify-center">
+                                <span class="text-white">Pas de miniature</span>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="p-4">
+                        <h2 class="text-xl font-semibold text-gray-800">{{ video.title }}</h2>
+                        <p class="text-gray-600 mt-2">{{ video.description|slice:":100" }}...</p>
+                        <p class="text-gray-500 text-sm"><strong>Publié le : </strong>{{ video.created }}</p>
+
+                        <!-- Lien pour lire la vidéo -->
+                        <div class="mt-4">
+                            <a href="{% url 'fetch_video' slug=video.slug %}" class="inline-block text-blue-500 hover:text-blue-700 font-semibold">Lire la vidéo</a>
+                        </div>
+                    </div>
+                </li>
+            {% empty %}
+                <li class="text-center text-xl font-semibold text-gray-600 col-span-full">Aucune vidéo disponible.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+</body>
+{% endblock %}

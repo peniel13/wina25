@@ -1,0 +1,565 @@
+{% load static tailwind_tags %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <title>WINA</title>
+    <link rel="stylesheet" href="{% static 'css/dist/styles.css' %}">
+    {% block meta_tags %}{% endblock %}
+    {% tailwind_css %}
+</head>
+<body class="bg-gray-100">
+    <!-- Spinner de chargement -->
+<div id="loadingSpinner" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="w-16 h-16 border-4 border-t-4 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
+</div>
+<style>
+    /* Animation de rotation */
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .animate-spin-custom {
+        animation: spin 1s linear infinite;
+    }
+</style>
+
+    <!-- Navbar -->
+    <nav class="bg-gray-800 text-white">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            {% comment %} <div class="text-lg font-bold">
+                <a href="{% url 'index' %}" class="text-white hover:underline">Zando na maboko</a>
+            </div> {% endcomment %}
+            <a href="{% url 'index' %}" class="text-gray hover:underline flex items-center bg-white-800 p-2 rounded">
+                <img src="{% static 'img/logoo.png' %}" alt="Logo" class="h-6 mr-2"> 
+            
+            </a>
+            
+            
+            <div class="hidden md:flex space-x-4">
+                <a href="{% url 'index' %}" class="hover:bg-gray-700 px-3 py-2 rounded">Accueil</a>
+                <a href="{% url 'apropos' %}" class="hover:bg-gray-700 px-3 py-2 rounded">À propos</a>
+                <a href="{% url 'contact' %}" class="hover:bg-gray-700 px-3 py-2 rounded">Contact</a>
+                <a href="{% url 'politique' %}" class="hover:bg-gray-700 px-3 py-2 rounded">Politique</a>
+                <a href="{% url 'advertisement_list_wina' %}" class="hover:bg-gray-700 px-3 py-2 rounded">Pub</a>
+                <a href="{% url 'lottery_list' %}" class="hover:bg-gray-700 px-3 py-2 rounded">lottery</a>
+                <!-- Dropdown Immo -->
+                <!-- Dropdown Immo -->
+<div class="relative">
+    <button class="hover:bg-gray-700 px-3 py-2 rounded inline-flex items-center" id="immoDropdownButton">
+       Service
+        <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+    </button>
+    <ul class="absolute left-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg z-20 hidden" id="immoDropdown">
+        
+        <li>
+            <a href="{% url 'product_list_wina' %}" class="block px-4 py-2 text-white hover:bg-gray-700">Liste produits </a>
+        </li>
+        <li>
+            <a href="{% url 'store_list_wina' %}" class="block px-4 py-2 text-white hover:bg-gray-700">Liste stores (magasins)</a>
+        </li>
+        <li>
+            <a href="{% url 'creer_commande' %}" class="block px-4 py-2 text-white hover:bg-gray-700">Commander une livraison</a>
+        </li>
+        <li>
+            <a href="{% url 'video_list' %}" class="block px-4 py-2 text-white hover:bg-gray-700">Guide vidéo</a>
+        </li>
+        <li>
+            <a href="{% url 'requete_list' %}" class="block px-4 py-2 text-white hover:bg-gray-700">Requêtes Immobilières</a>
+        </li>
+         <li>
+            <a href="{% url 'requete_create' %}" class="block px-4 py-2 text-white hover:bg-gray-700">Rechercher un immobilier</a>
+        </li> 
+    </ul>
+</div>
+
+<a href="{% url 'cart_detail_wina' %}" class="relative inline-block">
+    <img src="{% static 'img/cart.jpg' %}" alt="Panier" class="w-16 h-10">
+    <span class="cart-items-count absolute top-1/2 left-1/2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs transform -translate-x-1/2 -translate-y-1/2">
+        {{ cart.get_item_count }}
+    </span>    
+</a>
+
+
+{% if user.is_authenticated %}
+<a href="{% url 'notifications_list' %}" class="relative inline-block">
+    <img src="{% static 'img/belll.jpg' %}" alt="Notifications" class="w-10 h-10">
+    {% if unread_notifications_count > 0 %}
+    <span class="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+        {{ unread_notifications_count }}
+    </span>
+    {% endif %}
+</a>
+
+{% endif %}
+
+
+
+
+
+
+
+                {% if request.user.is_authenticated %}
+                    <a href="{% url 'profile' %}" class="hover:bg-gray-700 px-3 py-2 rounded">salut, {{ request.user.username }}</a>
+        
+                    <a href="{% url 'logout' %}" class="hover:bg-gray-700 px-3 py-2 rounded">Déconnexion</a>
+                    {% if request.user.is_staff %}
+                       
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'register' %}" class="hover:bg-gray-700 px-3 py-2 rounded">S'inscrire</a>
+                    <a href="{% url 'login' %}" class="hover:bg-gray-700 px-3 py-2 rounded">Connexion</a>
+                {% endif %}
+            </div>
+            <div class="md:hidden">
+                <button id="menu-toggle" class="focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div id="mobile-menu" class="md:hidden hidden">
+            <a href="{% url 'index' %}" class="block px-4 py-2 text-white hover:bg-gray-700">Accueil</a>
+            <a href="{% url 'apropos' %}" class="block px-4 py-2 text-white hover:bg-gray-700">À propos</a>
+            <a href="{% url 'contact' %}" class="block px-4 py-2 text-white hover:bg-gray-700">Contact</a>
+            <a href="{% url 'politique' %}" class="block px-4 py-2 text-white hover:bg-gray-700">Politique</a>
+            <a href="{% url 'advertisement_list_wina' %}" class="block px-4 py-2 text-white hover:bg-gray-700">Pub</a>
+            <a href="{% url 'lottery_list' %}" class="block px-4 py-2 text-white hover:bg-gray-700">lottery_list</a>
+           <!-- Dropdown Immo pour Mobile -->
+<div class="relative">
+    <button class="block w-full text-left hover:bg-gray-700 px-4 py-2" id="immoMobileDropdownButton">
+        Service
+        <svg class="inline ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+             xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M19 9l-7 7-7-7"></path>
+        </svg>
+    </button>
+    <ul class="absolute left-0 mt-2 w-full bg-gray-800 rounded-md shadow-lg z-20 hidden" id="immoMobileDropdown">
+        <li>
+            <a href="{% url 'product_list_wina' %}" class="block px-4 py-2 text-white hover:bg-gray-700">Liste produits</a>
+        </li>
+        <li>
+            <a href="{% url 'store_list_wina' %}" class="block px-4 py-2 text-white hover:bg-gray-700">Liste Stores (magasins)</a>
+        </li>
+        <li>
+            <a href="{% url 'creer_commande' %}" class="block px-4 py-2 text-white hover:bg-gray-700">Commander une livraison</a>
+        </li>
+        <li>
+            <a href="{% url 'video_list' %}" class="block px-4 py-2 text-white hover:bg-gray-700">Guide vidéo</a>
+        </li>
+        <li>
+            <a href="{% url 'requete_list' %}" class="block px-4 py-2 text-white hover:bg-gray-700">Requêtes Immobilières</a>
+        </li>
+        <li>
+            <a href="{% url 'requete_create' %}" class="block px-4 py-2 text-white hover:bg-gray-700">Rechercher un immobilier</a>
+        </li>
+    </ul>
+</div>
+
+<!-- Conteneur vertical des images -->
+<div class="flex flex-col space-y-4 mt-4">
+    <!-- Panier -->
+    <a href="{% url 'cart_detail_wina' %}" class="relative w-16 h-16">
+        <img src="{% static 'img/cart.jpg' %}" alt="Panier" class="w-full h-full object-contain">
+        <span class="cart-items-count absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+            {{ cart.get_item_count }}
+        </span>
+    </a>
+    
+    
+    {% if user.is_authenticated %}
+    <!-- Notifications -->
+    <a href="{% url 'notifications_list' %}" class="relative w-16 h-16">
+        <img src="{% static 'img/belll.jpg' %}" alt="Notifications" class="w-full h-full object-contain">
+        {% if unread_notifications_count > 0 %}
+        <span class="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+            {{ unread_notifications_count }}
+        </span>
+        {% endif %}
+    </a>
+    {% endif %}
+</div>
+
+<!-- Liens utilisateur -->
+<div class="mt-4">
+    {% if request.user.is_authenticated %}
+        <a href="{% url 'profile' %}" class="block px-4 py-2 text-white hover:bg-gray-700">Salut, {{ request.user.username }}</a>
+        <a href="{% url 'logout' %}" class="block px-4 py-2 text-white hover:bg-gray-700">Déconnexion</a>
+    {% else %}
+        <a href="{% url 'register' %}" class="block px-4 py-2 text-white hover:bg-gray-700">S'inscrire</a>
+        <a href="{% url 'login' %}" class="block px-4 py-2 text-white hover:bg-gray-700">Connexion</a>
+    {% endif %}
+</div>
+
+    </nav>
+    
+    
+    {% for message in messages %}
+    <div class="flex justify-center">
+        <div class="max-w-4xl w-full mt-4 px-4 py-2 text-center rounded-lg 
+            {% if message.tags == 'success' %}
+                bg-green-100 text-green-800 border border-green-500
+            {% elif message.tags == 'error' %}
+                bg-red-100 text-red-800 border border-red-500
+            {% else %}
+                bg-yellow-100 text-yellow-800 border border-yellow-500
+            {% endif %}
+        " role="alert">
+            {{ message }}
+        </div>
+    </div>
+{% endfor %}
+
+    
+      {% block content %}
+      <!-- Le contenu spécifique à chaque page sera inséré ici -->
+      {% endblock content %}
+ 
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-4">
+            <!-- First footer -->
+            <div class="mb-8">
+                <div class="flex flex-col md:flex-row">
+                    <div class="md:w-1/2 mb-4 md:mb-0">
+                        <h3 class="text-lg font-bold">Abonnez-vous à notre Newsletter</h3>
+                        <p class="text-gray-400">Pour toujours être informé de nos différentes offres</p>
+                    </div>
+                    <div class="md:w-1/2">
+                        <form action="https://api.web3forms.com/submit" method="POST" class="flex">
+                            <input type="hidden" name="access_key" value="f0a24e68-feaf-4b96-ba0f-07771649ad93">
+                            <input type="email" name="email" placeholder="Entrer votre Adresse mail" required class="flex-1 p-2 rounded-l-lg border border-gray-300" />
+                            <button class="bg-blue-600 text-white p-2 rounded-r-lg">Souscrire maintenant</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Second footer -->
+            <div class="flex flex-col md:flex-row mb-8">
+                <div class="md:w-1/3 mb-4 md:mb-0">
+                    <div class="footer-logo mb-2">
+                        <img class="img-fluid" src="{% static 'img/logoo.png' %}" alt="">
+                    </div>
+                    <p>Aillez une longueur d'avance dans vos achats, en explorant et achetant vos produits à distance plus rapidement.</p>
+                </div>
+                <div class="md:w-1/3 mb-4 md:mb-0">
+                    <h3 class="text-lg font-bold">Liens forts</h3>
+                    <ul class="mt-2">
+                        <li><a href="{% url 'product_list_wina' %}" class="text-gray-400 hover:text-white">Liste produits</a></li>
+                        <li><a href="{% url 'store_list_wina' %}" class="text-gray-400 hover:text-white">Liste Store (magasins)</a></li>
+                        <li><a href="{% url 'creer_commande' %}" class="text-gray-400 hover:text-white">Commander une livraison</a></li>
+                        <li><a href="{% url 'advertisement_list_wina' %}" class="text-gray-400 hover:text-white">Pub</a></li>
+                        <li><a href="{% url 'requete_list' %}" class="text-gray-400 hover:text-white">Requêtes Immobilières</a></li>
+                        <li><a href="{% url 'requete_create' %}" class="text-gray-400 hover:text-white">Rechercher un immobilier</a></li>
+                        <li><a href="{% url 'lottery_list' %}" class="text-gray-400 hover:text-white">lottery</a></li>
+                        <li><a href="{% url 'video_list' %}" class="text-gray-400 hover:text-white">Guide vidéo</a></li>
+                        <li><a href="{% url 'contact' %}" class="text-gray-400 hover:text-white">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="md:w-1/3">
+                    <h3 class="text-lg font-bold">Contact</h3>
+                    <div class="mt-2">
+                        <p class="flex items-center"><i class="ti-mobile mr-2"></i><a href="callto:+243 97 24 89 318" class="text-gray-400 hover:text-white">0972489318</a></p>
+                        <p class="flex items-center"><i class="ti-email mr-2"></i><a href="mailto:winaservice1@gmail.com" class="text-gray-400 hover:text-white">winaservice1@gmail.com</a></p>
+                    </div>
+                </div>
+            </div>
+    
+            <!-- Bottom footer -->
+            <div class="border-t border-gray-700 pt-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="mb-0">Copyright © 2025 by <a href="#" class="text-blue-500 hover:underline">Wina</a>. All rights reserved.</p>
+                    </div>
+                    <div>
+                       
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <!-- JavaScript pour activer le menu déroulant -->
+    
+      
+    <script>
+            // Script pour le dropdown Immo
+                // Script pour le dropdown Immo (desktop)
+                document.addEventListener('DOMContentLoaded', function() {
+                    const immoDropdownButton = document.getElementById('immoDropdownButton');
+                    const immoDropdown = document.getElementById('immoDropdown');
+            
+                    immoDropdownButton.addEventListener('click', function() {
+                        immoDropdown.classList.toggle('hidden');
+                    });
+            
+                    // Fermer le dropdown si on clique à l'extérieur
+                    window.addEventListener('click', function(event) {
+                        if (!immoDropdownButton.contains(event.target) && !immoDropdown.contains(event.target)) {
+                            immoDropdown.classList.add('hidden');
+                        }
+                    });
+            
+                    // Script pour le dropdown Immo (mobile)
+                    const immoMobileDropdownButton = document.getElementById('immoMobileDropdownButton');
+                    const immoMobileDropdown = document.getElementById('immoMobileDropdown');
+            
+                    immoMobileDropdownButton.addEventListener('click', function() {
+                        immoMobileDropdown.classList.toggle('hidden');
+                    });
+            
+                    // Fermer le dropdown mobile si on clique à l'extérieur
+                    window.addEventListener('click', function(event) {
+                        if (!immoMobileDropdownButton.contains(event.target) && !immoMobileDropdown.contains(event.target)) {
+                            immoMobileDropdown.classList.add('hidden');
+                        }
+                    });
+                });
+          
+        // Menu toggle for mobile
+        const menuToggle = document.getElementById('menu-toggle');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        menuToggle.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        
+    </script>
+   
+        <script>
+            // ✅ Met à jour tous les compteurs du panier à l’ouverture
+            window.addEventListener('DOMContentLoaded', function () {
+              fetch("{% url 'get_cart_items_count' %}", {
+                method: 'GET',
+                headers: {
+                  'X-CSRFToken': '{{ csrf_token }}',
+                },
+              })
+              .then(response => response.json())
+              .then(data => {
+                document.querySelectorAll('.cart-items-count').forEach(el => {
+                  el.textContent = data.total_items;
+                });
+              })
+              .catch(error => console.error('Erreur lors de la mise à jour du panier:', error));
+            });
+          
+            // ✅ Gestion AJAX de tous les formulaires "Ajouter au panier"
+            document.addEventListener('DOMContentLoaded', function () {
+              document.querySelectorAll('[id^="add-to-cart-form-"]').forEach(form => {
+                form.addEventListener('submit', function (event) {
+                  event.preventDefault();
+          
+                  const url = this.action;
+                  const data = new FormData(this);
+          
+                  fetch(url, {
+                    method: 'POST',
+                    body: data,
+                    headers: {
+                      'X-Requested-With': 'XMLHttpRequest'
+                    }
+                  })
+                  .then(response => {
+                    if (response.status === 401) {
+                      // 🔐 Redirection vers login si l'utilisateur n'est pas connecté
+                      window.location.href = "/login/?next=" + encodeURIComponent(window.location.pathname);
+                      return;
+                    }
+                    return response.json();
+                  })
+                  .then(data => {
+                    if (!data) return;
+          
+                    // 🔄 Met à jour tous les compteurs
+                    document.querySelectorAll('.cart-items-count').forEach(el => {
+                      el.textContent = data.total_items;
+                    });
+          
+                    // 🔄 Met à jour le prix total si présent
+                    if (data.total_price && document.getElementById('cart-total-price')) {
+                      document.getElementById('cart-total-price').textContent = data.total_price + " CDF";
+                    }
+          
+                    // ✅ Affiche le message temporaire
+                    const modal = document.getElementById('add-to-cart-modal');
+                    if (modal) {
+                      modal.classList.remove('hidden');
+                      setTimeout(() => {
+                        modal.classList.add('hidden');
+                      }, 3000);
+                    }
+                  })
+                  .catch(error => console.error('Erreur lors de l’ajout au panier:', error));
+                });
+              });
+            });
+          </script>
+          <script>
+      
+        // ✅ Gestion du spinner de chargement
+        window.addEventListener('load', function () {
+          const loadingSpinner = document.getElementById('loadingSpinner');
+          if (loadingSpinner) {
+            loadingSpinner.classList.add('hidden');
+          }
+        });
+      </script>
+      
+    
+    
+    
+    <script src="{% static 'js/script.js' %}"></script>
+    <div id="add-to-cart-modal" class="hidden fixed top-5 right-5 bg-green-100 text-green-800 px-4 py-2 rounded shadow z-50">
+        Produit ajouté au panier avec succès !
+      </div>
+</body>
+</html>
+
+
+{% comment %} 
+<!DOCTYPE html>
+{% load static %}
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+    <title>Kin-Palais</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'assets/favicon.ico' %}" />
+    <!-- Utilisation de Tailwind CSS 2.2.19 via CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-50">
+
+    <!-- Navbar -->
+    <nav class="bg-gray-900 text-white p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <!-- Titre Kin-Palais visible sur tous les écrans -->
+            <a href="{% url 'index' %}" class="text-2xl font-semibold">Kin-Palais</a>
+            
+            <!-- Bouton hamburger pour les petits écrans -->
+            <div class="lg:hidden">
+                <button id="menu-button" class="text-white focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Menu principal pour grands écrans -->
+            <div class="hidden lg:flex space-x-4">
+                <a href="" class="hover:bg-gray-700 px-3 py-2 rounded-md">Liste des Requêtes</a>
+                <a href="" class="hover:bg-gray-700 px-3 py-2 rounded-md">Liste des Produits</a>
+
+                {% if request.user.is_authenticated %}
+                <div class="relative">
+                    <button class="hover:bg-gray-700 px-3 py-2 rounded-md">Salut, {{ request.user.username }}</button>
+                    <div class="absolute right-0 mt-2 w-48 bg-gray-800 text-white rounded-md shadow-lg hidden group-hover:block">
+                        <a href="{% url 'profile' %}" class="block px-4 py-2">Profile</a>
+                        <a href="#" class="block px-4 py-2">Create Articles</a>
+                        <a href="{% url 'signout' %}" class="block px-4 py-2">Logout</a>
+                    </div>
+                </div>
+                {% else %}
+                <a href="{% url 'signup' %}" class="hover:bg-gray-700 px-3 py-2 rounded-md">SignUp</a>
+                <a href="{% url 'signin' %}" class="hover:bg-gray-700 px-3 py-2 rounded-md">Login</a>
+                {% endif %}
+            </div>
+
+            <!-- Menu responsive pour petits écrans (caché par défaut) -->
+            <div id="menu-dropdown" class="lg:hidden hidden absolute left-0 right-0 bg-gray-900 text-white mt-4 p-4 rounded-md">
+                <a href="" class="block px-4 py-2 hover:bg-gray-700">Liste des Requêtes</a>
+                <a href="" class="block px-4 py-2 hover:bg-gray-700">Liste des Produits</a>
+
+                {% if request.user.is_authenticated %}
+                <a href="{% url 'profile' %}" class="block px-4 py-2 hover:bg-gray-700">Profile</a>
+                <a href="#" class="block px-4 py-2 hover:bg-gray-700">Create Articles</a>
+                <a href="{% url 'signout' %}" class="block px-4 py-2 hover:bg-gray-700">Logout</a>
+                {% else %}
+                <a href="{% url 'signup' %}" class="block px-4 py-2 hover:bg-gray-700">SignUp</a>
+                <a href="{% url 'signin' %}" class="block px-4 py-2 hover:bg-gray-700">Login</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 py-2">
+        {% if messages %}
+        <div class="space-y-2">
+            {% for message in messages %}
+            <div class="text-green-600">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    {% block content %}
+    <h1 class="text-center text-3xl font-semibold text-gray-900 mt-12">Welcome to Kin-Palais</h1>
+    {% endblock content %}
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-10">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+                <div>
+                    <h5 class="font-bold mb-4">Quick Links</h5>
+                    <ul>
+                        <li><a href="#" class="hover:text-gray-400">Home</a></li>
+                        <li><a href="#" class="hover:text-gray-400">About</a></li>
+                        <li><a href="#" class="hover:text-gray-400">Tech Journeys</a></li>
+                        <li><a href="#" class="hover:text-gray-400">Contact</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h5 class="font-bold mb-4">Connect with Us</h5>
+                    <ul>
+                        <li><a href="#" target="_blank" class="hover:text-gray-400">Twitter</a></li>
+                        <li><a href="#" target="_blank" class="hover:text-gray-400">LinkedIn</a></li>
+                        <li><a href="#" target="_blank" class="hover:text-gray-400">GitHub</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h5 class="font-bold mb-4">Learning Resources</h5>
+                    <ul>
+                        <li><a href="#" target="_blank" class="hover:text-gray-400">FreeCodeCamp</a></li>
+                        <li><a href="#" target="_blank" class="hover:text-gray-400">NetNinja</a></li>
+                        <li><a href="#" target="_blank" class="hover:text-gray-400">Web Dev Simplified</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h5 class="font-bold mb-4">© Kin-Palais</h5>
+                    <p>All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // JavaScript pour afficher/masquer le menu sur les petits écrans
+        document.getElementById('menu-button').addEventListener('click', function () {
+            const menuDropdown = document.getElementById('menu-dropdown');
+            menuDropdown.classList.toggle('hidden');
+        });
+    </script>
+
+</body>
+
+</html> {% endcomment %}

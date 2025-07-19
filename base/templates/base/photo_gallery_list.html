@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<section class="container mx-auto px-4 py-8">
+
+  <h2 class="text-3xl font-bold mb-6">🖼 Galerie de produits</h2>
+
+  <!-- 🔍 Filtres -->
+  <form method="get" class="flex flex-wrap gap-4 items-end mb-8">
+    <!-- Pays -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Pays</label>
+      <select name="country" class="w-48 px-3 py-2 border rounded">
+        <option value="">Tous</option>
+        {% for country in countries %}
+        <option value="{{ country.id }}" {% if country.id|stringformat:"s" == selected_country %}selected{% endif %}>{{ country.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <!-- Ville -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Ville</label>
+      <select name="city" class="w-48 px-3 py-2 border rounded">
+        <option value="">Toutes</option>
+        {% for city in cities %}
+        <option value="{{ city.id }}" {% if city.id|stringformat:"s" == selected_city %}selected{% endif %}>{{ city.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Rechercher</button>
+  </form>
+
+  {% if photos %}
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+    {% for photo in photos %}
+    <div class="relative group rounded-lg overflow-hidden shadow-md bg-white">
+
+      {% if photo.product.store.country.flag %}
+      <div class="absolute top-2 left-2 z-10 bg-white px-1 py-0.5 rounded shadow">
+        <img src="{{ photo.product.store.country.flag.url }}" alt="Drapeau" class="w-5 h-3 object-cover">
+      </div>
+      {% endif %}
+
+      <img
+        src="{{ photo.image.url }}"
+        alt="Photo"
+        class="h-64 w-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-105 cursor-pointer"
+        onclick="openLightbox({{ forloop.counter0 }})"
+      >
+
+      <div class="absolute inset-0 bg-gradient-to-b from-black/40 to-black/5 flex items-end">
+        <h3 class="text-white text-lg font-semibold p-4">{{ photo.product.name }}</h3>
+      </div>
+
+      <div class="p-4">
+        <a href="{% url 'product_detail_wina' photo.product.id %}" class="block w-full text-center bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">
+          Voir le produit
+        </a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- 🔁 Pagination -->
+  {% if photos.has_other_pages %}
+  <div class="mt-10">
+    <nav class="flex justify-center">
+      <ul class="flex space-x-4">
+        {% if photos.has_previous %}
+        <li><a href="?page=1&country={{ selected_country }}&city={{ selected_city }}" class="px-4 py-2 bg-blue-600 text-white rounded-lg">&laquo; Première</a></li>
+        <li><a href="?page={{ photos.previous_page_number }}&country={{ selected_country }}&city={{ selected_city }}" class="px-4 py-2 bg-blue-600 text-white rounded-lg">&lt;</a></li>
+        {% endif %}
+
+        <li><span class="px-4 py-2 bg-blue-500 text-white rounded-lg">{{ photos.number }}</span></li>
+
+        {% if photos.has_next %}
+        <li><a href="?page={{ photos.next_page_number }}&country={{ selected_country }}&city={{ selected_city }}" class="px-4 py-2 bg-blue-600 text-white rounded-lg">&gt;</a></li>
+        <li><a href="?page={{ photos.paginator.num_pages }}&country={{ selected_country }}&city={{ selected_city }}" class="px-4 py-2 bg-blue-600 text-white rounded-lg">Dernière &raquo;</a></li>
+        {% endif %}
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
+
+  {% else %}
+  <p class="text-center text-gray-600 mt-10">Aucune photo trouvée.</p>
+  {% endif %}
+</section>
+
+<!-- 🖼️ Lightbox -->
+<div id="lightbox" class="fixed inset-0 z-50 bg-black bg-opacity-80 flex items-center justify-center hidden">
+  <button onclick="closeLightbox()" class="absolute top-4 right-6 text-white text-3xl font-bold">&times;</button>
+  <button onclick="prevImage()" class="absolute left-4 text-white text-4xl font-bold">&lsaquo;</button>
+  <img id="lightbox-img" src="" class="max-h-[80vh] max-w-[90vw] object-contain rounded-lg" />
+  <button onclick="nextImage()" class="absolute right-4 text-white text-4xl font-bold">&rsaquo;</button>
+</div>
+
+<script>
+  // Stocke les URLs des images dans un tableau JS
+  const imageUrls = [{% for photo in photos %}"{{ photo.image.url }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
+  let currentIndex = 0;
+
+  function openLightbox(index) {
+    currentIndex = index;
+    document.getElementById('lightbox-img').src = imageUrls[index];
+    document.getElementById('lightbox').classList.remove('hidden');
+  }
+
+  function closeLightbox() {
+    document.getElementById('lightbox').classList.add('hidden');
+  }
+
+  function nextImage() {
+    currentIndex = (currentIndex + 1) % imageUrls.length;
+    document.getElementById('lightbox-img').src = imageUrls[currentIndex];
+  }
+
+  function prevImage() {
+    currentIndex = (currentIndex - 1 + imageUrls.length) % imageUrls.length;
+    document.getElementById('lightbox-img').src = imageUrls[currentIndex];
+  }
+</script>
+{% endblock %}

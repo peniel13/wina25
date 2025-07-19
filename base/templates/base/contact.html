@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<section class="bg-white section-padding relative" style="background-image: url('{% static "img/maboko.jpg" %}'); background-size: cover; background-position: center;">
+    <div class="absolute inset-0 bg-black opacity-30"></div> <!-- Overlay sombre optionnel -->
+    
+    <!-- Ajout de padding en haut et en bas du contenu -->
+    <div class="container mx-auto px-4 py-16 relative z-10">
+        <div class="flex flex-col md:flex-row mb-32">
+            
+            <!-- Section des informations de contact -->
+            <div class="md:w-1/2 mb-8 animate-box" data-animate-effect="fadeInUp">
+                <h5 class="text-xl font-semibold text-white">Information</h5>
+                <p class="mb-8 text-gray-200">Nous sommes disponibles 7j/7 pour répondre à vos besoins.</p>
+
+                <div class="flex items-center mb-4">
+                    <div class="mr-4">
+                        <img src="{% static 'img/icons/c1.svg' %}" alt="" class="w-8 h-8">
+                    </div>
+                    <div>
+                        <div class="font-semibold text-white">Appelez-nous</div>
+                        <div class="text-gray-200"><a href="tel:0972489318" class="text-blue-400 hover:underline">+ 243972489318</a></div>
+                    </div>
+                </div>
+
+                <div class="flex items-center">
+                    <div class="mr-4">
+                        <img src="{% static 'img/icons/c2.svg' %}" alt="" class="w-8 h-8">
+                    </div>
+                    <div>
+                        <div class="font-semibold text-white">Envoyer un email</div>
+                        <div class="text-gray-200"><a href="mailto:winaservice1@gmail.com" class="text-blue-400 hover:underline">winaservice1@gmail.com</a></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section du formulaire de contact -->
+            <div class="md:w-1/2 md:ml-8 animate-box" data-animate-effect="fadeInUp">
+                <div class="form-box p-6 border rounded-lg shadow bg-white">
+                    <h5 class="text-xl font-semibold mb-4">Contacter nous</h5>
+                    <form action="https://api.web3forms.com/submit" method="POST">
+                        <input type="hidden" name="access_key" value="f0a24e68-feaf-4b96-ba0f-07771649ad93">
+                        
+                        <div class="mb-4">
+                            <input name="name" type="text" required placeholder="Votre Nom *" class="w-full p-2 border rounded" />
+                        </div>
+                        <div class="flex mb-4">
+                            <div class="w-1/2 pr-2">
+                                <input name="email" type="email" required placeholder="Votre Email *" class="w-full p-2 border rounded" />
+                            </div>
+                            <div class="w-1/2 pl-2">
+                                <input name="phone" type="text" required placeholder="Votre Numéro *" class="w-full p-2 border rounded" />
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <input name="subject" type="text" required placeholder="Entrer le Service recherché" class="w-full p-2 border rounded" />
+                        </div>
+                        <div class="mb-4">
+                            <textarea name="msg" required placeholder="Déterminer votre commande *" class="w-full p-2 border rounded"></textarea>
+                        </div>
+                        <div>
+                            <input name="submit" type="submit" value="Envoyer maintenant" class="bg-blue-600 text-white p-2 rounded hover:bg-blue-700 cursor-pointer" />
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

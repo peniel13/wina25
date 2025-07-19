@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-6">
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} p-4 rounded-lg mb-4">
+            {{ message }}
+        </div>
+    {% endfor %}
+</div>
+
+<section class="py-16 bg-white">
+    <div class="max-w-4xl mx-auto text-center">
+        <h2 class="text-3xl font-semibold mb-6">Fournissez votre requête de recherche</h2>
+        <p class="text-lg mb-6 text-gray-700">Cherchez une maison, boutique, hôtel, etc. Remplissez ce formulaire pour nous faire part de vos besoins.</p>
+
+        <form method="POST" enctype="multipart/form-data" class="space-y-4 text-left">
+            {% csrf_token %}
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="nom" class="block text-sm font-medium text-gray-700">Nom</label>
+                    {{ form.nom }}
+                </div>
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                    {{ form.email }}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="telephone" class="block text-sm font-medium text-gray-700">Téléphone</label>
+                    {{ form.telephone }}
+                </div>
+                <div>
+                    <label for="commune" class="block text-sm font-medium text-gray-700">Commune</label>
+                    {{ form.commune }}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="country" class="block text-sm font-medium text-gray-700">Pays</label>
+                    {{ form.country }}
+                </div>
+                <div>
+                    <label for="city" class="block text-sm font-medium text-gray-700">Ville</label>
+                    {{ form.city }}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="type_bien" class="block text-sm font-medium text-gray-700">Type de bien</label>
+                    {{ form.type_bien }}
+                </div>
+                <div>
+                    <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                    {{ form.description }}
+                </div>
+            </div>
+
+            
+
+            <div class="flex justify-between items-center mt-4">
+                <button type="submit" class="w-full py-2 px-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    Soumettre la requête
+                </button>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

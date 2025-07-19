@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% load static %}
+{% load form_filters %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+  <div class="bg-white shadow-lg rounded-xl w-full max-w-md p-8 space-y-6">
+    <div class="text-center">
+      <img src="{% static 'img/logoo.png' %}" alt="Logo" class="h-12 mx-auto mb-4">
+      <h2 class="text-3xl font-bold text-blue-700">Modifier mon profil</h2>
+    </div>
+
+    {% if messages %}
+      {% for message in messages %}
+        <p class="text-green-600 text-center text-sm">{{ message }}</p>
+      {% endfor %}
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" class="space-y-4">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+
+      <!-- Champ pays (avant ville) -->
+      <div>
+        {{ form.country.label_tag }}
+        {{ form.country|add_class:"input-field w-full" }}
+        {% if form.country.errors %}
+          <p class="text-red-500 text-sm">{{ form.country.errors.0 }}</p>
+        {% endif %}
+      </div>
+
+      <div>
+        {{ form.city.label_tag }}
+        {{ form.city|add_class:"input-field w-full" }}
+        {% if form.city.errors %}
+          <p class="text-red-500 text-sm">{{ form.city.errors.0 }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Autres champs -->
+      {% for field in form %}
+        {% if field.name not in "country,city" %}
+        <div>
+          {{ field.label_tag }}
+          {{ field|add_class:"input-field w-full" }}
+          {% if field.errors %}
+            <p class="text-red-500 text-sm">{{ field.errors.0 }}</p>
+          {% endif %}
+        </div>
+        {% endif %}
+      {% endfor %}
+
+      <button type="submit" class="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition duration-300">
+        Sauvegarder les modifications
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- JS dynamique : pays → villes -->
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const countrySelect = document.getElementById("id_country");
+    const citySelect = document.getElementById("id_city");
+
+    if (countrySelect) {
+      countrySelect.addEventListener("change", function () {
+        const countryId = this.value;
+        fetch(`/ajax/load-cities/?country=${countryId}`)
+          .then(response => response.json())
+          .then(data => {
+            citySelect.innerHTML = "";
+            data.forEach(city => {
+              const option = document.createElement("option");
+              option.value = city.id;
+              option.textContent = city.name;
+              citySelect.appendChild(option);
+            });
+          });
+      });
+    }
+  });
+</script>
+{% endblock %}

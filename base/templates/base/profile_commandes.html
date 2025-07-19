@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<section id="commandes" class="mt-12 pb-12">
+    <div class="flex justify-between items-center mb-6 px-4">
+        <h2 class="text-3xl font-bold text-center sm:text-left">Vos Commandes de Livraison</h2>
+        <a href="{% url 'creer_commande' %}" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+            + Commande livraison
+        </a>
+    </div>
+
+    {% if commandes %}
+    <div class="overflow-x-auto">
+        <table class="min-w-full table-auto bg-white shadow-lg rounded-lg">
+            <thead class="bg-blue-600 text-white">
+                <tr>
+                    <th class="px-6 py-3 text-left">Id #</th>
+                    <th class="px-6 py-3 text-left">Statut</th>
+                    <th class="px-6 py-3 text-left">Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for commande in commandes %}
+                <tr class="border-t">
+                    <td class="px-6 py-4">
+                        <a href="{% url 'livraison_detail' commande.id %}" class="text-blue-600 hover:text-blue-800">
+                            {{ commande.numero_id_colis }}
+                        </a>
+                    </td>
+                    <td class="px-6 py-4">{{ commande.statut }}</td>
+                    <td class="px-6 py-4">{{ commande.date_commande }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if commandes.has_other_pages %}
+    <div class="mt-8">
+        <nav aria-label="Pagination des commandes" class="flex justify-center">
+            <ul class="flex space-x-4">
+                {% if commandes.has_previous %}
+                <li>
+                    <a href="?page={{ commandes.previous_page_number }}#commandes" 
+                       class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        Précédente
+                    </a>
+                </li>
+                {% endif %}
+
+                <li>
+                    <span class="px-4 py-2 bg-blue-600 text-white rounded-lg">
+                        {{ commandes.number }}
+                    </span>
+                </li>
+
+                {% if commandes.has_next %}
+                <li>
+                    <a href="?page={{ commandes.next_page_number }}#commandes"
+                       class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        Suivante
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <p class="text-center text-lg text-gray-600">Vous n'avez pas encore de commandes de livraison.</p>
+    {% endif %}
+</section>
+
+{% endblock %}

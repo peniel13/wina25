@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1 class="text-2xl font-bold mt-2 mb-6 text-center"> Notifications  🔔 {{ unread_notifications_count|default:"0" }}</h1>
+<!-- Nombre de notifications non lues -->
+
+<div class="text-center mt-8 mb-4">
+    <button
+      id="delete-all"
+      class="delete-single px-6 py-3 bg-red-600 text-white rounded hover:bg-red-700 text-sm mt-2 h-12"
+      data-url="{% url 'delete_all_notifications' %}"
+      data-id="all">
+      Supprimer toutes les notifications
+    </button>
+  </div>
+  {% if notifications %}
+  <div class="space-y-6 mb-4">
+    {% for notification in notifications %}
+      <div class="bg-white rounded-lg shadow-md p-4 flex items-center space-x-6 notification-card">
+        {% if notification.image %}
+          <div class="flex-shrink-0">
+            <img src="{{ notification.image.url }}" alt="Image" class="w-20 h-20 object-cover rounded-md">
+          </div>
+        {% endif %}
+
+        <div class="flex-grow">
+          <h2 class="text-xl font-semibold {% if not notification.is_read %}text-blue-600{% else %}text-gray-800{% endif %}">
+            {{ notification.store.slug }}: {{ notification.title }}
+          </h2>
+
+          <p class="text-gray-700 mt-2">
+            {% if notification.description|length > 100 %}
+              {{ notification.description|slice:":100" }}... 
+              <a href="#" class="text-blue-500" onclick="openModal('{{ notification.title|escapejs }}', '{{ notification.description|escapejs }}')">
+                Lire plus
+              </a>
+            {% else %}
+              {{ notification.description }}
+            {% endif %}
+          </p>
+
+          <p class="text-xs text-gray-500 mt-2">
+            {{ notification.created_at|date:"d M Y H:i" }}
+          </p>
+
+          {% if notification.store %}
+            <div class="mt-3">
+              <a href="{% url 'store_detail' notification.store.slug %}" class="inline-block px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm">
+                Voir le store
+              </a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination -->
+  {% if notifications.has_other_pages %}
+    <nav aria-label="Pagination des notifications" class="flex justify-center mt-6 mb-12">
+      <ul class="flex space-x-2">
+        {% if notifications.has_previous %}
+          <li>
+            <a href="?page=1" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">&laquo; Première</a>
+          </li>
+          <li>
+            <a href="?page={{ notifications.previous_page_number }}" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">&lsaquo;</a>
+          </li>
+        {% endif %}
+
+        <li>
+          <span class="px-4 py-2 bg-blue-600 text-white rounded">
+            Page {{ notifications.number }} / {{ notifications.paginator.num_pages }}
+          </span>
+        </li>
+
+        {% if notifications.has_next %}
+          <li>
+            <a href="?page={{ notifications.next_page_number }}" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">&rsaquo;</a>
+          </li>
+          <li>
+            <a href="?page={{ notifications.paginator.num_pages }}" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Dernière &raquo;</a>
+          </li>
+        {% endif %}
+      </ul>
+    </nav>
+  {% endif %}
+{% else %}
+  <p class="text-gray-600 text-center">Aucune notification disponible.</p>
+{% endif %}
+
+<!-- MODAL -->
+<div id="notificationModal" onclick="closeModal()" class="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center hidden">
+  <div class="bg-white rounded-lg p-6 w-11/12 sm:w-1/2 relative" onclick="event.stopPropagation()">
+    <button onclick="closeModal()" class="text-gray-500 text-2xl absolute top-2 right-2">&times;</button>
+    <h2 id="modalTitle" class="text-2xl font-semibold mb-4"></h2>
+    <p id="modalDescription" class="text-gray-700 mb-4"></p>
+  </div>
+</div>
+
+{% csrf_token %}
+
+<script>
+function openModal(title, description) {
+  document.getElementById('modalTitle').innerText = title;
+  document.getElementById('modalDescription').innerText = description;
+  document.getElementById('notificationModal').classList.remove('hidden');
+}
+
+function closeModal() {
+  document.getElementById('notificationModal').classList.add('hidden');
+}
+
+// Récupérer le token CSRF
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+const csrftoken = getCookie('csrftoken');
+
+// Supprimer une notification
+document.querySelectorAll('.delete-single').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.preventDefault();
+    const notifId = btn.dataset.id;
+    fetch(btn.dataset.url, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrftoken },
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.status === 'ok') {
+        const msgEl = document.getElementById(`msg-${notifId}`);
+        if (msgEl) msgEl.classList.remove('hidden');
+        btn.disabled = true;
+        btn.classList.add('opacity-50');
+        btn.innerText = "Supprimée";
+      }
+    });
+  });
+});
+
+const deleteAllBtn = document.getElementById('delete-all');
+if (deleteAllBtn) {
+  deleteAllBtn.addEventListener('click', () => {
+    if (!confirm('Voulez-vous vraiment tout supprimer ?')) return;
+
+    fetch(deleteAllBtn.dataset.url, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': csrftoken
+      }
+    }).then(res => res.json())
+    .then(data => {
+      if (data.status === 'ok') {
+        window.location.reload(); // Recharger la page
+      }
+    });
+  });
+}
+
+</script>
+
+{% endblock %}
+
+{% comment %} 
+{% block extra_js %}
+<script>
+  function markAsRead(notificationId) {
+    fetch(`/notifications/mark-as-read/${notificationId}/`, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+      },
+    }).then(response => response.json())
+      .then(data => {
+        alert(data.message);
+        location.reload();
+      });
+  }
+
+  function deleteNotification(notificationId) {
+    fetch(`/notifications/delete/${notificationId}/`, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+      },
+    }).then(response => response.json())
+      .then(data => {
+        alert(data.message);
+        location.reload();
+      });
+  }
+
+  function deleteAllNotifications() {
+    fetch('/notifications/delete-all/', {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+      },
+    }).then(response => response.json())
+      .then(data => {
+        alert(data.message);
+        location.reload();
+      });
+  }
+
+  // Fonction pour ouvrir le modal avec la description complète
+  function openModal(notificationId) {
+    // Trouver la notification par son ID
+    const notification = {{ notifications|json_script:"notifications_data" }}.find(n => n.id == notificationId);
+    if (notification) {
+      document.getElementById('modalTitle').textContent = notification.title;
+      document.getElementById('modalDescription').textContent = notification.description;
+      document.getElementById('notificationModal').classList.remove('hidden');
+    }
+  }
+
+  // Fonction pour fermer le modal
+  function closeModal() {
+    document.getElementById('notificationModal').classList.add('hidden');
+  }
+</script>
+{% endblock %} {% endcomment %}

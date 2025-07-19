@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mx-auto mt-10">
+    <h2 class="text-2xl font-bold mb-6">📩 Messages reçus pour le produit "{{ product.name }}"</h2>
+
+    {% if contacts %}
+        <ul class="space-y-4">
+            {% for contact in contacts %}
+                <li class="p-4 bg-white rounded shadow">
+                    <p><strong>Nom :</strong> {{ contact.first_name }} {{ contact.last_name }}</p>
+                    <p><strong>Email :</strong> {{ contact.email }}</p>
+                    <p><strong>Téléphone :</strong> {{ contact.phone_number }}</p>
+                    <p><strong>Envoyé le :</strong> {{ contact.created_at|date:"d M Y H:i" }}</p>
+                    <a href="{% url 'contact_product_detail' contact.id %}" class="text-blue-600 hover:underline mt-2 inline-block">
+                        ➕ Voir le message complet
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+
+        {% if contacts.has_other_pages %}
+        <div class="mt-8 mb-20">
+            <nav class="flex justify-center">
+                <ul class="flex space-x-4">
+                    {% if contacts.has_previous %}
+                        <li><a href="?page=1" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">&laquo; Première</a></li>
+                        <li><a href="?page={{ contacts.previous_page_number }}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">&lt;</a></li>
+                    {% endif %}
+
+                    <li>
+                        <span class="px-4 py-2 bg-blue-600 text-white rounded-lg">
+                            {{ contacts.number }}
+                        </span>
+                    </li>
+
+                    {% if contacts.paginator.num_pages > 1 and contacts.number < contacts.paginator.num_pages %}
+                        <li>
+                            <a href="?page={{ contacts.paginator.num_pages }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-blue-600 hover:text-white">
+                                {{ contacts.paginator.num_pages }}
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    {% if contacts.has_next %}
+                        <li><a href="?page={{ contacts.next_page_number }}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">&gt;</a></li>
+                        <li><a href="?page={{ contacts.paginator.num_pages }}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Dernière &raquo;</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    {% else %}
+        <p>Aucun message trouvé.</p>
+    {% endif %}
+</div>
+{% endblock %}

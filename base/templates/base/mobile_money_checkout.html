@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="container mx-auto p-6">
+    <!-- Titre principal -->
+    <div class="welcome-message mb-6 text-center">
+        <h1 class="text-3xl font-semibold">Payer par Mobile Money sur Lushi Marché</h1>
+        <p class="text-lg mt-2">Pour effectuer le paiement de vos articles, suivez les instructions ci-dessous.</p>
+    </div>
+
+    <!-- 🇨🇩 Nom et drapeau du pays -->
+    <div class="flex items-center justify-center mb-6">
+        {% if country.flag %}
+            <img src="{{ country.flag.url }}" alt="{{ country.name }}" class="w-8 h-8 mr-2 rounded-full shadow">
+        {% endif %}
+        <h2 class="text-2xl font-bold">{{ country.name }}</h2>
+    </div>
+
+    <div class="payeenligne-container bg-white p-6 rounded-lg shadow-lg">
+        <div class="payeenligne-wrapper grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Partie gauche : instructions -->
+            <div class="payeenligne-left">
+                <h2 class="text-2xl font-semibold mb-4">Instructions de Paiement</h2>
+                <ul class="list-decimal pl-6 text-gray-800">
+                    <li>Sélectionnez le numéro de votre opérateur ci-dessous.</li>
+                    <li>Payez le montant : <strong>{{ total_price|floatformat:2 }} {{ devise }}</strong></li>
+                    <li>Remplissez les informations de la transaction ci-dessous.</li>
+                    <li>Cliquez sur "Soumettre le paiement".</li>
+                    <li>Suivez le statut de votre commande.</li>
+                </ul>
+
+                <!-- Numéro opérateur -->
+                <h3 class="text-xl font-semibold mt-6">Numéros pour le paiement :</h3>
+                {% if numero_paye %}
+                    <div class="flex items-center mt-4">
+                        <img src="{{ numero_paye.image.url }}" class="w-12 h-12 mr-4 rounded-full shadow" alt="Logo opérateur">
+                        <div>
+                            <p class="font-medium">{{ numero_paye.nom }}</p>
+                            <p class="text-gray-700">{{ numero_paye.numero_paye }}</p>
+                        </div>
+                    </div>
+                {% else %}
+                    <p class="text-red-600 mt-2">Aucun numéro disponible pour ce pays.</p>
+                {% endif %}
+
+                <!-- Récapitulatif -->
+                <div class="mt-6 text-gray-700">
+                    <p>Total des articles : <strong>{{ item_count }}</strong></p>
+                    <p>Montant total : <strong>{{ total_price|floatformat:2 }} {{ devise }}</strong></p>
+                </div>
+            </div>
+
+            <!-- Partie droite : formulaire -->
+            <div class="payeenligne-right">
+                <h2 class="text-xl font-semibold mb-4">Formulaire de Paiement</h2>
+                <form method="POST" class="space-y-6">
+                    {% csrf_token %}
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Prénom</label>
+                            <input type="text" name="first_name" value="{{ form.first_name.value|default_if_none:'' }}" class="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring focus:ring-indigo-300" required>
+                            {% if form.first_name.errors %}
+                                <p class="text-sm text-red-600">{{ form.first_name.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Nom</label>
+                            <input type="text" name="last_name" value="{{ form.last_name.value|default_if_none:'' }}" class="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring focus:ring-indigo-300" required>
+                            {% if form.last_name.errors %}
+                                <p class="text-sm text-red-600">{{ form.last_name.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Numéro de téléphone transaction</label>
+                        <input type="text" name="transaction_number" value="{{ form.transaction_number.value|default_if_none:'' }}" class="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring focus:ring-indigo-300" required>
+                        {% if form.transaction_number.errors %}
+                            <p class="text-sm text-red-600">{{ form.transaction_number.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">ID de la transaction</label>
+                        <input type="text" name="transaction_id" value="{{ form.transaction_id.value|default_if_none:'' }}" class="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring focus:ring-indigo-300" required>
+                        {% if form.transaction_id.errors %}
+                            <p class="text-sm text-red-600">{{ form.transaction_id.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Numéro de téléphone</label>
+                        <input type="text" name="phone_number" value="{{ form.phone_number.value|default_if_none:'' }}" class="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring focus:ring-indigo-300" required>
+                        {% if form.phone_number.errors %}
+                            <p class="text-sm text-red-600">{{ form.phone_number.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Option de livraison</label>
+                        <select name="delivery_option" class="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring focus:ring-indigo-300" required>
+                            <option value="">-- Sélectionnez --</option>
+                            <option value="home" {% if form.delivery_option.value == 'home' %}selected{% endif %}>À domicile</option>
+                            <option value="pickup" {% if form.delivery_option.value == 'pickup' %}selected{% endif %}>Récupérer soi-même</option>
+                        </select>
+                        {% if form.delivery_option.errors %}
+                            <p class="text-sm text-red-600">{{ form.delivery_option.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700 transition">
+                            Soumettre le paiement
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% load static form_tags %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+  <div class="bg-white shadow-lg rounded-xl w-full max-w-md p-8 space-y-6">
+    <div class="text-center">
+      <img src="{% static 'img/logoo.png' %}" alt="Logo" class="h-12 mx-auto mb-4">
+      <h2 class="text-3xl font-bold text-purple-700">Créer un compte</h2>
+    </div>
+
+    {% if messages %}
+      {% for message in messages %}
+        <p class="{% if message.tags == 'error' %}text-red-500{% else %}text-green-600{% endif %} text-center text-sm">
+          {{ message }}
+        </p>
+      {% endfor %}
+    {% endif %}
+
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+
+      <div>
+        {{ form.email.label_tag }}
+        {{ form.email|add_class:"input-field w-full" }}
+        <p class="text-sm text-red-500">{{ form.email.errors|striptags }}</p>
+      </div>
+
+      <div>
+        {{ form.username.label_tag }}
+        {{ form.username|add_class:"input-field w-full" }}
+        <p class="text-sm text-red-500">{{ form.username.errors|striptags }}</p>
+      </div>
+
+      <div>
+        {{ form.password.label_tag }}
+        {{ form.password|add_class:"input-field w-full" }}
+        <p class="text-sm text-red-500">{{ form.password.errors|striptags }}</p>
+      </div>
+
+      <div>
+        {{ form.confirm_password.label_tag }}
+        {{ form.confirm_password|add_class:"input-field w-full" }}
+        <p class="text-sm text-red-500">{{ form.confirm_password.errors|striptags }}</p>
+      </div>
+
+      <!-- ✅ CAPTCHA -->
+      <div>
+        {{ form.captcha.label_tag }}
+        {{ form.captcha|add_class:"input-field w-full" }}
+        <p class="text-sm text-red-500">{{ form.captcha.errors|striptags }}</p>
+      </div>
+
+      <button type="submit" class="w-full bg-purple-600 text-white font-semibold py-2 rounded-lg hover:bg-purple-700 transition duration-300">
+        S'inscrire
+      </button>
+    </form>
+
+    <p class="text-center text-sm text-gray-600">
+      Vous avez déjà un compte ?
+      <a href="{% url 'login' %}" class="text-purple-600 hover:underline">Connectez-vous</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

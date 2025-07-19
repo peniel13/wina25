@@ -1,0 +1,451 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<section class="container mx-auto mt-8 px-4">
+
+    <!-- Affichage du nom de l'utilisateur et de son compteur de points -->
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-semibold">Salut, {{ request.user.username }}</h1>
+        <div class="text-xl font-medium">
+            Points de fidélité: <span class="font-bold">{{ user_points }}</span>
+        </div>
+    </div>
+    <!-- BOUTON À AJOUTER ICI -->
+ <div class="mb-6">
+    <a href="{% url 'transfer_points' %}" class="inline-block bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition duration-200">
+        Céder vos points au profit d’un autre
+    </a>
+</div> 
+     <!-- Message sur les points de fidélité -->
+     <div class="mb-8 p-4 bg-blue-100 text-blue-800 rounded-lg">
+        <h3 class="font-semibold text-xl text-center">Gagnez des points de fidélité !</h3>
+        <p class="text-center">
+            Après <strong>5 achats</strong>, vous gagnez <strong>1 point de fidélité</strong>. Maximisez vos achats pour accumuler des points et profiter d’avantages exclusifs ! Plus vous achetez, plus vous gagnez de points. De plus, vous pouvez également accumuler des points en likant, commentant et partageant des publicités, ce qui vous permet de gagner jusqu’à <strong>7 points par publicité</strong> ! 🚀
+        </p>
+    </div>
+    <!-- Titre de la page -->
+    <h2 class="text-3xl font-bold mb-4">Explorer les produits ou services achétables avec vos Points de fidélité</h2>
+
+    <!-- Formulaire de recherche -->
+    <section id="search" class="mb-8">
+        <form method="GET" action="#produits" class="flex justify-between gap-4">
+            <input type="text" name="search" value="{{ search_query }}" placeholder="Rechercher par nom ou description"
+                   class="px-4 py-2 border border-gray-300 rounded-lg w-full">
+            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                Rechercher
+            </button>
+        </form>
+    </section>
+    <section id="produits_scrollables_rewards" class="py-16 bg-gray-100">
+        <p class="text-center mb-8">Faites défiler horizontalement pour découvrir les produits ou services disponibles via vos points.</p>
+      
+        <div class="overflow-x-auto px-4">
+          <div class="flex space-x-6 w-max">
+            {% for product_reward in  featured_products  %}
+            <div class="flex-shrink-0 w-64 border-2 border-secondary bg-slate-100 text-black rounded-xl cursor-pointer hover:scale-95 hover:bg-slate-200 transition duration-200 ease-linear flex flex-col">
+              
+              <!-- Image -->
+              <div>
+                <img src="{{ product_reward.image.url }}" alt="{{ product_reward.product.name }}" class="rounded-t-xl w-full h-40 object-cover cursor-pointer" 
+                     onclick="showImagePopup('{{ product_reward.image.url }}')" />
+              </div>
+      
+              <!-- Contenu -->
+              <div class="flex flex-col justify-between flex-grow p-4">
+                <!-- Nom & Prix -->
+                <div class="flex flex-col items-center my-4">
+                  <h1 class="font-semibold text-xl text-primary pt-2 text-center">{{ product_reward.name }}</h1>
+                  <h2 class="font-medium text-lg text-center">Prix: {{ product_reward.points_required }} points</h2>
+                  <p class="text-blue-600 font-semibold text-md text-center">
+                    💵 Valeur monétaire: ${{ product_reward.product.usd_price|floatformat:2 }}
+                  </p>
+                </div>
+      
+                <!-- Actions -->
+                <div class="my-4 text-center flex flex-col items-center gap-3">
+                  <a href="{% url 'detail_product_reward' product_reward.id %}" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400">
+                    Voir Détail
+                  </a>
+      
+                  <button id="buyButton_{{ product_reward.id }}" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    Acheter
+                  </button>
+                </div>
+              </div>
+            </div>
+      
+            <!-- Popup confirmation -->
+            <div id="confirmationPopupFeatured_{{ product_reward.id }}" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden">
+                <div class="bg-white p-8 rounded-xl w-96">
+                  <h2 class="text-xl font-semibold text-center">Confirmer l'achat</h2>
+                  <p class="my-4 text-center">
+                    Vous allez acheter {{ product_reward.product.name }} pour {{ product_reward.points_required }} points.
+                    Voulez-vous confirmer cet achat ?
+                  </p>
+                  <div class="flex justify-between">
+                    <!-- Bouton Annuler -->
+                    <button class="px-6 py-2 bg-gray-400 text-white rounded-lg" onclick="hidePopupFeatured({{ product_reward.id }})">Annuler</button>
+              
+                    <!-- Formulaire de confirmation -->
+                    <form action="{% url 'buy_product' product_reward.id %}" method="POST">
+                      {% csrf_token %}
+                      <button type="submit" class="px-6 py-2 bg-green-600 text-white rounded-lg">Confirmer</button>
+                    </form>
+                  </div>
+                </div>
+              </div>              
+      
+            {% empty %}
+            <p>Aucun produit de récompense trouvé pour cette recherche.</p>
+            {% endfor %}
+          </div>
+        </div>
+      </section>
+      
+    <!-- Affichage des produits de récompense -->
+    <section id="produits" class="py-16 bg-gray-100">
+        <div class="flex flex-wrap gap-6 justify-center">
+            {% for product_reward in product_rewards %}
+            <div class="flex-shrink-0 border-2 border-secondary bg-slate-100 text-black rounded-xl mb-6 cursor-pointer hover:scale-95 hover:bg-slate-200 transition duration-200 ease-linear w-64 h-full flex flex-col">
+                <div>
+                    <img src="{{ product_reward.image.url }}" alt="{{ product_reward.product.name }}" class="rounded-t-xl w-full h-40 object-cover cursor-pointer" 
+                         onclick="showImagePopup('{{ product_reward.image.url }}')"/>
+                </div>
+                <div class="flex flex-col justify-between flex-grow p-4">
+                    <!-- Nom du produit -->
+                    <div class="flex flex-col items-center my-4">
+                        <h1 class="font-semibold text-xl text-primary pt-2 text-center">{{ product_reward.name }}</h1>
+                        <h2 class="font-medium text-lg text-center">Prix: {{ product_reward.points_required }} points</h2>
+                        
+                        <!-- Valeur en USD -->
+                        <p class="text-blue-600 font-semibold text-md text-center">
+                            💵 Valeur monétaire: ${{ product_reward.usd_price|floatformat:2 }}
+                        </p>
+                    </div>
+    
+                    <!-- Bouton pour acheter -->
+                    <div class="my-4 text-center flex flex-col items-center gap-3">
+                        <!-- Bouton Voir Détail -->
+                        <a href="{% url 'detail_product_reward' product_reward.id %}" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400">
+                            Voir Détail
+                        </a>
+                    
+                        <!-- Bouton Acheter -->
+                        <button id="buyButton_{{ product_reward.id }}" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            Acheter
+                        </button>
+                    </div>
+                    
+                </div>
+            </div>
+           
+
+            <!-- Popup de confirmation -->
+            <div id="confirmationPopup_{{ product_reward.id }}" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden">
+                <div class="bg-white p-8 rounded-xl w-96">
+                    <h2 class="text-xl font-semibold text-center">Confirmer l'achat</h2>
+                    <p class="my-4 text-center">Vous allez acheter {{ product_reward.product.name }} pour {{ product_reward.points_required }} points. Voulez-vous confirmer cet achat ?</p>
+                    <div class="flex justify-between">
+                        <button class="px-6 py-2 bg-gray-400 text-white rounded-lg" onclick="hidePopup({{ product_reward.id }})">Annuler</button>
+                        <form action="{% url 'buy_product' product_reward.id %}" method="POST">
+                            {% csrf_token %}
+                            <button type="submit" class="px-6 py-2 bg-green-600 text-white rounded-lg">Confirmer</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            {% empty %}
+            <p>Aucun produit de récompense trouvé pour cette recherche.</p>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        <!-- Pagination -->
+        {% if product_rewards.has_other_pages %}
+        <div class="mt-8">
+            <nav aria-label="Pagination des produits" class="flex justify-center">
+                <ul class="flex space-x-4">
+        
+                    {% if product_rewards.has_previous %}
+                    <li>
+                        <a href="?page={{ product_rewards.previous_page_number }}#produits" 
+                           class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <
+                        </a>
+                    </li>
+                    {% endif %}
+        
+                    <!-- Page actuelle -->
+                    <li>
+                        <span class="px-4 py-2 bg-blue-600 text-white rounded-lg">
+                            {{ product_rewards.number }}
+                        </span>
+                    </li>
+        
+                    {% if product_rewards.has_next %}
+                    <li>
+                        <a href="?page={{ product_rewards.next_page_number }}#produits" 
+                           class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            >
+                        </a>
+                    </li>
+                    {% endif %}
+        
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+        
+
+    </section>
+
+</section>
+
+<!-- ⭐️ Featured Stores -->
+
+<section id="favorite_stores" class="pt-4 pb-10 bg-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="text-3xl font-semibold mt-4 mb-8 text-center">Stores favoris</h2>
+    
+      <div class="relative w-full glide-01">
+        <!-- Glide Track -->
+        <div class="overflow-hidden" data-glide-el="track">
+          <ul class="flex gap-6">
+            {% for featured in featured_stores %}
+              {% with store=featured.store %}
+                <li class="min-w-[250px] md:w-[calc(33.33%-24px)]">
+                  <a href="{% url 'store_detail' store.slug %}" class="block bg-white rounded-lg shadow-lg hover:shadow-2xl overflow-hidden relative">
+                    <div class="h-40 bg-cover bg-center" style="background-image: url('{% if store.thumbnail %}{{ store.thumbnail.url }}{% else %}{% static 'img/default-thumbnail.jpg' %}{% endif %}')">
+                      {% if store.country.flag %}
+                        <div class="absolute top-2 right-2">
+                          <img src="{{ store.country.flag.url }}" class="w-5 h-5 rounded-full border border-white shadow" alt="{{ store.country.name }}">
+                        </div>
+                      {% endif %}
+                    </div>
+                    <div class="bg-black bg-opacity-60 text-white p-3 text-sm">
+                      <h3 class="font-semibold truncate">{{ store.name }}</h3>
+                      <p class="text-xs text-blue-200 italic">{{ store.typestore.nom }}</p>
+                      <div class="flex items-center space-x-1 text-xs mt-1">
+                        {% with rating=store.average_rating|default:0 %}
+                          {% for i in "12345" %}
+                            {% if rating >= forloop.counter %}
+                              <i class="bx bxs-star text-yellow-400 text-xs"></i>
+                            {% elif rating >= forloop.counter0|add:"0.5" %}
+                              <i class="bx bxs-star-half text-yellow-400 text-xs"></i>
+                            {% else %}
+                              <i class="bx bx-star text-yellow-400 text-xs"></i>
+                            {% endif %}
+                          {% endfor %}
+                        {% endwith %}
+                      </div>
+                      <p class="truncate mt-1">{{ store.adresse }}</p>
+                      <p class="text-xs">{{ store.city.name }}, {{ store.country.name }}</p>
+                    </div>
+                  </a>
+                </li>
+              {% endwith %}
+            {% endfor %}
+          </ul>
+        </div>
+    
+        <!-- Contrôles -->
+        <div class="absolute left-0 flex items-center justify-between w-full h-0 px-4 top-1/2" data-glide-el="controls">
+          <button class="inline-flex items-center justify-center w-8 h-8 transition duration-300 border rounded-full lg:w-12 lg:h-12 text-slate-700 border-slate-700 hover:text-slate-900 hover:border-slate-900 bg-white/20" data-glide-dir="<">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 15.75L3 12m0 0l3.75-3.75M3 12h18"/>
+            </svg>
+          </button>
+          <button class="inline-flex items-center justify-center w-8 h-8 transition duration-300 border rounded-full lg:w-12 lg:h-12 text-slate-700 border-slate-700 hover:text-slate-900 hover:border-slate-900 bg-white/20" data-glide-dir=">">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12H3"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    </section>
+
+<!-- Glide.js Script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Glide.js/3.0.2/glide.js"></script>
+
+<script>
+    var glide01 = new Glide('.glide-01', {
+        type: 'carousel',
+        focusAt: 'center',
+        perView: 3,
+        autoplay: 3000,
+        animationDuration: 700,
+        gap: 24,
+        classes: {
+            activeNav: '[&>*]:bg-slate-700',
+        },
+        breakpoints: {
+            1024: {
+                perView: 2
+            },
+            640: {
+                perView: 1
+            }
+        },
+    });
+
+    glide01.mount();
+</script>
+<!-- Popup pour afficher l'image agrandie -->
+<div id="imagePopup" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center hidden">
+    <div class="bg-white p-4 rounded-xl max-w-lg">
+        <span class="absolute top-0 right-0 p-3 cursor-pointer text-white bg-red-600 rounded-full text-3xl flex justify-center items-center" onclick="hideImagePopup()">X</span>
+        <img id="popupImage" src="" alt="Image agrandie" class="w-full h-auto rounded-lg">
+    </div>
+</div>
+{% if ad_popup and ad_popup.is_active %}
+<div id="popupAd" class="modal show d-block" tabindex="-1"
+     style="background: rgba(0,0,0,0.5); position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; display: flex; justify-content: center;
+            align-items: center; z-index: 9999;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 90%; width: auto;">
+        <div class="modal-content position-relative">
+            <button type="button" class="btn-close" onclick="closePopup()"
+                    style="border: none; background: none; font-size: 30px;
+                           color: #fff; position: absolute; top: 20px; right: 20px;">&times;
+            </button>
+            <div class="modal-body text-center" style="display: flex; flex-direction: column;
+                                                        justify-content: space-between; max-height: 80vh;">
+
+                {% if ad_popup.media_type == "image" %}
+                    <img src="{{ ad_popup.file.url }}" class="img-fluid"
+                         style="max-height: 70vh; width: auto; margin-bottom: 20px;" alt="Publicité">
+                {% else %}
+                    <video autoplay controls class="img-fluid"
+                           style="max-height: 70vh; width: auto; margin-bottom: 20px;">
+                        <source src="{{ ad_popup.file.url }}" type="video/mp4">
+                    </video>
+                {% endif %}
+
+                <div class="mt-4 d-flex flex-wrap justify-content-center gap-3">
+
+                    {% if ad_popup.url %}
+                        <a href="{{ ad_popup.url }}" target="_blank"
+                           class="btn btn-danger"
+                           style="font-size: 18px; padding: 10px 20px; background-color: #ff5733;
+                                  border: none; color: white; border-radius: 5px;
+                                  transition: background-color 0.3s ease;">
+                            🔗 Voir l'annonce
+                        </a>
+                    {% endif %}
+
+                    {% if ad_popup.store %}
+                        <a href="{% url 'store_detail' ad_popup.store.slug %}"
+                           class="btn btn-primary"
+                           style="font-size: 18px; padding: 10px 20px; background-color: #007bff;
+                                  border: none; color: white; border-radius: 5px;
+                                  transition: background-color 0.3s ease;">
+                            🏬 Visiter le store
+                        </a>
+                    {% endif %}
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+    function closePopup() {
+        const popup = document.getElementById("popupAd");
+    
+        // Stopper la vidéo s'il y en a une
+        const video = popup.querySelector("video");
+        if (video) {
+            video.pause();
+            video.currentTime = 0; // optionnel : remet la vidéo au début
+        }
+    
+        // Cacher le popup
+        popup.style.display = "none";
+    }
+</script>
+<script>
+    // Afficher le popup avec l'image agrandie
+    function showImagePopup(imageUrl) {
+        document.getElementById('popupImage').src = imageUrl;
+        document.getElementById('imagePopup').classList.remove('hidden');
+    }
+
+    // Masquer le popup
+    function hideImagePopup() {
+        document.getElementById('imagePopup').classList.add('hidden');
+    }
+
+    // Afficher le popup de confirmation d'achat
+     // Fonction pour les produits classiques
+  function showPopup(productId) {
+    document.getElementById(`confirmationPopup_${productId}`).classList.remove('hidden');
+}
+
+function hidePopup(productId) {
+    document.getElementById(`confirmationPopup_${productId}`).classList.add('hidden');
+}
+
+// Fonction pour les produits en vedette
+function showPopupFeatured(productId) {
+    document.getElementById(`confirmationPopupFeatured_${productId}`).classList.remove('hidden');
+}
+
+function hidePopupFeatured(productId) {
+    document.getElementById(`confirmationPopupFeatured_${productId}`).classList.add('hidden');
+}
+
+// Attache les événements aux boutons d'achat (produits normaux)
+document.querySelectorAll('[id^="buyButton_"]').forEach(button => {
+    button.addEventListener('click', function() {
+        const productId = this.id.replace('buyButton_', '');
+        // Vérifie si le produit est en vedette ou non
+        const isFeatured = document.getElementById(`confirmationPopupFeatured_${productId}`) !== null;
+        if (isFeatured) {
+            showPopupFeatured(productId);
+        } else {
+            showPopup(productId);
+        }
+    });
+});
+    {% comment %} function showPopup(productId) {
+        document.getElementById('confirmationPopup_' + productId).classList.remove('hidden');
+    }
+
+    // Cacher le popup de confirmation d'achat
+    function hidePopup(productId) {
+        document.getElementById('confirmationPopup_' + productId).classList.add('hidden');
+    }
+
+    // Ajouter un événement au bouton d'achat pour chaque produit
+    {% for product_reward in product_rewards %}
+    document.getElementById('buyButton_{{ product_reward.id }}').addEventListener('click', function() {
+        showPopup({{ product_reward.id }});
+    });
+    {% endfor %}
+
+    // Afficher le popup pour les produits scrollables
+function showPopupFeatured(productId) {
+    document.getElementById('confirmationPopupFeatured_' + productId).classList.remove('hidden');
+}
+
+// Cacher le popup pour les produits scrollables
+function hidePopupFeatured(productId) {
+    document.getElementById('confirmationPopupFeatured_' + productId).classList.add('hidden');
+}
+
+// Ajouter un événement au bouton d'achat pour chaque produit featured
+{% for product_reward in featured_products %}
+document.getElementById('buyButton_{{ product_reward.id }}').addEventListener('click', function() {
+    showPopupFeatured({{ product_reward.id }});
+});
+{% endfor %} {% endcomment %}
+
+</script>
+
+    
+{% endblock %}

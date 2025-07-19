@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<section class="container mx-auto px-4 py-6">
+
+  <h2 class="text-3xl font-bold mb-6">🎥 Spots publicitaires des stores</h2>
+
+  <!-- 🔍 Filtres ville/pays -->
+  <form method="get" class="flex flex-wrap gap-4 items-end mb-6">
+    <div>
+      <label for="country" class="block text-sm font-medium text-gray-700">Pays</label>
+      <select name="country" id="country" class="w-48 px-3 py-2 border rounded">
+        <option value="">Tous</option>
+        {% for country in countries %}
+          <option value="{{ country.id }}" {% if country.id|stringformat:"s" == selected_country %}selected{% endif %}>
+            {{ country.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label for="city" class="block text-sm font-medium text-gray-700">Ville</label>
+      <select name="city" id="city" class="w-48 px-3 py-2 border rounded">
+        <option value="">Toutes</option>
+        {% for city in cities %}
+          <option value="{{ city.id }}" {% if city.id|stringformat:"s" == selected_city %}selected{% endif %}>
+            {{ city.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+      Rechercher
+    </button>
+  </form>
+
+  <!-- 🟦 Grille des spots pubs -->
+  {% if spotpubs %}
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+    {% for pub in spotpubs %}
+    <div class="bg-white rounded shadow overflow-hidden flex flex-col justify-between">
+      <video
+        src="{{ pub.video.url }}"
+        class="w-full h-64 object-cover"
+        autoplay
+        muted
+        loop
+        playsinline
+        onclick="this.muted = false; this.controls = true;"
+      ></video>
+      <div class="p-4">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-semibold text-lg">{{ pub.store.name }}</h3>
+          {% if pub.store.country.flag %}
+          <img src="{{ pub.store.country.flag.url }}" alt="{{ pub.store.country.name }}" class="w-6 h-4 object-cover rounded-sm ml-2">
+          {% endif %}
+        </div>
+        <p class="text-sm text-gray-600">{{ pub.store.city }} - {{ pub.store.country.name }}</p>
+        <a href="{% url 'store_detail' pub.store.slug %}" class="mt-3 inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+          Voir le store
+        </a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- 🔁 Pagination stylée -->
+  {% if spotpubs.has_other_pages %}
+  <div class="mt-8">
+    <nav class="flex justify-center">
+      <ul class="flex space-x-4">
+        {% if spotpubs.has_previous %}
+        <li><a href="?page=1{% if selected_country %}&country={{ selected_country }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}" class="px-4 py-2 bg-blue-600 text-white rounded-lg">&laquo; Première</a></li>
+        <li><a href="?page={{ spotpubs.previous_page_number }}{% if selected_country %}&country={{ selected_country }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}" class="px-4 py-2 bg-blue-600 text-white rounded-lg">&lt;</a></li>
+        {% endif %}
+
+        <li><span class="px-4 py-2 bg-blue-600 text-white rounded-lg">{{ spotpubs.number }}</span></li>
+
+        {% if spotpubs.has_next %}
+        <li><a href="?page={{ spotpubs.next_page_number }}{% if selected_country %}&country={{ selected_country }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}" class="px-4 py-2 bg-blue-600 text-white rounded-lg">&gt;</a></li>
+        <li><a href="?page={{ spotpubs.paginator.num_pages }}{% if selected_country %}&country={{ selected_country }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}" class="px-4 py-2 bg-blue-600 text-white rounded-lg">Dernière &raquo;</a></li>
+        {% endif %}
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
+
+  {% else %}
+    <p class="text-center text-gray-500 mt-10">Aucun spot publicitaire trouvé.</p>
+  {% endif %}
+</section>
+{% endblock %}

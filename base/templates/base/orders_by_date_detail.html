@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2 class="text-3xl font-bold text-center mt-8 mb-8">Détails des Ventes du {{ order_date }}</h2>
+
+    <div class="mb-4">
+        <p><strong>Nombre de commande/client :</strong> {{ total_orders }} commandes</p>
+        <p><strong>Total Montant des Ventes :</strong> {{ total_amount|floatformat:2 }} {{ store.country.devise_info.devise }}</p>
+    </div>
+
+    {% if orders_data %}
+    <div class="overflow-x-auto">
+        <table class="min-w-full table-auto bg-white shadow-lg rounded-lg">
+            <thead class="bg-blue-600 text-white">
+                <tr>
+                    <th class="px-6 py-3 text-left">Client</th>
+                    <th class="px-6 py-3 text-left">Nombre d'articles vendus</th>
+                    <th class="px-6 py-3 text-left">Montant Total des articles</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for data in orders_data %}
+                <tr class="border-t">
+                    <td class="px-6 py-4">
+                        <a href="{% url 'orders_by_date_detail_detail' store.slug order_date data.client_name %}" class="text-blue-600 hover:text-blue-800">
+                            {{ data.client_name }}
+                        </a>
+                    </td>
+                    <td class="px-6 py-4">{{ data.total_items_in_order }}</td>
+                    <td class="px-6 py-4">{{ data.total_order_amount|floatformat:2 }} {{ store.country.devise_info.devise }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% comment %} Pagination {% endcomment %}
+    {% if orders_data.has_other_pages %}
+    <div class="mt-8 mb-12"> <!-- Ajout de mb-12 pour éviter que la pagination touche le footer -->
+        <nav aria-label="Pagination des commandes" class="flex justify-center">
+            <ul class="flex space-x-4">
+
+                {% if orders_data.has_previous %}
+                <li>
+                    <a href="?page=1#commandes" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        « Première
+                    </a>
+                </li>
+                <li>
+                    <a href="?page={{ orders_data.previous_page_number }}#commandes" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        <
+                    </a>
+                </li>
+                {% endif %}
+
+                <!-- Page actuelle -->
+                <li>
+                    <span class="px-4 py-2 bg-blue-600 text-white rounded-lg">
+                        {{ orders_data.number }}
+                    </span>
+                </li>
+
+                {% if orders_data.number < orders_data.paginator.num_pages %}
+                <li>
+                    <a href="?page={{ orders_data.paginator.num_pages }}#commandes" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-blue-600 hover:text-white">
+                        {{ orders_data.paginator.num_pages }}
+                    </a>
+                </li>
+                {% endif %}
+
+                {% if orders_data.has_next %}
+                <li>
+                    <a href="?page={{ orders_data.next_page_number }}#commandes" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        >
+                    </a>
+                </li>
+                <li>
+                    <a href="?page={{ orders_data.paginator.num_pages }}#commandes" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        Dernière »
+                    </a>
+                </li>
+                {% endif %}
+
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+
+    {% else %}
+        <p class="text-center text-lg text-gray-600">Aucune commande pour cette date.</p>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,6 @@
+.env
+*.mp4
+/media/
+*.mp4
+*.sqlite3
+/media/

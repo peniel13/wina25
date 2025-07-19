@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mx-auto p-4">
+    <h1 class="text-3xl font-bold mb-6">{{ ad.title }}</h1>
+    <p class="text-gray-600 mb-4">{{ ad.description }}</p>
+
+    <div class="flex items-center mb-4">
+        <h2 class="text-xl font-semibold mr-4">Commentaires</h2>
+    </div>
+
+    <!-- Conteneur scrollable des commentaires -->
+    <div class="mb-6 max-h-96 overflow-y-auto pr-2">
+        {% for comment in comments %}
+            <div class="border-b border-gray-300 py-2 flex items-start gap-4">
+                {% if comment.user.profile_pic %}
+                    <img src="{{ comment.user.profile_pic.url }}" alt="{{ comment.user.username }}" class="rounded-full w-12 h-12">
+                {% else %}
+                    <img src="https://bootdey.com/img/Content/avatar/avatar7.png" alt="Default Profile Picture" class="rounded-full w-12 h-12">
+                {% endif %}
+                <div>
+                    <p><strong>{{ comment.user.username }}</strong> : {{ comment.content }}</p>
+                    <p class="text-gray-500 text-sm">{{ comment.created_at }}</p>
+                </div>
+            </div>
+        {% empty %}
+            <p>Aucun commentaire pour cette publicité.</p>
+        {% endfor %}
+    </div>
+
+    <!-- Formulaire de commentaire -->
+    <div class="mt-6">
+        <h3 class="text-lg font-semibold">Ajouter un commentaire</h3>
+        <form method="POST">
+            {% csrf_token %}
+            <textarea name="comment_content" rows="4" class="w-full p-2 border border-gray-300 rounded-md" placeholder="Écrivez votre commentaire..."></textarea>
+            <button type="submit" class="mt-4 px-6 py-2 bg-blue-500 text-white rounded-md">Commenter</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+
+{% comment %} {% extends 'base.html' %}
+
+{% block content %}
+    <div class="container mx-auto p-4">
+        <h1 class="text-3xl font-bold mb-6">{{ ad.title }}</h1>
+        <p class="text-gray-600 mb-4">{{ ad.description }}</p>
+
+        <div class="flex items-center mb-4">
+            <h2 class="text-xl font-semibold mr-4">Commentaires</h2>
+        </div>
+
+        <div class="mb-4">
+            {% for comment in comments %}
+                <div class="border-b border-gray-300 py-2">
+                    
+                    <p> {% if comment.user.profile_pic %}
+                        <img src="{{ comment.user.profile_pic.url }}" alt="{{ testimonial.user.username }}" class="rounded-full w-12 h-12 mr-4">
+                    {% else %}
+                        <img src="https://bootdey.com/img/Content/avatar/avatar7.png" alt="Default Profile Picture" class="rounded-full w-12 h-12 mr-4">
+                    {% endif %}<strong>{{ comment.user.username }}:</strong> {{ comment.content }}</p>
+                    <p class="text-gray-500 text-sm">{{ comment.created_at }}</p>
+                </div>
+            {% empty %}
+                <p>Aucun commentaire pour cette publicité.</p>
+            {% endfor %}
+        </div>
+          <!-- Pagination -->
+          {% if comments.has_other_pages %}
+          <div class="mt-8 mb-12"> <!-- Ajout de mb-12 pour éviter que la pagination touche le footer -->
+              <nav aria-label="Pagination des commentaires" class="flex justify-center">
+                  <ul class="flex space-x-4">
+          
+                      {% if comments.has_previous %}
+                      <li>
+                          <a href="?page={{ comments.previous_page_number }}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                              < Précédente
+                          </a>
+                      </li>
+                      {% endif %}
+          
+                      <!-- Affichage de la page actuelle -->
+                      <li>
+                          <span class="px-4 py-2 bg-blue-600 text-white rounded-lg">
+                              {{ comments.number }}
+                          </span>
+                      </li>
+          
+                      {% if comments.has_next %}
+                      <li>
+                          <a href="?page={{ comments.next_page_number }}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                              Suivante >
+                          </a>
+                      </li>
+                      {% endif %}
+          
+                  </ul>
+              </nav>
+          </div>
+          {% endif %}
+          
+
+        <div class="mt-6">
+            <h3 class="text-lg font-semibold">Ajouter un commentaire</h3>
+            <form method="POST">
+                {% csrf_token %}
+                <textarea name="comment_content" rows="4" class="w-full p-2 border border-gray-300 rounded-md" placeholder="Écrivez votre commentaire..."></textarea>
+                <button type="submit" class="mt-4 px-6 py-2 bg-blue-500 text-white rounded-md">Commenter</button>
+            </form>
+        </div>
+    </div>
+{% endblock %} {% endcomment %}

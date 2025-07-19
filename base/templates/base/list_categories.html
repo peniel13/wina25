@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Liste des catégories - {{ store.name }}{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-center min-h-screen bg-gray-100">
+    <div class="w-full max-w-md bg-white p-8 rounded-lg shadow-lg">
+        <h2 class="text-2xl font-semibold text-center text-gray-800 mb-6">Catégories pour {{ store.name }}</h2>
+
+        {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                    <div class="text-green-600 text-center">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Liste des catégories -->
+        {% if categories %}
+            <ul class="space-y-4">
+                {% for category in categories %}
+                    <li class="flex justify-between items-center bg-gray-50 p-4 rounded-lg shadow-md">
+                        <span class="text-lg text-gray-800">{{ category.name }}</span>
+                        
+                        <!-- Formulaire de suppression -->
+                        <form method="POST" action="" style="display:inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="category_id" value="{{ category.id }}">
+                            <button type="submit" name="delete_category" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Supprimer</button>
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-center text-lg text-gray-600">Aucune catégorie n'a été créée pour ce store.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

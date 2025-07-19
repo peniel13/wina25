@@ -1,0 +1,264 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="max-w-4xl mx-auto py-10 px-4">
+    <h1 class="text-3xl font-bold mb-6 text-center">🎉 Résultat du Tirage : {{ lottery.title }}</h1>
+
+    <h2 class="text-2xl font-semibold mb-4">🎉 Gagnants :</h2>
+{% if winners %}
+    <ul class="space-y-3 mb-4">
+        {% for win in winners %}
+            <li class="flex items-center space-x-4">
+                <div class="flex-shrink-0">
+                    {% if win.user.profile_pic %}
+                        <img class="h-10 w-10 rounded-full" src="{{ win.user.profile_pic.url }}">
+                    {% else %}
+                        <img class="h-10 w-10 rounded-full" src="https://bootdey.com/img/Content/avatar/avatar7.png">
+                    {% endif %}
+                </div>
+                <span class="text-gray-800 font-semibold">
+                        🥇 {{ forloop.counter }}. {{ win.full_name }}
+                         
+                </span>
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p class="text-lg text-gray-700 mb-4">Aucun gagnant désigné encore.</p>
+{% endif %}
+
+    
+
+    <h2 class="text-2xl font-semibold mb-4 mt-6">Liste des participants (frais de participation : {{ lottery.participation_fee }} USD)</h2>
+
+    <div class="mb-6">
+        <input type="text" id="search-participant" class="px-4 py-2 border border-gray-300 rounded" placeholder="Rechercher un participant...">
+    </div>
+
+   <!-- Liste des participants avec scroll vertical limité à 4 éléments -->
+<div class="overflow-y-auto max-h-64 mb-6 border border-gray-200 rounded p-4" id="participant-scroll">
+    <ul id="participant-list" class="space-y-4">
+        {% for participant in participants %}
+            <li class="flex items-center space-x-4">
+                <div class="flex-shrink-0">
+                    {% if participant.user.profile_pic %}
+                        <img class="h-10 w-10 rounded-full" src="{{ participant.user.profile_pic.url }}" alt="Avatar">
+                    {% else %}
+                        <img class="h-10 w-10 rounded-full" src="https://bootdey.com/img/Content/avatar/avatar7.png" alt="Avatar par défaut">
+                    {% endif %}
+                </div>
+                <span class="text-gray-800">{{ participant.full_name }}, bonne chance prochainement</span>
+
+            </li>
+        {% empty %}
+            <p>Aucun participant pour cette loterie.</p>
+        {% endfor %}
+    </ul>
+</div>
+{% if show_pick_button %}
+    <form method="POST" class="mt-6 space-y-4">
+        {% csrf_token %}
+        <label for="num_winners" class="block text-sm font-medium text-gray-700">Nombre de gagnants à tirer :</label>
+        <input type="number" name="num_winners" min="1" max="10" value="1" class="w-20 px-2 py-1 border border-gray-300 rounded" required>
+
+        <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+            Tirer des gagnants
+        </button>
+    </form>
+{% endif %}
+<!-- Image et description de la loterie -->
+{% if lottery.image %}
+    <div class="mt-8 text-center">
+        <img src="{{ lottery.image.url }}" alt="Image de la loterie" class="mx-auto rounded-lg shadow-md max-w-sm">
+    </div>
+{% endif %}
+
+{% if lottery.description %}
+    <div class="mt-4 px-4 text-gray-700 text-lg">
+        <p>{{ lottery.description }}</p>
+    </div>
+{% endif %}
+
+    
+
+</div>
+<!-- ⭐️ Featured Stores -->
+
+<section id="favorite_stores" class="pt-4 pb-10 bg-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="text-3xl font-semibold mt-4 mb-8 text-center">Stores favoris</h2>
+    
+      <div class="relative w-full glide-01">
+        <!-- Glide Track -->
+        <div class="overflow-hidden" data-glide-el="track">
+          <ul class="flex gap-6">
+            {% for featured in featured_stores %}
+              {% with store=featured.store %}
+                <li class="min-w-[250px] md:w-[calc(33.33%-24px)]">
+                  <a href="{% url 'store_detail' store.slug %}" class="block bg-white rounded-lg shadow-lg hover:shadow-2xl overflow-hidden relative">
+                    <div class="h-40 bg-cover bg-center" style="background-image: url('{% if store.thumbnail %}{{ store.thumbnail.url }}{% else %}{% static 'img/default-thumbnail.jpg' %}{% endif %}')">
+                      {% if store.country.flag %}
+                        <div class="absolute top-2 right-2">
+                          <img src="{{ store.country.flag.url }}" class="w-5 h-5 rounded-full border border-white shadow" alt="{{ store.country.name }}">
+                        </div>
+                      {% endif %}
+                    </div>
+                    <div class="bg-black bg-opacity-60 text-white p-3 text-sm">
+                      <h3 class="font-semibold truncate">{{ store.name }}</h3>
+                      <p class="text-xs text-blue-200 italic">{{ store.typestore.nom }}</p>
+                      <div class="flex items-center space-x-1 text-xs mt-1">
+                        {% with rating=store.average_rating|default:0 %}
+                          {% for i in "12345" %}
+                            {% if rating >= forloop.counter %}
+                              <i class="bx bxs-star text-yellow-400 text-xs"></i>
+                            {% elif rating >= forloop.counter0|add:"0.5" %}
+                              <i class="bx bxs-star-half text-yellow-400 text-xs"></i>
+                            {% else %}
+                              <i class="bx bx-star text-yellow-400 text-xs"></i>
+                            {% endif %}
+                          {% endfor %}
+                        {% endwith %}
+                      </div>
+                      <p class="truncate mt-1">{{ store.adresse }}</p>
+                      <p class="text-xs">{{ store.city.name }}, {{ store.country.name }}</p>
+                    </div>
+                  </a>
+                </li>
+              {% endwith %}
+            {% endfor %}
+          </ul>
+        </div>
+    
+        <!-- Contrôles -->
+        <div class="absolute left-0 flex items-center justify-between w-full h-0 px-4 top-1/2" data-glide-el="controls">
+          <button class="inline-flex items-center justify-center w-8 h-8 transition duration-300 border rounded-full lg:w-12 lg:h-12 text-slate-700 border-slate-700 hover:text-slate-900 hover:border-slate-900 bg-white/20" data-glide-dir="<">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 15.75L3 12m0 0l3.75-3.75M3 12h18"/>
+            </svg>
+          </button>
+          <button class="inline-flex items-center justify-center w-8 h-8 transition duration-300 border rounded-full lg:w-12 lg:h-12 text-slate-700 border-slate-700 hover:text-slate-900 hover:border-slate-900 bg-white/20" data-glide-dir=">">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12H3"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    </section>
+
+<!-- Popup pour afficher l'image agrandie -->
+<div id="imagePopup" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center hidden">
+    <div class="bg-white p-4 rounded-xl max-w-lg">
+        <span class="absolute top-0 right-0 p-3 cursor-pointer text-white bg-red-600 rounded-full text-3xl flex justify-center items-center" onclick="hideImagePopup()">X</span>
+        <img id="popupImage" src="" alt="Image agrandie" class="w-full h-auto rounded-lg">
+    </div>
+</div>
+{% if ad_popup and ad_popup.is_active %}
+<div id="popupAd" class="modal show d-block" tabindex="-1"
+     style="background: rgba(0,0,0,0.5); position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; display: flex; justify-content: center;
+            align-items: center; z-index: 9999;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 90%; width: auto;">
+        <div class="modal-content position-relative">
+            <button type="button" class="btn-close" onclick="closePopup()"
+                    style="border: none; background: none; font-size: 30px;
+                           color: #fff; position: absolute; top: 20px; right: 20px;">&times;
+            </button>
+            <div class="modal-body text-center" style="display: flex; flex-direction: column;
+                                                        justify-content: space-between; max-height: 80vh;">
+
+                {% if ad_popup.media_type == "image" %}
+                    <img src="{{ ad_popup.file.url }}" class="img-fluid"
+                         style="max-height: 70vh; width: auto; margin-bottom: 20px;" alt="Publicité">
+                {% else %}
+                    <video autoplay controls class="img-fluid"
+                           style="max-height: 70vh; width: auto; margin-bottom: 20px;">
+                        <source src="{{ ad_popup.file.url }}" type="video/mp4">
+                    </video>
+                {% endif %}
+
+                <div class="mt-4 d-flex flex-wrap justify-content-center gap-3">
+
+                    {% if ad_popup.url %}
+                        <a href="{{ ad_popup.url }}" target="_blank"
+                           class="btn btn-danger"
+                           style="font-size: 18px; padding: 10px 20px; background-color: #ff5733;
+                                  border: none; color: white; border-radius: 5px;
+                                  transition: background-color 0.3s ease;">
+                            🔗 Voir l'annonce
+                        </a>
+                    {% endif %}
+
+                    {% if ad_popup.store %}
+                        <a href="{% url 'store_detail' ad_popup.store.slug %}"
+                           class="btn btn-primary"
+                           style="font-size: 18px; padding: 10px 20px; background-color: #007bff;
+                                  border: none; color: white; border-radius: 5px;
+                                  transition: background-color 0.3s ease;">
+                            🏬 Visiter le store
+                        </a>
+                    {% endif %}
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Glide.js Script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Glide.js/3.0.2/glide.js"></script>
+<script>
+    function closePopup() {
+        const popup = document.getElementById("popupAd");
+    
+        // Stopper la vidéo s'il y en a une
+        const video = popup.querySelector("video");
+        if (video) {
+            video.pause();
+            video.currentTime = 0; // optionnel : remet la vidéo au début
+        }
+    
+        // Cacher le popup
+        popup.style.display = "none";
+    }
+</script>
+<script>
+    var glide01 = new Glide('.glide-01', {
+        type: 'carousel',
+        focusAt: 'center',
+        perView: 3,
+        autoplay: 3000,
+        animationDuration: 700,
+        gap: 24,
+        classes: {
+            activeNav: '[&>*]:bg-slate-700',
+        },
+        breakpoints: {
+            1024: {
+                perView: 2
+            },
+            640: {
+                perView: 1
+            }
+        },
+    });
+
+    glide01.mount();
+</script>
+<script>
+    document.getElementById('search-participant').addEventListener('input', function() {
+        const searchValue = this.value.toLowerCase();
+        const participants = document.querySelectorAll('#participant-list li');
+        participants.forEach(function(participant) {
+            const username = participant.textContent.toLowerCase();
+            if (username.includes(searchValue)) {
+                participant.style.display = '';
+            } else {
+                participant.style.display = 'none';
+            }
+        });
+    });
+</script>
+
+{% endblock %}

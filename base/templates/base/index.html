@@ -1,0 +1,1062 @@
+{% extends "base.html" %}
+{% load static custom_filters %}
+
+{% block content %}
+<header class="relative bg-gradient-to-r from-gray-900 to-gray-700 h-screen flex items-center" style="background-image: url('{% static "img/her2.jpg" %}'); background-size: cover;">
+  <!-- Couche d'opacité noire -->
+  <div class="absolute inset-0 opacity-50 bg-black"></div>
+  
+  <!-- Contenu centré -->
+  <div class="relative z-10 flex items-center justify-center w-full h-full px-6 md:px-12">
+      <div class="text-center max-w-2xl mx-auto text-white">
+          <h4 class="text-sm font-light mb-2">Bienvenue sur</h4>
+<h1 class="text-4xl md:text-5xl font-bold uppercase mb-4">WINA MARCHE</h1>
+<h3 class="text-2xl md:text-3xl font-light mb-6">Wina Avance !</h3>
+<p class="text-base md:text-lg mb-8">Faites vos courses au grand marché numerique de toutes les villes sans vous déplacer. Comparez les prix, commandez depuis chez vous ou au bureau. Votre panier vous attend à l’arrivée, ou faites-vous livrer directement chez vous ! bonus : pleins d'autres avantages vous attend </p>
+
+          <a href="{% url 'contact' %}" class="inline-block bg-transparent border-2 border-white text-white py-2 px-6 rounded-md hover:bg-white hover:text-black transition duration-300">Contactez-nous</a>
+      </div>
+  </div>
+</header>
+<div class="max-w-7xl mx-auto px-4 py-6">
+
+ <!-- ⭐️ Featured Stores -->
+
+<section id="favorite_stores" class="pt-4 pb-10 bg-gray-100">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <h2 class="text-3xl font-semibold mt-4 mb-8 text-center">Stores favoris</h2>
+  
+    <div class="relative w-full glide-01">
+      <!-- Glide Track -->
+      <div class="overflow-hidden" data-glide-el="track">
+        <ul class="flex gap-6">
+          {% for featured in featured_stores %}
+            {% with store=featured.store %}
+              <li class="min-w-[250px] md:w-[calc(33.33%-24px)]">
+                <a href="{% url 'store_detail' store.slug %}" class="block bg-white rounded-lg shadow-lg hover:shadow-2xl overflow-hidden relative">
+                  <div class="h-40 bg-cover bg-center" style="background-image: url('{% if store.thumbnail %}{{ store.thumbnail.url }}{% else %}{% static 'img/default-thumbnail.jpg' %}{% endif %}')">
+                    {% if store.country.flag %}
+                      <div class="absolute top-2 right-2">
+                        <img src="{{ store.country.flag.url }}" class="w-5 h-5 rounded-full border border-white shadow" alt="{{ store.country.name }}">
+                      </div>
+                    {% endif %}
+                  </div>
+                  <div class="bg-black bg-opacity-60 text-white p-3 text-sm">
+                    <h3 class="font-semibold truncate">{{ store.name }}</h3>
+                    <p class="text-xs text-blue-200 italic">{{ store.typestore.nom }}</p>
+                    <div class="flex items-center space-x-1 text-xs mt-1">
+                      {% with rating=store.average_rating|default:0 %}
+                        {% for i in "12345" %}
+                          {% if rating >= forloop.counter %}
+                            <i class="bx bxs-star text-yellow-400 text-xs"></i>
+                          {% elif rating >= forloop.counter0|add:"0.5" %}
+                            <i class="bx bxs-star-half text-yellow-400 text-xs"></i>
+                          {% else %}
+                            <i class="bx bx-star text-yellow-400 text-xs"></i>
+                          {% endif %}
+                        {% endfor %}
+                      {% endwith %}
+                    </div>
+                    <p class="truncate mt-1">{{ store.adresse }}</p>
+                    <p class="text-xs">{{ store.city.name }}, {{ store.country.name }}</p>
+                  </div>
+                </a>
+              </li>
+            {% endwith %}
+          {% endfor %}
+        </ul>
+      </div>
+  
+      <!-- Contrôles -->
+      <div class="absolute left-0 flex items-center justify-between w-full h-0 px-4 top-1/2" data-glide-el="controls">
+        <button class="inline-flex items-center justify-center w-8 h-8 transition duration-300 border rounded-full lg:w-12 lg:h-12 text-slate-700 border-slate-700 hover:text-slate-900 hover:border-slate-900 bg-white/20" data-glide-dir="<">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 15.75L3 12m0 0l3.75-3.75M3 12h18"/>
+          </svg>
+        </button>
+        <button class="inline-flex items-center justify-center w-8 h-8 transition duration-300 border rounded-full lg:w-12 lg:h-12 text-slate-700 border-slate-700 hover:text-slate-900 hover:border-slate-900 bg-white/20" data-glide-dir=">">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12H3"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+  </section>
+  
+  
+  <!-- 🏪 Types de store -->
+  <h2 class="text-2xl font-bold mb-4">Types de Store ou Entité</h2>
+
+<div class="flex space-x-3 overflow-x-auto mb-8 pb-2 scrollbar-hide">
+  {% for typestore in typestores %}
+    <a href="{% url 'stores_by_typestore_django' typestore.id %}"
+       class="flex items-center max-w-xs px-4 py-2 bg-blue-100 rounded-full transition transform hover:scale-105 hover:bg-blue-200 duration-300 whitespace-nowrap">
+       
+      {% if typestore.image %}
+        <img src="{{ typestore.image.url }}" alt="{{ typestore.nom }}" class="w-6 h-6 rounded-full flex-shrink-0 mr-2">
+      {% endif %}
+      
+      <span class="text-sm truncate block">{{ typestore.nom }}</span>
+    </a>
+  {% endfor %}
+</div>
+
+
+  <!-- 🌍 Pays -->
+  <h2 class="text-2xl font-bold mb-4">Store ou Entité / Pays</h2>
+
+  <div class="flex space-x-3 overflow-x-auto mb-8 pb-2 scrollbar-hide">
+    {% for country in countries %}
+      <a href="{% url 'stores_by_country_django' country.id %}"
+         class="flex items-center max-w-xs px-4 py-2 bg-green-100 rounded-full hover:bg-green-200 transition transform hover:scale-105 duration-300 whitespace-nowrap">
+         
+        {% if country.flag %}
+          <img src="{{ country.flag.url }}" alt="{{ country.name }}" class="w-6 h-6 rounded-full flex-shrink-0 mr-2">
+        {% endif %}
+        
+        <span class="text-sm truncate block">{{ country.name }}</span>
+      </a>
+    {% endfor %}
+  </div>
+  
+<!-- 🏙️ Villes -->
+<h2 class="text-2xl font-bold mb-4">Store ou Entité / Villes</h2>
+
+<div class="flex space-x-3 overflow-x-auto mb-8 pb-2 scrollbar-hide">
+  {% for city in cities %}
+    <a href="{% url 'stores_by_city_wina' city.id %}"
+       class="flex items-center max-w-xs px-4 py-2 bg-purple-100 rounded-full hover:bg-purple-200 transition transform hover:scale-105 duration-300 whitespace-nowrap">
+       
+      {% if city.image %}
+        <img src="{{ city.image.url }}" alt="{{ city.name }}" class="w-6 h-6 rounded-full flex-shrink-0 mr-2">
+      {% endif %}
+      
+      <span class="text-sm truncate block">{{ city.name }}</span>
+    </a>
+  {% endfor %}
+</div>
+
+
+  <!-- 💼 Stores par secteur -->
+  <h2 class="text-2xl font-bold mb-6">Stores par secteur d’activité</h2>
+  <div class="space-y-8">
+    {% for typebusiness in typebusinesses %}
+      {% with stores=stores_by_type|get_item:typebusiness.id %}
+        {% if stores %}
+          <div class="mb-6">
+            <h3 class="text-xl font-semibold mb-2">{{ typebusiness.nom }}</h3>
+            <div class="flex space-x-4 overflow-x-auto pb-2">
+              {% for store in stores %}
+                <a href="{% url 'store_detail' store.slug %}" class="relative w-64 flex-shrink-0 rounded-lg overflow-hidden shadow-md">
+                  <div class="h-40 bg-cover bg-center bg-gray-200"
+                       style="background-image: url('{% if store.thumbnail %}{{ store.thumbnail.url }}{% else %}{% static 'img/default-thumbnail.jpg' %}{% endif %}')">
+                    {% if store.country.flag %}
+                      <div class="absolute top-1 right-1">
+                        <img src="{{ store.country.flag.url }}" class="w-5 h-5 rounded-full border border-white" alt="{{ store.country.name }}">
+                      </div>
+                    {% endif %}
+                  </div>
+                  <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 p-2">
+                    <h4 class="text-white font-semibold text-sm truncate">{{ store.name }}</h4>
+                    <div class="flex items-center space-x-1 mt-1">
+                      {% with rating=store.average_rating|default:0 %}
+                        {% for i in "12345" %}
+                          {% if rating >= forloop.counter %}
+                            <i class="bx bxs-star text-yellow-400 text-xs"></i>
+                          {% elif rating >= forloop.counter0|add:"0.5" %}
+                            <i class="bx bxs-star-half text-yellow-400 text-xs"></i>
+                          {% else %}
+                            <i class="bx bx-star text-yellow-400 text-xs"></i>
+                          {% endif %}
+                        {% endfor %}
+                      {% endwith %}
+                    </div>
+                    <p class="text-white text-xs truncate mt-1">{{ store.adresse }}</p>
+                    <p class="text-white text-xs">{{ store.city.name }}, {{ store.country.name }}</p>
+                  </div>
+                </a>
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+      {% endwith %}
+    {% endfor %}
+  </div>
+
+  <!-- 🏪 Tous les stores -->
+  <h2 class="text-2xl font-bold mb-4">Tous les stores & entités</h2>
+  <div class="flex justify-center mb-6">
+    <div class="flex flex-wrap gap-4 mt-6">
+      <a href="{% url 'store_list_wina' %}" class="px-6 py-2 bg-blue-600 text-white rounded-full text-sm hover:bg-blue-700 transition">
+        Voir plus de stores
+      </a>
+      <a href="{% url 'spotpub_list' %}" class="px-6 py-2 bg-blue-600 text-white rounded-full text-sm hover:bg-blue-700 transition">
+        Spot pub de stores
+      </a>
+    </div>
+    
+  </div>
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    {% for store in all_stores %}
+      <a href="{% url 'store_detail' store.slug %}" class="relative rounded-lg overflow-hidden shadow-md">
+        <div class="h-40 bg-cover bg-center bg-gray-200"
+             style="background-image: url('{% if store.thumbnail %}{{ store.thumbnail.url }}{% else %}{% static 'img/default-thumbnail.jpg' %}{% endif %}')">
+          {% if store.country.flag %}
+            <div class="absolute top-2 right-2">
+              <img src="{{ store.country.flag.url }}" class="w-5 h-5 rounded-full border border-white" alt="{{ store.country.name }}">
+            </div>
+          {% endif %}
+        </div>
+        <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 p-2">
+          <h3 class="text-white font-semibold text-sm truncate">{{ store.name }}</h3>
+          <div class="flex items-center space-x-1 mt-1">
+            {% with rating=store.average_rating|default:0 %}
+              {% for i in "12345" %}
+                {% if rating >= forloop.counter %}
+                  <i class="bx bxs-star text-yellow-400 text-xs"></i>
+                {% elif rating >= forloop.counter0|add:"0.5" %}
+                  <i class="bx bxs-star-half text-yellow-400 text-xs"></i>
+                {% else %}
+                  <i class="bx bx-star text-yellow-400 text-xs"></i>
+                {% endif %}
+              {% endfor %}
+            {% endwith %}
+          </div>
+          <p class="text-white text-xs truncate mt-1">{{ store.adresse }}</p>
+          <p class="text-white text-xs">{{ store.city.name }}, {{ store.country.name }}</p>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+
+  <!-- 📄 Pagination -->
+  <div class="flex justify-center mt-6 space-x-4">
+    {% if all_stores.has_previous %}
+      <a href="?page={{ all_stores.previous_page_number }}" class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Précédent</a>
+    {% endif %}
+    {% if all_stores.has_next %}
+      <a href="?page={{ all_stores.next_page_number }}" class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Suivant</a>
+    {% endif %}
+  </div>
+  <h2 class="text-xl font-bold mb-4">Produits ou service / Pays</h2>
+
+<div class="flex space-x-4 overflow-x-auto mb-6 pb-2 scrollbar-hide">
+  {% for country in countries %}
+    <a href="{% url 'products_by_country_wina' country.id %}"
+       class="flex items-center max-w-xs px-4 py-2 bg-green-100 rounded-full hover:bg-green-200 transition transform hover:scale-105 duration-300 whitespace-nowrap">
+       
+      {% if country.flag %}
+        <img src="{{ country.flag.url }}" alt="{{ country.name }}" class="w-6 h-6 rounded-full flex-shrink-0 mr-2">
+      {% endif %}
+      
+      <span class="text-sm truncate block">{{ country.name }}</span>
+    </a>
+  {% endfor %}
+</div>
+
+
+<!-- Section: Bulles Villes -->
+<h2 class="text-xl font-bold mb-4">Produits ou service / Villes</h2>
+
+<div class="flex space-x-4 overflow-x-auto mb-6 pb-2 scrollbar-hide">
+  {% for city in cities %}
+    <a href="{% url 'products_by_city_wina' city.id %}"
+       class="flex items-center max-w-xs px-4 py-2 bg-purple-100 rounded-full hover:bg-purple-200 transition transform hover:scale-105 duration-300 whitespace-nowrap">
+       
+      {% if city.image %}
+        <img src="{{ city.image.url }}" alt="{{ city.name }}" class="w-6 h-6 rounded-full flex-shrink-0 mr-2">
+      {% endif %}
+      
+      <span class="text-sm text-gray-800 font-medium truncate">{{ city.name }}</span>
+    </a>
+  {% endfor %}
+</div>
+
+
+  <!-- Section: Produits groupés par type -->
+  {% for type_name, products in grouped_products_by_type.items %}
+    <h2 class="text-xl font-bold mb-4">{{ type_name }}</h2>
+    <div class="flex space-x-4 overflow-x-auto mb-6">
+      {% for product in products %}
+        <div class="relative w-40 h-64 bg-orange-100 rounded-lg overflow-hidden shadow-md">
+          <div>
+            <!-- Drapeau du pays -->
+{% if product.store.country.flag %}
+<div class="flex justify-center items-center mb-2">
+  <img src="{{ product.store.country.flag.url }}" alt="{{ product.store.country.name }}" class="w-6 h-4 object-cover mr-2 rounded-sm">
+  <span class="text-sm text-gray-700">{{ product.store.country.name }}</span>
+</div>
+{% endif %}
+
+<div>
+  {% if product.video %}
+    <video autoplay muted loop playsinline
+           class="rounded-t-xl w-full h-40 object-cover cursor-pointer"
+           onclick="this.muted = !this.muted; this.controls = true;">
+      <source src="{{ product.video.url }}" type="video/mp4">
+      Votre navigateur ne supporte pas la lecture vidéo.
+    </video>
+  {% elif product.image %}
+    <img src="{{ product.image.url }}" alt="{{ product.name }}"
+         class="rounded-t-xl w-full h-40 object-cover"
+         onclick="showImagePopup('{{ product.image.url }}')" />
+  {% else %}
+    <div class="rounded-t-xl w-full h-40 bg-gray-300 flex items-center justify-center text-gray-600 text-sm">
+      Pas de média
+    </div>
+  {% endif %}
+</div>
+
+            <div class="p-3 bg-black bg-opacity-60 text-white text-sm">
+              <h3 class="font-semibold truncate">{{ product.name }}</h3>
+              <p>{{ product.price_with_commission|default:product.price }} {{ product.store.country.devise_info.devise }}</p>
+              <div class="flex space-x-1">
+                {% for i in "12345" %}
+                  {% if product.rating >= i|add:"0.0" %}
+                    <i class="bx bxs-star text-yellow-400"></i>
+                  {% else %}
+                    <i class="bx bx-star text-yellow-400"></i>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endfor %}
+  
+
+  {% for type_name, products in grouped_products.items %}
+  <section class="py-6 bg-gray-100">
+    <!-- Titre du type -->
+    <h2 class="text-xl font-bold mb-4 px-4">{{ type_name }}</h2>
+    <p class="text-center mb-4 text-sm text-gray-600">Faites défiler horizontalement pour découvrir des produits populaires de type {{ type_name|lower }}.</p>
+
+    <!-- Scroll horizontal -->
+    <div class="overflow-x-auto px-4">
+      <div class="flex space-x-6 w-max">
+        {% for product in products %}
+        <div class="flex-shrink-0 w-64 border-2 border-secondary bg-slate-100 text-black rounded-xl cursor-pointer 
+                    hover:scale-105 hover:shadow-lg transition-transform duration-300 ease-in-out flex flex-col h-full">
+          <!-- Drapeau du pays -->
+{% if product.store.country.flag %}
+<div class="flex justify-center items-center mb-2">
+  <img src="{{ product.store.country.flag.url }}" alt="{{ product.store.country.name }}" class="w-6 h-4 object-cover mr-2 rounded-sm">
+  <span class="text-sm text-gray-700">{{ product.store.country.name }}</span>
+</div>
+{% endif %}
+    
+        <!-- ✅ Image ou Vidéo -->
+        <div>
+          {% if product.video %}
+            <video autoplay muted loop playsinline
+                   class="rounded-t-xl w-full h-40 object-cover cursor-pointer"
+                   onclick="this.muted = !this.muted; this.controls = true;">
+              <source src="{{ product.video.url }}" type="video/mp4">
+              Votre navigateur ne supporte pas la lecture vidéo.
+            </video>
+          {% elif product.image %}
+            <img src="{{ product.image.url }}" alt="{{ product.name }}"
+                 class="rounded-t-xl w-full h-40 object-cover"
+                 onclick="showImagePopup('{{ product.image.url }}')" />
+          {% else %}
+            <div class="rounded-t-xl w-full h-40 bg-gray-300 flex items-center justify-center text-gray-600 text-sm">
+              Pas de média
+            </div>
+          {% endif %}
+        </div>
+
+          <!-- Contenu -->
+          <div class="flex flex-col justify-between flex-grow p-4 space-y-3">
+            <!-- Ajout au panier -->
+            <form id="add-to-cart-form-{{ product.id }}" action="{% url 'add_to_cart_ajax' product.id %}" method="POST">
+              {% csrf_token %}
+              <button type="submit" class="w-full px-4 py-2 bg-blue-500 text-white rounded-full text-sm hover:bg-blue-600 transition">
+                Ajouter au panier
+              </button>
+            </form>
+
+            <!-- Nom et prix -->
+            <div class="text-center">
+              <h1 class="font-semibold text-lg text-primary">{{ product.name }}</h1>
+              <h2 class="font-medium text-md">{{ product.price_with_commission }} {{ product.store.country.devise_info.devise }}</h2>
+            </div>
+
+            <!-- Étoiles -->
+            <div class="flex items-center justify-center space-x-2">
+              <div class="flex text-yellow-500 text-sm">
+                {% with rating=product.average_rating|default:0 %}
+                  {% for i in "12345" %}
+                    {% if rating >= forloop.counter %}
+                      <i class="bx bxs-star text-yellow-400 text-xs"></i>
+                    {% elif rating >= forloop.counter0|add:"0.5" %}
+                      <i class="bx bxs-star-half text-yellow-400 text-xs"></i>
+                    {% else %}
+                      <i class="bx bx-star text-yellow-400 text-xs"></i>
+                    {% endif %}
+                  {% endfor %}
+                {% endwith %}
+              </div>
+              
+              
+            </div>
+
+            <!-- Lien Détail -->
+            <a href="{% url 'product_detail_wina' product.id %}" class="block text-center mt-auto px-4 py-2 bg-blue-500 text-white rounded-full text-sm hover:bg-blue-600 transition">
+              Voir les détails
+            </a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+{% endfor %}
+
+  <!-- Section: Tous les produits -->
+ 
+  <section id="produits" class="pb-10 pt-12 bg-gray-100">
+    <h2 class="text-xl font-bold mb-4 text-center">Tous les Produits</h2>
+    <!-- 🔘 Bouton Voir plus -->
+  <div class="flex justify-center mb-6">
+    <a href="{% url 'product_list_wina' %}" class="px-6 py-2 bg-blue-600 text-white rounded-full text-sm hover:bg-blue-700 transition">
+      Voir plus de produits
+    </a>
+    
+  </div>
+    <div class="flex flex-wrap gap-6 justify-center">
+        {% for product in product_list %}
+        <div class="flex-shrink-0 border-2 border-secondary bg-slate-100 text-black rounded-xl mb-6 cursor-pointer hover:scale-95 hover:bg-slate-200 transition duration-200 ease-linear w-64 h-full flex flex-col">
+            <div>
+              <!-- Drapeau du pays -->
+{% if product.store.country.flag %}
+<div class="flex justify-center items-center mb-2">
+  <img src="{{ product.store.country.flag.url }}" alt="{{ product.store.country.name }}" class="w-6 h-4 object-cover mr-2 rounded-sm">
+  <span class="text-sm text-gray-700">{{ product.store.country.name }}</span>
+</div>
+{% endif %}
+    
+        <!-- ✅ Image ou Vidéo -->
+        
+          {% if product.video %}
+            <video autoplay muted loop playsinline
+                   class="rounded-t-xl w-full h-40 object-cover cursor-pointer"
+                   onclick="this.muted = !this.muted; this.controls = true;">
+              <source src="{{ product.video.url }}" type="video/mp4">
+              Votre navigateur ne supporte pas la lecture vidéo.
+            </video>
+          {% elif product.image %}
+            <img src="{{ product.image.url }}" alt="{{ product.name }}"
+                 class="rounded-t-xl w-full h-40 object-cover"
+                 onclick="showImagePopup('{{ product.image.url }}')" />
+          {% else %}
+            <div class="rounded-t-xl w-full h-40 bg-gray-300 flex items-center justify-center text-gray-600 text-sm">
+              Pas de média
+            </div>
+          {% endif %}
+        </div>
+            <div class="flex flex-col justify-between flex-grow p-4">
+                <!-- Formulaire d'ajout au panier -->
+                <form id="add-to-cart-form-{{ product.id }}" action="{% url 'add_to_cart_ajax' product.id %}" method="POST">
+                  {% csrf_token %}
+                  <button type="submit" class="w-full px-4 py-2 bg-blue-500 text-white rounded-full text-sm hover:bg-blue-600 transition">
+                    Ajouter au panier
+                  </button>
+                </form>
+
+                <!-- Nom du produit et prix -->
+                <div class="flex flex-col items-center my-4">
+                    <h1 class="font-semibold text-xl text-primary pt-2 text-center">{{ product.name }}</h1>
+                    <h2 class="font-medium text-lg text-center">{{ product.price_with_commission }} {{ product.store.country.devise_info.devise }}</h2>
+                </div>
+
+                <!-- Affichage des étoiles de la note moyenne -->
+                <div class="flex items-center justify-center my-2">
+                    <div class="flex text-yellow-500 text-sm">
+                        {% with rating=product.average_rating|default:0 %}
+                          {% for i in "12345" %}
+                            {% if rating >= forloop.counter %}
+                              <i class="bx bxs-star text-yellow-400 text-xs"></i>
+                            {% elif rating >= forloop.counter0|add:"0.5" %}
+                              <i class="bx bxs-star-half text-yellow-400 text-xs"></i>
+                            {% else %}
+                              <i class="bx bx-star text-yellow-400 text-xs"></i>
+                            {% endif %}
+                          {% endfor %}
+                        {% endwith %}
+                      </div>
+                    
+                </div>
+
+                <!-- Bouton "Voir les détails" -->
+                <a href="{% url 'product_detail_wina' product.id %}" class="px-6 py-2 bg-blue-500 text-white rounded-full text-lg hover:bg-blue-600 transition duration-300">
+                    Voir les détails
+                </a>
+            </div>
+        </div>
+        {% empty %}
+        <p>Aucun produit ou service trouvé pour cette recherche.</p>
+        {% endfor %}
+    </div>
+  </section>
+  
+  {% if no_ads_message %}
+<div class="alert alert-warning text-center mt-4">
+  {{ no_ads_message }}
+</div>
+{% endif %}
+
+<div class="container mx-auto p-4" id="publicites">
+  <h1 class="text-3xl font-bold mb-6">Recentes Publicités 💵</h1>
+<p class="text-lg text-gray-700 mb-6">
+    Aimez, commentez, partagez et visitez une publicité pour gagner jusqu’à <strong>7 points</strong> par publicité !
+</p>
+
+<!-- 🔽 Bouton Voir plus -->
+<div class="flex justify-center mt-6">
+    <a href="{% url 'advertisement_list_wina' %}" class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+        Voir plus de publicités
+    </a>
+</div>
+
+
+  {% if user_points %}
+    <p>Points disponibles : {{ user_points.points }} points</p>
+  {% else %}
+    <p>Vous devez vous connecter pour accumuler des points.</p>
+    <a href="{% url 'login' %}" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-700 mt-2 mb-4 inline-block">
+      Se connecter
+    </a>
+  {% endif %}
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for ad in ads %}
+      <div class="bg-white rounded-lg shadow-lg p-4 transform transition-transform hover:scale-105 hover:shadow-lg duration-300 mb-6">
+        <h2 class="text-xl font-semibold">{{ ad.title }}</h2>
+        <p class="text-gray-600 break-words whitespace-normal overflow-hidden max-w-full">{{ ad.description|truncatewords:20 }}</p>
+
+        
+
+        {% if ad.media_type == 'image' %}
+          <img src="{{ ad.media_file.url }}" alt="{{ ad.title }}" class="w-full mt-4 rounded">
+        {% elif ad.media_type == 'video' %}
+          <video class="w-full mt-4 rounded" controls poster="{{ ad.thumbnail_url.url }}">
+              <source src="{{ ad.media_file.url }}" type="video/mp4">
+          </video>
+        {% endif %}
+
+        {% if ad.url %}
+          <a href="{% url 'visit_ad_url' ad.slug %}" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-800 mt-4 inline-block">
+            🌐 Visiter le lien de la pub 👁 Visites : {{ ad.visits_count }}
+          </a>
+          {% if not user.is_authenticated %}
+            <p class="text-sm text-red-500 mt-2">Connecte-toi pour gagner des points en visitant les pubs.</p>
+          {% endif %}
+        {% elif ad.store %}
+          <a href="{% url 'visit_ad_url' ad.slug %}?next={% url 'store_detail' ad.store.slug %}"
+             class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-800 mt-4 inline-block">
+            🏪 Visiter le store associé
+          </a>
+          {% if not user.is_authenticated %}
+            <p class="text-sm text-red-500 mt-2">Connecte-toi pour gagner des points en visitant le store.</p>
+          {% endif %}
+        {% endif %}
+
+        <div class="flex items-center justify-between mt-4">
+          {% if user.is_authenticated %}
+            <form action="{% url 'handle_like' ad.id %}" method="POST">
+              {% csrf_token %}
+              <button type="submit" {% if ad.user_has_liked %}disabled class="cursor-not-allowed opacity-50"{% endif %}>
+                {% if ad.user_has_liked %}
+                  <span class="text-red-500 text-2xl">❤️</span>
+                {% else %}
+                  <span class="text-gray-500 text-2xl">🤍</span>
+                {% endif %}
+              </button>
+            </form>
+
+            <a href="{% url 'ad_comments' ad.slug %}" class="mr-4 text-2xl text-blue-500">
+              💬
+            </a>
+
+            {% if ad.id not in user_shares %}
+              <button onclick="openSharePopup({{ ad.id }})" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-700 mt-2">
+                <i class="fa fa-share-alt"></i> Partager
+              </button>
+            {% else %}
+              <button class="px-4 py-2 bg-gray-400 text-white rounded-lg mt-2" disabled>
+                <i class="fa fa-share-alt"></i> Déjà partagé
+              </button>
+            {% endif %}
+          {% else %}
+            <p class="text-red-500 mt-2">🔒 Connectez-vous pour interagir avec cette publicité.</p>
+            <a href="{% url 'login' %}" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-700 mt-2 inline-block">
+              Se connecter
+            </a>
+          {% endif %}
+        </div>
+
+        <!-- POPUP DE PARTAGE -->
+        <div id="share-popup-{{ ad.id }}" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden z-50">
+          <div class="bg-white p-6 rounded-xl relative w-96">
+            <button onclick="closeSharePopup({{ ad.id }})" class="absolute top-2 right-3 text-gray-600 text-2xl hover:text-gray-900">&times;</button>
+            <h3 class="text-xl font-semibold text-center">Partager cette publicité</h3>
+            <form method="POST" action="{% url 'record_share' ad.slug %}" id="share-form-{{ ad.id }}">
+              {% csrf_token %}
+              <input type="hidden" name="social_network" id="social-network-input-{{ ad.id }}">
+              <div class="flex justify-center mt-6 space-x-4">
+                <a href="#" onclick="recordShare(event, {{ ad.id }}, 'whatsapp')" data-url="{{ ad_absolute_urls|get_item:ad.id }}">
+                  <img src="{% static 'img/whatsap2.jpg' %}" class="w-10 h-10">
+                </a>
+                <a href="#" onclick="recordShare(event, {{ ad.id }}, 'facebook')" data-url="{{ ad_absolute_urls|get_item:ad.id }}">
+                  <img src="{% static 'img/fb2.png' %}" class="w-10 h-10">
+                </a>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="mt-4 flex justify-between items-center text-gray-500">
+          <div>
+            <p>{{ ad.likes_count }} Like(s)</p>
+            <p>{{ ad.comments_count }} Commentaire(s)</p>
+            <p>{{ ad.shares_count }} Partage(s)</p>
+          </div>
+          <a href="{% url 'advertisement_detail' ad.slug %}" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+            Voir Détails
+          </a>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+  function openSharePopup(adId) {
+    document.getElementById(`share-popup-${adId}`).classList.remove('hidden');
+  }
+  function closeSharePopup(adId) {
+    document.getElementById(`share-popup-${adId}`).classList.add('hidden');
+  }
+  function recordShare(event, adId, network) {
+    event.preventDefault();
+    const form = document.getElementById(`share-form-${adId}`);
+    document.getElementById(`social-network-input-${adId}`).value = network;
+
+    const adUrl = event.currentTarget.getAttribute('data-url');
+    const url = form.action;
+    const data = new FormData(form);
+
+    const shareLinks = {
+      'facebook': `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(adUrl)}`,
+      'whatsapp': `https://api.whatsapp.com/send?text=${encodeURIComponent(adUrl)}`,
+    };
+
+    window.open(shareLinks[network], '_blank');
+
+    fetch(url, {
+      method: 'POST',
+      body: data
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.status === 'success') {
+        alert(`Merci ! Vous avez gagné ${data.points} points.`);
+        closeSharePopup(adId);
+        location.reload();
+      }
+    });
+  }
+</script>
+
+
+  <h1 class="text-3xl font-bold mb-6 text-center">🎉 Tirages au sort Challenge</h1>
+  <!-- 🔽 Bouton Voir plus -->
+  <div class="flex justify-center mt-6 mb-6">
+    <a href="{% url 'lottery_list' %}" class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+        Voir plus de Tirages au sort 
+    </a>
+  </div>
+  
+  {% if lotteries %}
+      <div id="tirages" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {% for lottery in lotteries %}
+              <div id="tirage-{{ lottery.id }}" class="bg-white p-6 rounded-lg shadow-md transform transition-transform hover:scale-105 hover:shadow-lg duration-300 mb-6">
+                  
+                  {% if lottery.image %}
+                      <img src="{{ lottery.image.url }}" alt="{{ lottery.title }}" class="w-full h-48 object-cover rounded mb-4">
+                  {% endif %}
+
+                  <h2 class="text-xl font-semibold mb-2">{{ lottery.title }}</h2>
+
+                  {% if lottery.top_winner %}
+                      <div class="flex items-center space-x-4 mb-4 bg-green-50 p-3 rounded">
+                          <div class="flex-shrink-0">
+                              {% if lottery.top_winner.user.profile_pic %}
+                                  <img class="h-12 w-12 rounded-full" src="{{ lottery.top_winner.user.profile_pic.url }}" alt="Avatar gagnant">
+                              {% else %}
+                                  <img class="h-12 w-12 rounded-full" src="https://bootdey.com/img/Content/avatar/avatar7.png" alt="Avatar par défaut">
+                              {% endif %}
+                          </div>
+                          <p class="text-green-700 font-medium">
+                              🎉 Félicitations à <strong>{{ lottery.top_winner.full_name }} le gagnant ou la gagnante</strong> !
+                          </p>
+                          
+                      </div>
+                      <p>🏆 Gagnant numéro 1 {{ lottery.top_winner.full_name }}</p>
+                  {% else %}
+                      <p class="text-gray-500 italic mb-4">Aucun gagnant désigné encore.</p>
+                  {% endif %}
+
+                  <p class="text-gray-700 mb-4">
+                      {{ lottery.description|truncatechars:150 }}
+                      {% if lottery.description|length > 150 %}
+                          <button 
+                              type="button" 
+                              class="text-blue-600 underline ml-2 hover:text-blue-800" 
+                              onclick="open1Modal('{{ lottery.id }}')">
+                              Lire plus
+                          </button>
+                      {% endif %}
+                  </p>
+
+                  <!-- MODAL -->
+                  <div id="modal-{{ lottery.id }}" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+                      <div class="bg-white rounded-lg shadow-lg max-w-xl w-full p-6 relative">
+                          <button onclick="close1Modal('{{ lottery.id }}')" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl">&times;</button>
+                          <h2 class="text-2xl font-semibold mb-4">Description complète</h2>
+                          <p class="text-gray-800 whitespace-pre-line">{{ lottery.description }}</p>
+                      </div>
+                  </div>
+
+                  {% with count=lottery.current_participant_count %}
+                      <div class="text-sm text-gray-600 mb-2">
+                          <strong>Prix de Participation :</strong> {{ lottery.participation_fee }} usd
+                      </div>
+                      <div class="text-sm text-gray-600 mb-2">
+                          <strong>Participants :</strong> {{ count }} / {{ lottery.max_participants }}
+                      </div>
+
+                      {% if user.is_authenticated %}
+  {% if lottery.is_active and count < lottery.max_participants %}
+      <a href="{% url 'participate_in_lottery' lottery.id %}" class="inline-block mt-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded">
+          Participer
+      </a>
+  {% else %}
+      <p class="text-red-500 font-semibold">Les participations sont fermées.</p>
+  {% endif %}
+{% else %}
+  <a href="{% url 'login' %}?next={% url 'participate_in_lottery' lottery.id %}" class="inline-block mt-2 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold px-4 py-2 rounded">
+      Connectez-vous pour participer
+  </a>
+{% endif %}
+
+
+                      {% if count == lottery.max_participants %}
+                          <a href="{% url 'lottery_result' lottery.id %}" class="inline-block mt-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded">
+                              Voir le résultat
+                          </a>
+                      {% else %}
+                      <a href="{% url 'lottery_result_pending' lottery.id %}" class="inline-block mt-2 bg-gray-400 text-white font-semibold px-4 py-2 rounded hover:bg-gray-500 transition">
+                          Résultat en attente
+                      </a>
+                      
+                      {% endif %}
+                  {% endwith %}
+              </div>
+          {% endfor %}
+      </div>
+  {% else %}
+      <p class="text-center text-gray-500">Aucun tirage au sort disponible pour le moment.</p>
+  {% endif %}
+
+  <section class="bg-gray-100 py-6 px-6 sm:px-12 md:px-24">
+    <div class="container mx-auto text-center">
+        <h2 class="text-4xl font-extrabold text-gray-800 mb-4">Recherchez vos biens immobiliers</h2>
+        <p class="text-lg text-gray-600 mb-8">Nous vous aidons à trouver votre maison, appartement, hôtel, guesthouse, terrain vide, terrain agricole ou tout autre bien immobilier. Grâce à notre réseau de commissionnaires et d'agences immobilières, nous vous trouvons rapidement ce dont vous avez besoin !</p>
+        
+        <div class="flex flex-wrap justify-center gap-6">
+            <!-- Options de recherche -->
+            {% comment %} <div class="w-full sm:w-1/2 md:w-1/3 lg:w-1/4">
+                <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-4">Maison</h3>
+                    <p class="text-gray-500">Trouver une maison de vos rêves.</p>
+                </div>
+            </div>
+            
+            <div class="w-full sm:w-1/2 md:w-1/3 lg:w-1/4">
+                <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-4">Appartement</h3>
+                    <p class="text-gray-500">Explorez nos appartements disponibles.</p>
+                </div>
+            </div>
+            
+            <div class="w-full sm:w-1/2 md:w-1/3 lg:w-1/4">
+                <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-4">Hôtel</h3>
+                    <p class="text-gray-500">Recherchez des hôtels de qualité.</p>
+                </div>
+            </div>
+
+            <div class="w-full sm:w-1/2 md:w-1/3 lg:w-1/4">
+                <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-4">Guesthouse</h3>
+                    <p class="text-gray-500">Découvrez des guesthouses pour un séjour agréable.</p>
+                </div>
+            </div> {% endcomment %}
+            
+            {% comment %} <div class="w-full sm:w-1/2 md:w-1/3 lg:w-1/4">
+                <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-4">Terrain Vide</h3>
+                    <p class="text-gray-500">Trouvez un terrain vide pour vos projets.</p>
+                </div>
+            </div>
+
+            <div class="w-full sm:w-1/2 md:w-1/3 lg:w-1/4">
+                <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-4">Terrain Agricole</h3>
+                    <p class="text-gray-500">Explorez des terrains agricoles disponibles.</p>
+                </div>
+            </div>
+            
+            <div class="w-full sm:w-1/2 md:w-1/3 lg:w-1/4">
+                <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-4">Autres</h3>
+                    <p class="text-gray-500">Trouvez d'autres types de biens immobiliers.</p>
+                </div>
+            </div>
+
+            <div class="w-full sm:w-1/2 md:w-1/3 lg:w-1/4">
+                <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-4">Boutique</h3>
+                    <p class="text-gray-500">Recherchez des boutiques pour votre commerce.</p>
+                </div>
+            </div>
+        </div> {% endcomment %}
+
+        <!-- Bouton d'appel à l'action -->
+        <div class="mt-12">
+            <a href="{% url 'requete_create' %}" class="bg-blue-600 text-white px-8 py-4 rounded-lg text-xl font-semibold hover:bg-blue-700 transition duration-300">
+                Recherche immobilier
+            </a>
+        </div>
+    </div>
+</section>
+<section class="py-16 px-8 bg-gray-100"> 
+  <div class="max-w-6xl mx-auto text-center">
+      <h2 class="text-3xl font-semibold mb-8">Requêtes Récentes des Clients</h2>
+      <div class="mb-8">
+          <a href="{% url 'requete_list' %}" class="inline-block px-8 py-4 text-white bg-blue-600 hover:bg-blue-800 rounded-md font-semibold transition duration-300">
+              Voir plus de Requêtes Clients
+          </a>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {% for requete in requetes %}
+              <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300">
+                  <h3 class="text-xl font-bold text-gray-800 mb-2">Recherche : {{ requete.type_bien }}</h3>
+                  <p class="text-sm text-gray-500 mb-2">{{ requete.commune }}</p>
+                  <p class="text-gray-600 mb-4">{{ requete.description|truncatewords:15 }}</p>
+                  <div class="mt-4">
+                      <a href="{% url 'requete_detail' requete.id %}" class="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                          Voir les détails
+                      </a>
+                  </div>
+                  
+              </div>
+          {% empty %}
+              <p>Aucune requête pour le moment.</p>
+          {% endfor %}
+      </div>
+      
+  </div>
+</section>
+
+</div>
+<section class="bg-white section-padding relative" style="background-image: url('{% static "img/maboko.jpg" %}'); background-size: cover; background-position: center;">
+  <div class="absolute inset-0 bg-black opacity-30"></div> <!-- Overlay sombre optionnel -->
+  
+  <!-- Ajout de padding en haut et en bas du contenu -->
+  <div class="container mx-auto px-4 py-16 relative z-10">
+      <div class="flex flex-col md:flex-row mb-32">
+          
+          <!-- Section des informations de contact -->
+          <div class="md:w-1/2 mb-8 animate-box" data-animate-effect="fadeInUp">
+              <h5 class="text-xl font-semibold text-white">Information</h5>
+              <p class="mb-8 text-gray-200">Voici nos contacts qui sont 7/7 opérationnels pour répondre à vos besoins.</p>
+
+              <div class="flex items-center mb-4">
+                  <div class="mr-4">
+                      <img src="{% static 'img/icons/c1.svg' %}" alt="" class="w-8 h-8">
+                  </div>
+                  <div>
+                      <div class="font-semibold text-white">Appelez-nous</div>
+                      <div class="text-gray-200"><a href="tel:0972489318" class="text-blue-400 hover:underline">+ 243972489318</a></div>
+                  </div>
+              </div>
+
+              <div class="flex items-center">
+                  <div class="mr-4">
+                      <img src="{% static 'img/icons/c2.svg' %}" alt="" class="w-8 h-8">
+                  </div>
+                  <div>
+                      <div class="font-semibold text-white">Envoyer un email</div>
+                      <div class="text-gray-200"><a href="mailto:winaservice1@gmail.com" class="text-blue-400 hover:underline">winaservice1@gmail.com</a></div>
+                  </div>
+              </div>
+          </div>
+
+          <!-- Section du formulaire de contact -->
+          <div class="md:w-1/2 md:ml-8 animate-box" data-animate-effect="fadeInUp">
+              <div class="form-box p-6 border rounded-lg shadow bg-white">
+                  <h5 class="text-xl font-semibold mb-4">Contacter nous</h5>
+                  <form action="https://api.web3forms.com/submit" method="POST">
+                      <input type="hidden" name="access_key" value="f0a24e68-feaf-4b96-ba0f-07771649ad93">
+                      
+                      <div class="mb-4">
+                          <input name="name" type="text" required placeholder="Votre Nom *" class="w-full p-2 border rounded" />
+                      </div>
+                      <div class="flex mb-4">
+                          <div class="w-1/2 pr-2">
+                              <input name="email" type="email" required placeholder="Votre Email *" class="w-full p-2 border rounded" />
+                          </div>
+                          <div class="w-1/2 pl-2">
+                              <input name="phone" type="text" required placeholder="Votre Numéro *" class="w-full p-2 border rounded" />
+                          </div>
+                      </div>
+                      <div class="mb-4">
+                          <input name="subject" type="text" required placeholder="Entrer le Service recherché" class="w-full p-2 border rounded" />
+                      </div>
+                      <div class="mb-4">
+                          <textarea name="msg" required placeholder="Déterminer votre commande *" class="w-full p-2 border rounded"></textarea>
+                      </div>
+                      <div>
+                          <input name="submit" type="submit" value="Envoyer maintenant" class="bg-blue-600 text-white p-2 rounded hover:bg-blue-700 cursor-pointer" />
+                      </div>
+                  </form>
+              </div>
+          </div>
+      </div>
+  </div>
+</section>
+
+<!-- Popup pour afficher l'image agrandie -->
+<div id="imagePopup" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center hidden">
+  <div class="bg-white p-4 rounded-xl max-w-lg">
+      <span class="absolute top-0 right-0 p-3 cursor-pointer text-white bg-red-600 rounded-full text-3xl flex justify-center items-center" onclick="hideImagePopup()">X</span>
+      <img id="popupImage" src="" alt="Image agrandie" class="w-full h-auto rounded-lg">
+  </div>
+</div>
+{% if ad_popup and ad_popup.is_active %}
+<div id="popupAd" class="modal show d-block" tabindex="-1"
+   style="background: rgba(0,0,0,0.5); position: fixed; top: 0; left: 0;
+          width: 100%; height: 100%; display: flex; justify-content: center;
+          align-items: center; z-index: 9999;">
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 90%; width: auto;">
+      <div class="modal-content position-relative">
+          <button type="button" class="btn-close" onclick="closePopup()"
+                  style="border: none; background: none; font-size: 30px;
+                         color: #fff; position: absolute; top: 20px; right: 20px;">&times;
+          </button>
+          <div class="modal-body text-center" style="display: flex; flex-direction: column;
+                                                      justify-content: space-between; max-height: 80vh;">
+
+              {% if ad_popup.media_type == "image" %}
+                  <img src="{{ ad_popup.file.url }}" class="img-fluid"
+                       style="max-height: 70vh; width: auto; margin-bottom: 20px;" alt="Publicité">
+              {% else %}
+                  <video autoplay controls class="img-fluid"
+                         style="max-height: 70vh; width: auto; margin-bottom: 20px;">
+                      <source src="{{ ad_popup.file.url }}" type="video/mp4">
+                  </video>
+              {% endif %}
+
+              <div class="mt-4 d-flex flex-wrap justify-content-center gap-3">
+
+                  {% if ad_popup.url %}
+                      <a href="{{ ad_popup.url }}" target="_blank"
+                         class="btn btn-danger"
+                         style="font-size: 18px; padding: 10px 20px; background-color: #ff5733;
+                                border: none; color: white; border-radius: 5px;
+                                transition: background-color 0.3s ease;">
+                          🔗 Voir l'annonce
+                      </a>
+                  {% endif %}
+
+                  {% if ad_popup.store %}
+                      <a href="{% url 'store_detail' ad_popup.store.slug %}"
+                         class="btn btn-primary"
+                         style="font-size: 18px; padding: 10px 20px; background-color: #007bff;
+                                border: none; color: white; border-radius: 5px;
+                                transition: background-color 0.3s ease;">
+                          🏬 Visiter le store
+                      </a>
+                  {% endif %}
+
+              </div>
+          </div>
+      </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Popup pour afficher l'image agrandie -->
+<div id="imagePopup" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center hidden">
+  <div class="bg-white p-4 rounded-xl max-w-lg">
+      <span class="absolute top-0 right-0 p-3 cursor-pointer text-white bg-red-600 rounded-full text-3xl flex justify-center items-center" onclick="hideImagePopup()">X</span>
+      <img id="popupImage" src="" alt="Image agrandie" class="w-full h-auto rounded-lg">
+  </div>
+  </div>
+ <!-- Glide.js Script -->
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/Glide.js/3.0.2/glide.js"></script>
+ <script>
+  function closePopup() {
+      const popup = document.getElementById("popupAd");
+  
+      // Stopper la vidéo s'il y en a une
+      const video = popup.querySelector("video");
+      if (video) {
+          video.pause();
+          video.currentTime = 0; // optionnel : remet la vidéo au début
+      }
+  
+      // Cacher le popup
+      popup.style.display = "none";
+  }
+</script>
+ <script>
+ var glide01 = new Glide('.glide-01', {
+     type: 'carousel',
+     focusAt: 'center',
+     perView: 3,
+     autoplay: 3000,
+     animationDuration: 700,
+     gap: 24,
+     classes: {
+         activeNav: '[&>*]:bg-slate-700',
+     },
+     breakpoints: {
+         1024: {
+             perView: 2
+         },
+         640: {
+             perView: 1
+         }
+     },
+ });
+ 
+ glide01.mount();
+ </script>
+ <script>
+  function open1Modal(id) {
+      document.getElementById('modal-' + id).classList.remove('hidden');
+      document.getElementById('modal-' + id).classList.add('flex');
+  }
+
+  function close1Modal(id) {
+      document.getElementById('modal-' + id).classList.add('hidden');
+      document.getElementById('modal-' + id).classList.remove('flex');
+  }
+</script>
+{% endblock %}

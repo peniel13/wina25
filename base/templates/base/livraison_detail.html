@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<section class="relative bg-cover bg-center h-96" style="background-image: url('{% static 'img/livraison2.jpg' %}');">
+    <div class="absolute inset-0 bg-gray-800 opacity-50"></div>
+    <div class="container mx-auto h-full flex items-center justify-start relative z-10">
+        <div class="text-left text-white px-6">
+            <h1 class="text-4xl font-bold">Détails de la commande de livraison ID: {{ commande.numero_id_colis }}</h1>
+        </div>
+    </div>
+</section>
+
+<section class="mt-12 pb-12">
+    <div class="container mx-auto p-8 bg-white shadow-lg rounded-lg">
+        <h2 class="text-2xl font-semibold mb-4">Informations sur la commande</h2>
+        <ul class="space-y-4">
+            <li><strong>Nom :</strong> {{ commande.nom }} {{ commande.prenom }}</li>
+            <li><strong>Email :</strong> {{ commande.email }}</li>
+            <li><strong>Numéro de téléphone :</strong> {{ commande.numero_tel }}</li>
+            <li><strong>Adresse de livraison :</strong> {{ commande.adresse_livraison }}</li>
+            <li><strong>Description du colis :</strong> {{ commande.description_colis }}</li>
+            <li><strong>Endroit de récupération :</strong> {{ commande.endroit_recuperation }}</li>
+            <li><strong>Numéro ID du colis :</strong> {{ commande.numero_id_colis }}</li>
+            <li><strong>Statut :</strong> {{ commande.statut }}</li>
+            <li><strong>Date de commande :</strong> {{ commande.date_commande }}</li>
+        </ul>
+
+        <hr class="my-6">
+
+        <!-- Bouton de retour à la liste des commandes -->
+        <a href="profile" class="px-6 py-3 text-white bg-blue-600 hover:bg-blue-700 rounded-md">Retour sur votre profile</a>
+    </div>
+</section>
+{% endblock %}

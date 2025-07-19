@@ -1,0 +1,341 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+  <h2 class="text-2xl font-bold mb-6">Tous les Stores</h2>
+
+  <!-- 🔍 Barre de recherche + bouton filtre -->
+  <div class="px-4 mb-6 w-full">
+    <!-- ✅ Barre mobile -->
+    <div class="sm:hidden flex items-center justify-between mb-4">
+      <form method="get" class="w-full mr-2">
+        <input type="text" name="name" value="{{ search_name }}" placeholder="Rechercher un store..." class="w-full px-4 py-2 border rounded-lg">
+      </form>
+      <button onclick="toggleSlide()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 rounded-md text-sm flex items-center ml-2">
+        <i class="bx bx-filter-alt text-lg"></i>
+      </button>
+    </div>
+
+    <!-- ✅ Formulaire Desktop -->
+    <form method="GET" class="hidden sm:flex items-end gap-4 flex-wrap">
+      <!-- Champ Nom -->
+<div class="flex flex-col">
+    <label class="text-sm font-semibold">Nom</label>
+    <input type="text" name="name" value="{{ search_name }}" placeholder="Entrer un nom du store"
+           class="px-4 py-2 border rounded-lg w-56">
+  </div>
+  
+  <!-- Champ Adresse -->
+  <div class="flex flex-col">
+    <label class="text-sm font-semibold">Adresse</label>
+    <input type="text" name="adresse" value="{{ store_address }}" placeholder="Entrer une adresse d'un store"
+           class="px-4 py-2 border rounded-lg w-56">
+  </div>
+  
+
+      <div class="flex flex-col">
+        <label class="text-sm font-semibold">Ville</label>
+        <select name="city" class="px-4 py-2 border rounded-lg w-56">
+          <option value="">Toutes les villes</option>
+          {% for city in cities %}
+            <option value="{{ city.id }}" {% if city.id == selected_city %}selected{% endif %}>{{ city.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="flex flex-col">
+        <label class="text-sm font-semibold">Pays</label>
+        <select name="country" class="px-4 py-2 border rounded-lg w-56">
+          <option value="">Tous les pays</option>
+          {% for country in countries %}
+            <option value="{{ country.id }}" {% if country.id == selected_country %}selected{% endif %}>{{ country.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="flex flex-col">
+        <label class="text-sm font-semibold">Type de Store</label>
+        <select name="typestore" class="px-4 py-2 border rounded-lg w-56">
+          <option value="">Tous</option>
+          {% for t in typestores %}
+            <option value="{{ t.id }}" {% if t.id|stringformat:"s" == selected_typestore %}selected{% endif %}>{{ t.nom }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="flex flex-col">
+        <label class="text-sm font-semibold">Secteur</label>
+        <select name="typebusiness" class="px-4 py-2 border rounded-lg w-56">
+          <option value="">Tous</option>
+          {% for b in typebusinesses %}
+            <option value="{{ b.id }}" {% if b.id|stringformat:"s" == selected_typebusiness %}selected{% endif %}>{{ b.nom }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700">Rechercher</button>
+      </div>
+    </form>
+  </div>
+  <!-- 📱 Slide mobile des filtres -->
+<section id="search-slide" class="sm:hidden fixed inset-0 bg-black bg-opacity-60 z-50 hidden">
+    <div class="bg-white h-full overflow-y-auto p-6 relative">
+      <!-- Titre + bouton fermeture -->
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-bold">Filtres de recherche</h2>
+        <button onclick="toggleSlide()" class="text-gray-700 text-xl font-bold">X</button>
+      </div>
+  
+      <!-- Formulaire -->
+      <form method="GET" class="space-y-4">
+       <!-- Champ Nom -->
+<div class="flex flex-col">
+    <label class="text-sm font-semibold">Nom</label>
+    <input type="text" name="name" value="{{ search_name }}" placeholder="Entrer un nom du store"
+           class="px-4 py-2 border rounded-lg">
+  </div>
+  
+  <!-- Champ Adresse -->
+  <div class="flex flex-col">
+    <label class="text-sm font-semibold">Adresse</label>
+    <input type="text" name="adresse" value="{{ store_address }}" placeholder="Entrer une adresse d'un store"
+           class="px-4 py-2 border rounded-lg">
+  </div>
+  
+  
+        <div class="flex flex-col">
+          <label class="text-sm font-semibold">Pays</label>
+          <select name="country" class="px-4 py-2 border rounded-lg">
+            <option value="">Tous les pays</option>
+            {% for country in countries %}
+              <option value="{{ country.id }}" {% if country.id|stringformat:"s" == selected_country %}selected{% endif %}>{{ country.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+  
+        <div class="flex flex-col">
+          <label class="text-sm font-semibold">Ville</label>
+          <select name="city" class="px-4 py-2 border rounded-lg">
+            <option value="">Toutes les villes</option>
+            {% for city in cities %}
+              <option value="{{ city.id }}" {% if city.id|stringformat:"s" == selected_city %}selected{% endif %}>{{ city.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+  
+        <div class="flex flex-col">
+          <label class="text-sm font-semibold">Type de Store</label>
+          <select name="typestore" class="px-4 py-2 border rounded-lg">
+            <option value="">Tous</option>
+            {% for t in typestores %}
+              <option value="{{ t.id }}" {% if t.id|stringformat:"s" == selected_typestore %}selected{% endif %}>{{ t.nom }}</option>
+            {% endfor %}
+          </select>
+        </div>
+  
+        <div class="flex flex-col">
+          <label class="text-sm font-semibold">Secteur</label>
+          <select name="typebusiness" class="px-4 py-2 border rounded-lg">
+            <option value="">Tous</option>
+            {% for b in typebusinesses %}
+              <option value="{{ b.id }}" {% if b.id|stringformat:"s" == selected_typebusiness %}selected{% endif %}>{{ b.nom }}</option>
+            {% endfor %}
+          </select>
+        </div>
+  
+        <div>
+          <button type="submit" class="w-full px-4 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700">
+            Appliquer les filtres
+          </button>
+        </div>
+      </form>
+    </div>
+  </section>
+  
+  <!-- 🔽 Liste des stores -->
+  <div id="stores" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6 mb-4">
+    {% for store in stores %}
+      <a href="{% url 'store_detail' store.slug %}" class="flex-shrink-0 relative border rounded-lg shadow hover:shadow-lg overflow-hidden bg-white">
+        <div class="h-40 bg-cover bg-center" style="background-image: url('{% if store.thumbnail %}{{ store.thumbnail.url }}{% else %}{% static 'img/default-thumbnail.jpg' %}{% endif %}')">
+          {% if store.country.flag %}
+            <div class="absolute top-2 right-2">
+              <img src="{{ store.country.flag.url }}" class="w-5 h-5 rounded-full border border-white shadow" alt="{{ store.country.name }}">
+            </div>
+          {% endif %}
+        </div>
+        <div class="bg-black bg-opacity-60 text-white p-3 text-sm">
+          <h3 class="font-semibold truncate">{{ store.name }}</h3>
+          <p class="text-xs text-blue-200 italic">{{ store.typestore.nom }}</p>
+          <div class="flex items-center space-x-1 text-xs mt-1">
+            {% with rating=store.average_rating|default:0 %}
+              {% for i in "12345" %}
+                {% if rating >= forloop.counter %}
+                  <i class="bx bxs-star text-yellow-400 text-xs"></i>
+                {% elif rating >= forloop.counter0|add:"0.5" %}
+                  <i class="bx bxs-star-half text-yellow-400 text-xs"></i>
+                {% else %}
+                  <i class="bx bx-star text-yellow-400 text-xs"></i>
+                {% endif %}
+              {% endfor %}
+            {% endwith %}
+          </div>
+          <p class="truncate mt-1">{{ store.adresse }}</p>
+          <p class="text-xs">{{ store.city.name }}, {{ store.country.name }}</p>
+        </div>
+      </a>
+    {% empty %}
+      <p class="text-gray-500">Aucun store trouvé.</p>
+    {% endfor %}
+  </div>
+  
+  <!-- Pagination -->
+  <!-- Pagination -->
+  {% if stores.has_other_pages %}
+  <div class="mt-12 mb-16">  {# 🛠️ ICI on passe à mt-12 pour plus d’espace #}
+    <nav aria-label="Pagination des stores" class="flex justify-center">
+      <ul class="flex space-x-4">
+        {% if stores.has_previous %}
+        <li>
+          <a href="?page=1#stores" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            &laquo; Première
+          </a>
+        </li>
+        <li>
+          <a href="?page={{ stores.previous_page_number }}#stores" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            &lt;
+          </a>
+        </li>
+        {% endif %}
+  
+        <li>
+          <span class="px-4 py-2 bg-blue-600 text-white rounded-lg">
+            {{ stores.number }}
+          </span>
+        </li>
+  
+        {% if stores.number < stores.paginator.num_pages %}
+        <li>
+          <a href="?page={{ stores.paginator.num_pages }}#stores" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-blue-600 hover:text-white">
+            {{ stores.paginator.num_pages }}
+          </a>
+        </li>
+        {% endif %}
+  
+        {% if stores.has_next %}
+        <li>
+          <a href="?page={{ stores.next_page_number }}#stores" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            &gt;
+          </a>
+        </li>
+        <li>
+          <a href="?page={{ stores.paginator.num_pages }}#stores" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            Dernière &raquo;
+          </a>
+        </li>
+        {% endif %}
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
+  
+  <section id="favorite_stores" class="pt-4 pb-10 bg-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="text-3xl font-semibold mt-6 mb-6 text-center">Stores favoris</h2>
+  
+  
+      <div class="relative w-full glide-01">
+        <!-- Glide Track -->
+        <div class="overflow-hidden" data-glide-el="track">
+          <ul class="flex gap-6">
+            {% for featured in featured_stores %}
+              {% with store=featured.store %}
+                <li class="min-w-[250px] md:w-[calc(33.33%-24px)]">
+                  <a href="{% url 'store_detail' store.slug %}" class="block bg-white rounded-lg shadow-lg hover:shadow-2xl overflow-hidden relative">
+                    <div class="h-40 bg-cover bg-center" style="background-image: url('{% if store.thumbnail %}{{ store.thumbnail.url }}{% else %}{% static 'img/default-thumbnail.jpg' %}{% endif %}')">
+                      {% if store.country.flag %}
+                        <div class="absolute top-2 right-2">
+                          <img src="{{ store.country.flag.url }}" class="w-5 h-5 rounded-full border border-white shadow" alt="{{ store.country.name }}">
+                        </div>
+                      {% endif %}
+                    </div>
+                    <div class="bg-black bg-opacity-60 text-white p-3 text-sm">
+                      <h3 class="font-semibold truncate">{{ store.name }}</h3>
+                      <p class="text-xs text-blue-200 italic">{{ store.typestore.nom }}</p>
+                      <div class="flex items-center space-x-1 text-xs mt-1">
+                        {% with rating=store.average_rating|default:0 %}
+                          {% for i in "12345" %}
+                            {% if rating >= forloop.counter %}
+                              <i class="bx bxs-star text-yellow-400 text-xs"></i>
+                            {% elif rating >= forloop.counter0|add:"0.5" %}
+                              <i class="bx bxs-star-half text-yellow-400 text-xs"></i>
+                            {% else %}
+                              <i class="bx bx-star text-yellow-400 text-xs"></i>
+                            {% endif %}
+                          {% endfor %}
+                        {% endwith %}
+                      </div>
+                      <p class="truncate mt-1">{{ store.adresse }}</p>
+                      <p class="text-xs">{{ store.city.name }}, {{ store.country.name }}</p>
+                    </div>
+                  </a>
+                </li>
+              {% endwith %}
+            {% endfor %}
+          </ul>
+        </div>
+  
+        <!-- Contrôles -->
+        <div class="absolute left-0 flex items-center justify-between w-full h-0 px-4 top-1/2" data-glide-el="controls">
+          <button class="inline-flex items-center justify-center w-8 h-8 transition duration-300 border rounded-full lg:w-12 lg:h-12 text-slate-700 border-slate-700 hover:text-slate-900 hover:border-slate-900 bg-white/20" data-glide-dir="<">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 15.75L3 12m0 0l3.75-3.75M3 12h18"/>
+            </svg>
+          </button>
+          <button class="inline-flex items-center justify-center w-8 h-8 transition duration-300 border rounded-full lg:w-12 lg:h-12 text-slate-700 border-slate-700 hover:text-slate-900 hover:border-slate-900 bg-white/20" data-glide-dir=">">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12H3"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  
+  </div>
+  
+  <script>
+    function toggleSlide() {
+      const slide = document.getElementById('search-slide');
+      slide.classList.toggle('hidden');
+    }
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Glide.js/3.0.2/glide.js"></script>
+  <script>
+    var glide01 = new Glide('.glide-01', {
+      type: 'carousel',
+      focusAt: 'center',
+      perView: 3,
+      autoplay: 3000,
+      animationDuration: 700,
+      gap: 24,
+      breakpoints: {
+        1024: { perView: 2 },
+        640: { perView: 1 }
+      }
+    });
+    glide01.mount();
+  </script>
+  
+  
+{% comment %} <script>
+    function toggleSlide() {
+      const el = document.getElementById('search-slide');
+      el.classList.toggle('hidden');
+    }
+  </script> {% endcomment %}
+  
+{% endblock %}

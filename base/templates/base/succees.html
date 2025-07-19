@@ -1,0 +1,16 @@
+<!-- success.html -->
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+    <div class="container mx-auto mt-8 text-center">
+            <!-- Image centrée -->
+            <div class="mb-4">
+                <img src="{% static 'img/success.jpg' %}" alt="Erreur" class="mx-auto">
+            </div>
+        <h1 class="text-3xl font-bold text-green-600">Achat réussi !</h1>
+        <p class="text-xl">Félicitations, votre achat a été effectué avec succès.</p>
+        <!-- Message supplémentaire -->
+        <p class="text-lg mt-4">Nous vous prions de passer récupérer votre produit ou article acheté à nos adresses. Pour plus d'informations, contactez-nous ou commandez un service de livraison à domicile pour vous faire livrer directement chez vous.</p>
+        
+    </div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="bg-gray-100 py-6 shadow-sm">
+    <div class="max-w-xl mx-auto text-center">
+        <h1 class="text-3xl font-bold text-gray-800">Abonnement à {{ store.name }}</h1>
+    </div>
+</div>
+
+<div class="max-w-xl mx-auto mt-10 text-center">
+    {% if subscribed %}
+    <img src="{{ store.thumbnail.url }}" alt="{{ store.name }}" class="mx-auto w-32 h-32 object-cover mb-4 shadow-md rounded-md">
+    <h2 class="text-2xl font-bold text-green-600 mb-4">Merci de vous être abonné à {{ store.name }} !</h2>
+    <p class="text-gray-700">Vous recevrez désormais des notifications lorsqu’il y aura de nouveaux produits ou services.</p>
+{% else %}
+    <img src="{{ store.thumbnail.url }}" alt="{{ store.name }}" class="mx-auto w-32 h-32 object-cover mb-4 shadow-md rounded-md">
+    <h2 class="text-2xl font-bold text-red-600 mb-4">Vous vous êtes désabonné de {{ store.name }}.</h2>
+    <p class="text-gray-700">Vous ne recevrez plus de notifications de ce store.</p>
+{% endif %}
+
+
+
+</div>
+{% endblock %}

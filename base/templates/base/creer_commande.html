@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block title %}Créer une commande de livraison{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-center min-h-screen bg-gray-100">
+    <div class="w-full max-w-4xl bg-white p-8 rounded-lg shadow-lg">
+        <h2 class="text-2xl font-semibold text-center text-gray-800 mb-6">Faire une commande de livraison</h2>
+
+        {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                    <div class="text-green-600 text-center">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Formulaire de commande de livraison -->
+        <form method="POST" class="space-y-4">
+            {% csrf_token %}
+            
+            <!-- Nom et Prénom sur la même ligne -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="form-group">
+                    <label for="id_nom">Nom</label>
+                    {{ form.nom }}
+                </div>
+                <div class="form-group">
+                    <label for="id_prenom">Prénom</label>
+                    {{ form.prenom }}
+                </div>
+            </div>
+
+            <!-- Email et Numéro de téléphone sur la même ligne -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="form-group">
+                    <label for="id_email">Email</label>
+                    {{ form.email }}
+                </div>
+                <div class="form-group">
+                    <label for="id_numero_tel">Numéro de téléphone</label>
+                    {{ form.numero_tel }}
+                </div>
+            </div>
+
+            <!-- Adresse de livraison et Description du colis sur la même ligne -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="form-group">
+                    <label for="id_adresse_livraison">Adresse de livraison</label>
+                    {{ form.adresse_livraison }}
+                </div>
+                <div class="form-group">
+                    <label for="id_description_colis">Description du colis</label>
+                    {{ form.description_colis }}
+                </div>
+            </div>
+
+            <!-- Endroit de récupération et ID du colis sur la même ligne -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="form-group">
+                    <label for="id_endroit_recuperation">Endroit de récupération</label>
+                    {{ form.endroit_recuperation }}
+                </div>
+                <div class="form-group">
+                    <label for="id_numero_id_colis">Numéro d'ID du colis</label>
+                    {{ form.numero_id_colis }}
+                </div>
+            </div>
+
+            <!-- Bouton de soumission -->
+            <div class="flex justify-between items-center">
+                <button type="submit" class="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">Créer la commande</button>
+            </div>
+        </form>
+
+        <hr class="my-6">
+        {% comment %} <a href="{% url 'list_commandes' %}" class="inline-block px-6 py-3 text-white bg-green-600 hover:bg-green-800 rounded-md transition duration-300">
+            Liste des commandes existantes
+        </a> {% endcomment %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+  <div class="container mx-auto mt-8">
+    <div class="bg-white p-8 rounded-lg shadow-lg">
+      <h2 class="text-3xl font-semibold mb-6">Créer une notification pour les abonnés</h2>
+
+      <!-- Messages de validation -->
+      {% if messages %}
+        <div class="mb-4">
+          {% for message in messages %}
+            <div class="bg-green-100 text-green-700 p-4 rounded-lg mb-2">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <!-- Formulaire de notification -->
+      <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="grid grid-cols-1 gap-6">
+          <!-- Titre de la notification -->
+          <div class="mb-4">
+            <label for="id_title" class="block text-sm font-medium text-gray-700">Titre de la notification</label>
+            {{ form.title }}
+            {% if form.title.errors %}
+              <p class="text-red-600 text-sm mt-1">{{ form.title.errors.0 }}</p>
+            {% endif %}
+          </div>
+
+          <!-- Description de la notification -->
+          <div class="mb-4">
+            <label for="id_description" class="block text-sm font-medium text-gray-700">Description de la notification</label>
+            {{ form.description }}
+            {% if form.description.errors %}
+              <p class="text-red-600 text-sm mt-1">{{ form.description.errors.0 }}</p>
+            {% endif %}
+          </div>
+
+          <!-- Image de la notification (facultatif) -->
+          <div class="mb-4">
+            <label for="id_image" class="block text-sm font-medium text-gray-700">Image (facultatif)</label>
+            {{ form.image }}
+            {% if form.image.errors %}
+              <p class="text-red-600 text-sm mt-1">{{ form.image.errors.0 }}</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Bouton de soumission -->
+        <button type="submit" class="bg-blue-500 text-white px-6 py-3 rounded hover:bg-blue-700 mt-4">
+          Envoyer la notification
+        </button>
+      </form>
+    </div>
+  </div>
+{% endblock %}

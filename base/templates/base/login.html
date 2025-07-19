@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+  <div class="bg-white shadow-lg rounded-xl w-full max-w-md p-8 space-y-6">
+    <div class="text-center">
+      <img src="{% static 'img/logoo.png' %}" alt="Logo" class="h-12 mx-auto mb-4">
+      <h2 class="text-3xl font-bold text-purple-700">Se connecter</h2>
+    </div>
+
+    {% if messages %}
+      {% for message in messages %}
+        <p class="text-red-500 text-center text-sm">{{ message }}</p>
+      {% endfor %}
+    {% endif %}
+
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      <input name="email" type="email" placeholder="Adresse email" required class="input-field w-full">
+      <input name="password" type="password" placeholder="Mot de passe" required class="input-field w-full">
+
+      <button type="submit" class="w-full bg-purple-600 text-white font-semibold py-2 rounded-lg hover:bg-purple-700 transition duration-300">
+        Se connecter
+      </button>
+    </form>
+
+    <p class="text-center text-sm text-gray-600">
+      Vous n'avez pas encore de compte ?
+      <a href="{% url 'register' %}" class="text-purple-600 hover:underline">Créer un compte</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

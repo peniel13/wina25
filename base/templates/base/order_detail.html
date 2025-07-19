@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<section class="bg-gray-100 py-12">
+    <div class="container mx-auto px-6">
+        <h1 class="text-3xl font-bold text-center mb-6">Détail de la Commande #{{ order.id }}</h1>
+        
+        <!-- Informations de la commande -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 class="text-2xl font-semibold">Informations de la Commande</h2>
+            {% if order.country %}
+    <div class="flex items-center space-x-4 mt-4">
+        <img src="{{ order.country.flag.url }}" alt="{{ order.country.name }}" class="w-10 h-6 object-cover rounded shadow">
+        <span class="font-semibold text-lg">{{ order.country.name }}</span>
+    </div>
+{% endif %}
+
+            <p><strong>Statut :</strong> {{ order.status }}</p>
+            <p><strong>Date de commande :</strong> {{ order.created_at }}</p>
+            <p><strong>Total :</strong> {{ order.total_amount|floatformat:2 }}
+                {{ order.devise }}</p>
+                <div class="mt-6">
+                    <a href="{% url 'download_client_order' order.id %}"
+                       class="inline-flex items-center px-5 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700 transition">
+                      <i class="bx bx-download mr-2"></i> Télécharger cette commande (.docx)
+                    </a>
+                  </div>
+                  
+        </div>
+        
+        <!-- Liste des articles de la commande -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold mb-4">Articles de la commande</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full table-auto">
+                    <thead class="bg-blue-600 text-white">
+                        <tr class="hidden sm:table-row">
+                            <th class="px-4 py-2">Produit</th>
+                            <th class="px-4 py-2">Magasin</th>
+                            <th class="px-4 py-2">Quantité</th>
+                            <th class="px-4 py-2">Prix Unitaire</th>
+                            <th class="px-4 py-2">Prix Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in order_items %}
+                        <!-- Affichage mobile -->
+                        <tr class="border-t sm:hidden">
+                            <td class="px-4 py-2 font-semibold">Produit :</td>
+                            <td class="px-4 py-2">{{ item.product.name }}</td>
+                        </tr>
+                        <tr class="border-t sm:hidden">
+                            <td class="px-4 py-2 font-semibold">Magasin :</td>
+                            <td class="px-4 py-2">
+                                <a href="{% url 'store_detail' item.product.store.slug %}" class="text-blue-600 hover:underline">
+                                    {{ item.product.store.name }}
+                                </a>
+                            </td>
+                        </tr>
+                        <tr class="border-t sm:hidden">
+                            <td class="px-4 py-2 font-semibold">Quantité :</td>
+                            <td class="px-4 py-2">{{ item.quantity }}</td>
+                        </tr>
+                        <tr class="border-t sm:hidden">
+                            <td class="px-4 py-2 font-semibold">Prix Unitaire :</td>
+                            <td class="px-4 py-2">{{ item.price_at_time_of_order }} {{ order.devise }}</td>
+                        </tr>
+                        <tr class="border-t sm:hidden">
+                            <td class="px-4 py-2 font-semibold">Prix Total :</td>
+                            <td class="px-4 py-2">{{ item.get_total_price }} {{ order.devise }}</td>
+                        </tr>
+
+                        <!-- Affichage grand écran -->
+                        <tr class="hidden sm:table-row border-t">
+                            <td class="px-4 py-2">{{ item.product.name }}</td>
+                            <td class="px-4 py-2">
+                                <a href="{% url 'store_detail' item.product.store.slug %}" class="text-blue-600 hover:underline">
+                                    {{ item.product.store.name }}
+                                </a>
+                            </td>
+                            <td class="px-4 py-2">{{ item.quantity }}</td>
+                            <td class="px-4 py-2">{{ item.price_at_time_of_order }} {{ order.devise }}</td>
+                            <td class="px-4 py-2">{{ item.get_total_price }} {{ order.devise }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="px-4 py-2 text-center text-gray-600">Aucun article dans cette commande.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+
+
+{% comment %} {% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<section class="bg-gray-100 py-12">
+    <div class="container mx-auto px-6">
+        <h1 class="text-3xl font-bold text-center mb-6">Détail de la Commande #{{ order.id }}</h1>
+        
+        <!-- Informations de la commande -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 class="text-2xl font-semibold">Informations de la Commande</h2>
+            <p><strong>Statut:</strong> {{ order.status }}</p>
+            <p><strong>Date de commande:</strong> {{ order.created_at }}</p>
+            <p><strong>Total:</strong> {{ order.get_total }} CDF</p>
+        </div>
+
+        <!-- Liste des articles de la commande -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold mb-4">Articles de la commande</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full table-auto">
+                    <thead class="bg-blue-600 text-white">
+                        <tr class="hidden sm:table-row">
+                            <th class="px-4 py-2">Produit</th>
+                            <th class="px-4 py-2">Quantité</th>
+                            <th class="px-4 py-2">Prix Unitaire</th>
+                            <th class="px-4 py-2">Prix Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in order_items %}
+                        <tr class="border-t sm:hidden">
+                            <td class="px-4 py-2 font-semibold">Produit :</td>
+                            <td class="px-4 py-2">{{ item.product.name }}</td>
+                        </tr>
+                        <tr class="border-t sm:hidden">
+                            <td class="px-4 py-2 font-semibold">Quantité :</td>
+                            <td class="px-4 py-2">{{ item.quantity }}</td>
+                        </tr>
+                        <tr class="border-t sm:hidden">
+                            <td class="px-4 py-2 font-semibold">Prix Unitaire :</td>
+                            <td class="px-4 py-2">{{ item.price_at_time_of_order }} CDF</td>
+                        </tr>
+                        <tr class="border-t sm:hidden">
+                            <td class="px-4 py-2 font-semibold">Prix Total :</td>
+                            <td class="px-4 py-2">{{ item.get_total_price }} CDF</td>
+                        </tr>
+        
+                        <!-- Affichage classique pour les grands écrans -->
+                        <tr class="hidden sm:table-row">
+                            <td class="px-4 py-2">{{ item.product.name }}</td>
+                            <td class="px-4 py-2">{{ item.quantity }}</td>
+                            <td class="px-4 py-2">{{ item.price_at_time_of_order }} CDF</td>
+                            <td class="px-4 py-2">{{ item.get_total_price }} CDF</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="px-4 py-2 text-center text-gray-600">Aucun article dans cette commande.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        
+        <!-- Lien de retour -->
+        <div class="mt-8 text-center">
+            <a href="{% url 'profile' %}" class="inline-block px-6 py-3 text-white bg-blue-600 hover:bg-blue-800 rounded-md">Retour à mon profil</a>
+        </div>
+    </div>
+</section>
+{% endblock %} {% endcomment %}

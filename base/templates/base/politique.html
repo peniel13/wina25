@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<section id="privacy-policy" class="py-16 bg-gray-50">
+  <div class="max-w-6xl mx-auto text-center px-4">
+      <!-- Titre de la section -->
+      <h2 class="text-4xl font-semibold text-gray-800 mb-8">Politique de Confidentialité</h2>
+
+      <!-- Introduction -->
+      <p class="text-lg text-gray-600 mb-12">
+          Chez Wina marché, nous accordons une grande importance à la sécurité de vos informations personnelles et à la protection de vos paiements. En tant que branche du **Groupe Peniel**, nous nous engageons à offrir une expérience de shopping en ligne transparente, fiable et sécurisée pour tous nos clients.
+      </p>
+
+      <!-- Logique de Paiement et Sécurité -->
+      <div class="mb-12">
+          <h3 class="text-2xl font-semibold text-gray-800 mb-4">Paiement Sécurisé et Remboursement Garanti</h3>
+          <p class="text-lg text-gray-600 mb-6">
+              En ce qui concerne les paiements en ligne, Wina marché agit comme un intermédiaire entre vous et les boutiques partenaires. Nous avons mis en place un système de paiement sécurisé où l'argent versé par nos clients n'est pas directement envoyé à la boutique concernée, mais est réceptionné par Wina marché.
+          </p>
+          <p class="text-lg text-gray-600 mb-6">
+              Cette approche nous permet de protéger nos clients en cas de problème. Si une boutique en ligne n'a pas le produit que vous avez commandé, ou si un problème survient avec votre commande, vous pouvez toujours vous adresser à Wina marché pour résoudre la situation. Nous nous engageons à vous rembourser intégralement dans ce genre de situation.
+          </p>
+          <p class="text-lg text-gray-600 mb-6">
+              Nous assumons la responsabilité de garantir que votre argent est en sécurité tout au long du processus d'achat. Notre plateforme assure la gestion des paiements pour que vous n'ayez pas à vous soucier de la transaction avec la boutique. Si un litige survient, il sera traité par Wina marché, et non par la boutique elle-même, pour garantir que vos droits sont respectés.
+          </p>
+          <p class="text-lg text-gray-600 mb-6">
+              En résumé, lorsque vous effectuez un achat via Wina marché, vous pouvez être sûr que votre argent est en sécurité. En cas de problème, nous intervenons directement pour résoudre la situation et, si nécessaire, procéder à un remboursement.
+          </p>
+      </div>
+
+      <!-- Confidentialité des Données -->
+      <div class="mb-12">
+          <h3 class="text-2xl font-semibold text-gray-800 mb-4">Protection de vos Données Personnelles</h3>
+          <p class="text-lg text-gray-600 mb-6">
+            Wina marché respecte également votre vie privée. Toutes les informations personnelles que vous fournissez lors de votre inscription ou de vos achats sont strictement confidentielles et sont utilisées uniquement pour faciliter votre expérience d'achat.
+          </p>
+          <p class="text-lg text-gray-600 mb-6">
+              Nous nous engageons à ne jamais partager vos informations personnelles avec des tiers sans votre consentement préalable. Nous mettons en place des mesures de sécurité avancées pour protéger vos données contre tout accès non autorisé ou tout usage abusif.
+          </p>
+      </div>
+
+      <!-- Conclusion -->
+      <div class="mt-12">
+          <h3 class="text-2xl font-semibold text-gray-800 mb-4">Nous protégeons vos achats, vos données et votre tranquillité d'esprit</h3>
+          <p class="text-lg text-gray-600 mb-6">
+              Notre priorité est de vous offrir une expérience d'achat en ligne sécurisée et sans tracas. Avec Wina marché, vous avez l'assurance que vos transactions sont protégées, et que nous prenons toute la responsabilité en cas de problème. Nous sommes là pour vous aider à chaque étape de votre parcours d'achat.
+          </p>
+          <a href="{% url 'register' %}" class="inline-block px-8 py-4 text-white bg-blue-600 hover:bg-blue-800 rounded-md font-semibold transition duration-300">
+              S'inscrire maintenant
+          </a>
+      </div>
+  </div>
+</section>
+{% endblock content %}

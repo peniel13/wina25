@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto py-8">
+  <h1 class="text-2xl font-bold mb-6 text-center">Détail du Panier 🛒</h1>
+
+  {% if carts_by_country %}
+    <!-- 🏳️ Onglets pays -->
+    <div class="flex overflow-x-auto gap-4 mb-6 px-2">
+      {% for country_id, data in carts_by_country.items %}
+        <button onclick="openTab('tab-{{ country_id }}')" class="flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md text-sm font-semibold whitespace-nowrap">
+          {% if data.country.flag %}
+            <img src="{{ data.country.flag.url }}" alt="Drapeau de {{ data.country.name }}" class="w-5 h-4 object-cover rounded">
+          {% endif %}
+          {{ data.country.name }}
+        </button>
+      {% endfor %}
+    </div>
+
+    <!-- 🛒 Panier par pays -->
+    {% for country_id, data in carts_by_country.items %}
+      {% with devise=data.country.devise_info.devise %}
+      <div id="tab-{{ country_id }}" class="tab-content hidden">
+        <div class="bg-white p-6 rounded-lg shadow-md">
+          {% if data.items %}
+            <div class="overflow-x-auto">
+              <table class="min-w-full table-auto">
+                <thead class="bg-gray-100">
+                  <tr>
+                    <th class="px-4 py-2 text-left font-semibold">Produit</th>
+                    <th class="px-4 py-2 text-left font-semibold">Quantité</th>
+                    <th class="px-4 py-2 text-left font-semibold">Prix ({{ devise }})</th>
+                    <th class="px-4 py-2 text-left font-semibold">Total ({{ devise }})</th>
+                    <th class="px-4 py-2 text-left font-semibold">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for item in data.items %}
+                    <tr class="border-b hover:bg-gray-50">
+                      <td class="px-4 py-2 flex flex-col sm:flex-row items-center">
+                        <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="w-16 h-16 object-cover mb-2 sm:mb-0 sm:mr-4">
+                        <span>{{ item.product.name }}</span>
+                      </td>
+                      <td class="px-4 py-2">
+                        <form action="{% url 'update_cart_wina' cart_item_id=item.id quantity=item.quantity %}" method="POST">
+                          {% csrf_token %}
+                          <input type="number" name="quantity" value="{{ item.quantity }}" min="1" class="w-16 p-2 border rounded-md">
+                          <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-md mt-2 sm:mt-0 sm:ml-2 hover:bg-blue-600">Mettre à jour</button>
+                        </form>
+                      </td>
+                      <td class="px-4 py-2">{{ item.product.price_with_commission }} {{ devise }}</td>
+                      <td class="px-4 py-2">{{ item.get_total_price }} {{ devise }}</td>
+                      <td class="px-4 py-2">
+                        <form action="{% url 'remove_from_cart' cart_item_id=item.id %}" method="POST">
+                          {% csrf_token %}
+                          <button type="submit" class="text-red-500 hover:text-red-600 text-sm">Supprimer</button>
+                        </form>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            <!-- 🔢 Résumé -->
+            <div class="mt-6 flex flex-col sm:flex-row justify-between items-center">
+              <div class="flex items-center gap-2 text-lg font-semibold text-gray-800">
+                {% if data.country.flag %}
+                  <img src="{{ data.country.flag.url }}" alt="Drapeau" class="w-6 h-4 object-cover rounded">
+                {% endif %}
+                <span>Total pour {{ data.country.name }} : {{ data.total_price }} {{ devise }}</span>
+              </div>
+              <p class="text-base mt-2 sm:mt-0">Articles : {{ data.item_count }}</p>
+            </div>
+
+            <!-- 💰 Paiement -->
+            <div class="mt-6 text-center">
+              {% if data.country %}
+  <a href="{% url 'mobile_money_checkout_by_country' country_id=data.country.id %}" class="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition duration-300">
+    Payer pour {{ data.country.name }} via mobile money
+  </a>
+{% else %}
+  <p class="text-red-500 text-sm">Aucun pays associé à ce panier.</p>
+{% endif %}
+
+            </div>
+          {% else %}
+            <p class="text-center text-gray-500">Aucun produit dans ce panier.</p>
+          {% endif %}
+        </div>
+      </div>
+      {% endwith %}
+    {% endfor %}
+  {% else %}
+    <p class="text-center text-gray-500">Votre panier est vide.</p>
+  {% endif %}
+</div>
+
+<!-- JS pour onglets -->
+<script>
+  function openTab(id) {
+    const tabs = document.querySelectorAll('.tab-content');
+    tabs.forEach(tab => tab.classList.add('hidden'));
+    document.getElementById(id).classList.remove('hidden');
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    const firstTab = document.querySelector('.tab-content');
+    if (firstTab) firstTab.classList.remove('hidden');
+  });
+</script>
+{% endblock %}

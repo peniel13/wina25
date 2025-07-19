@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+  <div class="container mx-auto mt-8">
+    <div class="bg-white p-8 rounded-lg shadow-lg">
+      <h2 class="text-3xl font-semibold mb-6">Participer au tirage : "{{ lottery.title }}"</h2>
+
+      <!-- Message de paiement requis -->
+      <div class="welcome-message mb-6 text-center">
+        <h1 class="text-2xl font-semibold text-red-600">Participation payante</h1>
+        <p class="text-lg mt-2 text-gray-700">
+          Pour participer à ce tirage au sort, vous devez effectuer un paiement de <strong>{{ lottery.participation_fee }} USD</strong> par Mobile Money.
+        </p>
+        <p class="mt-2 text-gray-600">
+          Veuillez suivre les instructions ci-dessous pour effectuer le paiement avant de soumettre le formulaire.
+        </p>
+      </div>
+
+      <!-- Instructions de paiement -->
+      <div class="payeenligne-container bg-gray-50 p-6 rounded-lg shadow mb-8">
+        <h2 class="text-2xl font-semibold mb-4">Instructions de Paiement Mobile Money</h2>
+        <ul class="list-decimal pl-6 text-gray-700 mb-6">
+          <li>Sélectionnez un opérateur ci-dessous et effectuez le paiement de <strong>{{ lottery.participation_fee }} USD</strong>.</li>
+          <li>Une fois le paiement effectué, notez le code de transaction.</li>
+          <li>Remplissez le formulaire de participation avec vos informations et le code de transaction.</li>
+          <li>Soumettez le formulaire pour valider votre participation.</li>
+        </ul>
+
+        <h3 class="text-xl font-semibold mt-4">Numéros pour le paiement :</h3>
+        <ul class="list-none mt-4">
+          {% if numero_paye %}
+  <div class="flex items-center mb-2">
+    <img src="{{ numero_paye.image.url }}" alt="{{ numero_paye.nom }}" class="w-10 h-10 mr-3">
+    {{ numero_paye.nom }} : <strong>{{ numero_paye.numero_paye }}</strong>
+  </div>
+{% else %}
+  <p class="text-red-600">Aucun numéro de paiement enregistré pour ton pays.</p>
+{% endif %}
+
+        </ul>
+
+        <p class="text-gray-600 mt-4">
+          Conservez une preuve de paiement. En cas de problème, contactez notre service client.
+        </p>
+      </div>
+
+      <!-- Messages de validation -->
+      {% if messages %}
+        <div class="mb-4">
+          {% for message in messages %}
+            <div class="bg-green-100 text-green-700 p-4 rounded-lg mb-2">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <!-- Formulaire de participation -->
+      <form method="POST">
+        {% csrf_token %}
+        <div class="grid grid-cols-1 gap-6">
+          <!-- Nom complet -->
+          <div class="mb-4">
+            <label for="id_full_name" class="block text-sm font-medium text-gray-700">Nom complet</label>
+            {{ form.full_name }}
+            {% if form.full_name.errors %}
+              <p class="text-red-600 text-sm mt-1">{{ form.full_name.errors.0 }}</p>
+            {% endif %}
+          </div>
+
+          <!-- Téléphone -->
+          <div class="mb-4">
+            <label for="id_phone_number" class="block text-sm font-medium text-gray-700">Numéro de téléphone</label>
+            {{ form.phone_number }}
+            {% if form.phone_number.errors %}
+              <p class="text-red-600 text-sm mt-1">{{ form.phone_number.errors.0 }}</p>
+            {% endif %}
+          </div>
+
+          <!-- ID Transaction -->
+          <div class="mb-4">
+            <label for="id_id_transaction" class="block text-sm font-medium text-gray-700">ID de transaction Mobile Money</label>
+            {{ form.id_transaction }}
+            {% if form.id_transaction.errors %}
+              <p class="text-red-600 text-sm mt-1">{{ form.id_transaction.errors.0 }}</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Bouton de soumission -->
+        <button type="submit" class="bg-blue-500 text-white px-6 py-3 rounded hover:bg-blue-700 mt-4">
+          Envoyer ma participation
+        </button>
+      </form>
+    </div>
+  </div>
+{% endblock %}
+
+
+{% comment %} {% extends 'base.html' %}
+
+{% block content %}
+  <div class="container mx-auto mt-8">
+    <div class="bg-white p-8 rounded-lg shadow-lg">
+      <h2 class="text-3xl font-semibold mb-6">Participer au tirage : "{{ lottery.title }}"</h2>
+
+      <!-- Messages de validation -->
+      {% if messages %}
+        <div class="mb-4">
+          {% for message in messages %}
+            <div class="bg-green-100 text-green-700 p-4 rounded-lg mb-2">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <p class="text-gray-600 mb-6">
+        Veuillez remplir ce formulaire pour participer. Votre demande sera activée manuellement par un administrateur.
+      </p>
+
+      <!-- Formulaire -->
+      <form method="POST">
+        {% csrf_token %}
+
+        <div class="grid grid-cols-1 gap-6">
+          <!-- Nom complet -->
+          <div class="mb-4">
+            <label for="id_full_name" class="block text-sm font-medium text-gray-700">Nom complet</label>
+            {{ form.full_name }}
+            {% if form.full_name.errors %}
+              <p class="text-red-600 text-sm mt-1">{{ form.full_name.errors.0 }}</p>
+            {% endif %}
+          </div>
+
+          <!-- Téléphone -->
+          <div class="mb-4">
+            <label for="id_phone_number" class="block text-sm font-medium text-gray-700">Numéro de téléphone</label>
+            {{ form.phone_number }}
+            {% if form.phone_number.errors %}
+              <p class="text-red-600 text-sm mt-1">{{ form.phone_number.errors.0 }}</p>
+            {% endif %}
+          </div>
+
+          <!-- ID Transaction -->
+          <div class="mb-4">
+            <label for="id_id_transaction" class="block text-sm font-medium text-gray-700">ID de transaction</label>
+            {{ form.id_transaction }}
+            {% if form.id_transaction.errors %}
+              <p class="text-red-600 text-sm mt-1">{{ form.id_transaction.errors.0 }}</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <button type="submit" class="bg-blue-500 text-white px-6 py-3 rounded hover:bg-blue-700 mt-4">
+          Envoyer ma participation
+        </button>
+      </form>
+    </div>
+  </div>
+{% endblock %} {% endcomment %}
+
+{% comment %} {% extends 'base.html' %}
+
+{% block content %}
+
+<body class="bg-gray-100 py-10">
+
+    <div class="max-w-xl mx-auto bg-white p-8 rounded shadow">
+        <h1 class="text-2xl font-bold mb-4 text-center">Participation au tirage : {{ lottery.title }}</h1>
+        <p class="text-gray-600 mb-6 text-center">{{ lottery.description }}</p>
+
+        {% if form %}
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                {{ form.non_field_errors }}
+                {% for field in form %}
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-1">{{ field.label_tag }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <p class="text-red-500 text-sm">{{ field.errors|striptags }}</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                    Soumettre ma participation
+                </button>
+            </form>
+        {% else %}
+            <p class="text-center text-gray-500">Le formulaire n'est pas disponible actuellement.</p>
+        {% endif %}
+    </div>
+
+{% endblock %} {% endcomment %}

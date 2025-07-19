@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-10">
+  <div class="bg-white shadow-md rounded-lg p-6">
+    <div class="flex flex-col items-center text-center">
+      {% if user.profile_pic %}
+        <img class="h-16 w-16 rounded-full object-cover border-2 border-purple-600" src="{{ user.profile_pic.url }}" alt="Profile Picture">
+      {% else %}
+        <img class="h-16 w-16 rounded-full object-cover border-2 border-gray-400" src="https://bootdey.com/img/Content/avatar/avatar7.png" alt="Default Profile Picture">
+      {% endif %}
+    
+      <h2 class="mt-4 text-lg font-semibold text-gray-800">{{ user.username }}</h2>
+      <p class="text-gray-500 text-sm">{{ user.email }}</p>
+      <p class="text-gray-500 text-sm">{{ user.phone }}</p>
+      <p class="text-gray-500 text-sm">{{ user.address }}</p>
+    
+      {% if user.country %}
+        <div class="flex items-center space-x-2 mt-2">
+          <img src="{{ user.country.flag.url }}" alt="{{ user.country.name }} flag" class="h-5 w-8 object-cover border border-gray-300 rounded">
+          <span class="text-gray-700 text-sm font-medium">{{ user.country.name }}</span>
+        </div>
+      {% endif %}
+    
+      {% if user.city %}
+        <p class="text-gray-500 text-sm mt-1">{{ user.city.name }}</p>
+      {% endif %}
+    </div>
+    
+
+    <div class="mt-8 space-y-3">
+      <a href="{% url 'profile_orders' %}" class="block px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 flex items-center">
+        <i class="bx bx-cart text-xl mr-3 text-purple-600"></i> Historique d'achat
+      </a>
+
+      <a href="{% url 'profile_stores' %}" class="block px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 flex items-center">
+        <i class="bx bx-store text-xl mr-3 text-purple-600"></i> Mon business
+      </a>
+      <a href="{% url 'profile_livraisons' %}" class="block px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 flex items-center">
+        <i class="bx bx-star text-xl mr-3 text-purple-600"></i> Historique de Livraison
+      </a>
+      <a href="{% url 'user_dashboard' %}" class="block px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 flex items-center">
+        <i class="bx bx-star text-xl mr-3 text-purple-600"></i> Mes points de fidélité
+      </a>
+
+      <a href="{% url 'update_profile' %}" class="block px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 flex items-center">
+        <i class="bx bx-user text-xl mr-3 text-purple-600"></i> Modifier mon profil
+      </a>
+
+      <a href="{% url 'list_product_rewards' %}" class="block px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 flex items-center">
+        <i class="bx bx-gift text-xl mr-3 text-purple-600"></i> Produits à échanger contre des points
+      </a>
+
+      <a href="{% url 'create_advertisement' %}" class="block px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 flex items-center">
+        <i class="bx bx-bullhorn text-xl mr-3 text-purple-600"></i> Créer une publicité
+      </a>
+      <a href="{% url 'advertisement_payment_list' %}" class="block px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 flex items-center">
+        <i class="bx bx-bullhorn text-xl mr-3 text-purple-600"></i> Mes pubs payées validées
+    </a>
+    
+      <a href="{% url 'change_password' %}" class="block px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 flex items-center">
+        <i class="bx bx-lock-open text-xl mr-3 text-purple-600"></i> Modifier le mot de passe
+      </a>
+
+      <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="w-full text-left px-4 py-2 bg-red-100 text-red-700 rounded hover:bg-red-200 flex items-center">
+          <i class="bx bx-log-out text-xl mr-3"></i> Déconnexion
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

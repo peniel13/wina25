@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<section id="about" class="py-16 bg-gray-50">
+  <div class="max-w-6xl mx-auto text-center px-4">
+      <!-- Titre de la section -->
+      <h2 class="text-4xl font-semibold text-gray-800 mb-8">À propos de Wina marché</h2>
+
+      <!-- Description de la mission de la plateforme -->
+      <p class="text-lg text-gray-600 mb-12">
+        Wina marché est une plateforme numérique innovante du grand marché local,national et international. 
+          Elle permet à toutes les boutiques,super marché, hotel,restaurant, cabinet etc. du marché local,national et international de disposer d'un espace profil pour vendre leurs produits ou service et les rendre visibles. 
+          Ainsi, les clients peuvent facilement avoir un contrôle total sur les boutiques, shop etc. et produits ou service à partir de chez eux, sans avoir besoin de se déplacer.
+      </p>
+
+      <!-- Image avec du texte à côté -->
+      <div class="flex flex-col lg:flex-row items-center justify-center gap-8 mb-12">
+          <div class="w-full lg:w-1/2">
+              <img src="{% static "img/maboko.jpg" %}" alt="Shopping online" class="w-full rounded-lg shadow-lg">
+          </div>
+          <div class="w-full lg:w-1/2">
+              <h3 class="text-2xl font-semibold text-gray-800 mb-4">Achetez depuis chez vous, contrôlez vos achats</h3>
+              <p class="text-lg text-gray-600 mb-4">
+                  Nous vous offrons la possibilité de parcourir une large gamme de produits du marché local,national et international, de consulter leurs prix, 
+                  et de passer vos commandes en quelques clics. Vous n'avez plus besoin de vous déplacer pour faire vos courses. 
+                  Tout est à portée de main.
+              </p>
+              <p class="text-lg text-gray-600 mb-4">
+                  Que vous soyez chez vous ou au bureau, vous pouvez facilement commander vos produits et les faire livrer directement chez vous, 
+                  à l'heure qui vous convient.
+              </p>
+          </div>
+      </div>
+      <div class="flex flex-col md:flex-row items-center bg-white p-6 rounded-lg shadow-lg mt-8 mb-8">
+        <div class="flex-1 mb-4 md:mb-0 md:w-1/2">
+            <h4 class="text-xl font-semibold text-gray-800 mb-2">Gagnez des points en interagissant avec les publicités</h4>
+            <p class="text-gray-600 text-center md:text-left">
+                En likant, commentant et partageant des publicités, vous gagnez des points que vous pouvez convertir en argent (USD).
+                Ces points peuvent ensuite être utilisés pour acheter des produits exclusifs sur notre marketplace.
+            </p>
+            <p class="text-gray-600 text-center md:text-left mt-4">
+                Plus vous interagissez avec les publicités, plus vous accumulez de points, et plus vous avez de chances de vous offrir des produits sans dépenser d'argent ! 🎁
+            </p>
+            <p class="text-gray-600 text-center md:text-left mt-2">
+                gagnez 💵
+            </p>
+        </div>
+        <div class="flex-1 md:w-1/2">
+            <img src="{% static "img/rewards.jpg" %}" alt="Gagner des points" class="w-full h-auto rounded-lg">
+        </div>
+    </div>
+    
+      <!-- Avantages principaux -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div class="flex flex-col items-center bg-white p-6 rounded-lg shadow-lg">
+              <img src="{% static "img/zando.jpg" %}" alt="Icon" class="mb-4">
+              <h4 class="text-xl font-semibold text-gray-800 mb-2">Achetez à l'avance</h4>
+              <p class="text-gray-600 text-center">
+                  Évitez les longues files d'attente ou deambullement en achetant vos produits en avance et en toute tranquillité depuis chez vous.
+              </p>
+          </div>
+
+          <div class="flex flex-col items-center bg-white p-6 rounded-lg shadow-lg">
+              <img src="{% static "img/zando1.jpg" %}" alt="Icon" class="mb-4">
+              <h4 class="text-xl font-semibold text-gray-800 mb-2">Contrôlez vos achats</h4>
+              <p class="text-gray-600 text-center">
+                  Accédez à toutes les informations sur les produits : prix, disponibilité et caractéristiques, avant de faire votre choix.
+              </p>
+          </div>
+
+          <div class="flex flex-col items-center bg-white p-6 rounded-lg shadow-lg">
+              <img src="{% static "img/livreson.jpg" %}" alt="Icon" class="mb-4">
+              <h4 class="text-xl font-semibold text-gray-800 mb-2">Livraison à domicile</h4>
+              <p class="text-gray-600 text-center">
+                  Commandez vos produits et faites-les livrer directement à votre domicile. Vous choisissez l'heure qui vous convient le mieux.
+              </p>
+          </div>
+         
+      </div>
+
+      <!-- Appel à l'action -->
+      <div class="mt-12">
+          <h3 class="text-2xl font-semibold text-gray-800 mb-4">Rejoignez-nous dès aujourd'hui et simplifiez vos courses !</h3>
+          <a href="{% url 'register' %}" class="inline-block px-8 py-4 text-white bg-blue-600 hover:bg-blue-800 rounded-md font-semibold transition duration-300">
+              S'inscrire maintenant
+          </a>
+      </div>
+  </div>
+</section>
+{% endblock content %}

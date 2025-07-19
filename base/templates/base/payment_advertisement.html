@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mx-auto p-6">
+  <h2 class="text-3xl font-bold text-center text-indigo-700 mb-6">Paiement de votre publicité</h2>
+
+  <div class="bg-white shadow p-6 rounded-lg">
+    <h3 class="text-xl font-semibold mt-4 mb-2">Résumé de la Facturation</h3>
+    <ul class="list-disc pl-5 text-gray-700">
+      <li><strong>Titre de la pub :</strong> {{ ad.title }}</li>
+      <li><strong>Nombre d’interactions souhaitées :</strong> {{ base_interactions }}</li>
+      {% comment %} <li><strong>1 point = {{ conversion_rate }} USD</strong></li> {% endcomment %}
+      <li><strong>1 interaction = 0,01 USD</strong></li>
+      <li><strong>Cible choisie :</strong> {{ cible }}</li>
+      <li><strong>Multiplicateur appliqué :</strong> x{{ multiplicateur }}</li>
+      <li><strong>Montant total à payer :</strong> {{ montant_total }} USD</li>
+    </ul>
+
+    {% if numero %}
+    <div class="mt-4">
+      <p class="font-semibold">Numéro de paiement pour {{ numero.country.name }} :</p>
+      <div class="flex items-center gap-4 mt-2">
+        <img src="{{ numero.image.url }}" alt="Logo opérateur" class="w-12 h-12 rounded-full shadow">
+        <span class="text-lg font-bold">{{ numero.numero_paye }}</span>
+      </div>
+    </div>
+    {% else %}
+    <div class="text-red-600 font-semibold mt-4">
+      Aucun numéro de paiement disponible pour votre pays.
+    </div>
+    {% endif %}
+
+    <form method="post" class="mt-6 space-y-4">
+      {% csrf_token %}
+      <label class="block">
+        <span class="text-gray-700">Numéro de transaction :</span>
+        <input type="text" name="transaction_id" class="mt-1 block w-full border px-4 py-2 rounded" required>
+      </label>
+      <label class="block">
+        <span class="text-gray-700">Votre numéro de téléphone :</span>
+        <input type="text" name="phone_number" class="mt-1 block w-full border px-4 py-2 rounded" required>
+      </label>
+      <button type="submit" class="w-full bg-indigo-600 text-white font-semibold py-2 rounded hover:bg-indigo-700">
+        Valider le paiement
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

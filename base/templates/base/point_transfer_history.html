@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-3xl mx-auto mt-10 bg-white shadow-md p-6 rounded">
+    <h2 class="text-2xl font-bold mb-6 text-center">Historique de cession de points</h2>
+    {% if history %}
+        <ul class="divide-y divide-gray-300">
+            {% for transfer in history %}
+                <li class="py-4 flex items-center space-x-4">
+                    <!-- Photo du sender -->
+                    <div class="flex-shrink-0">
+                        {% if transfer.sender.profile_pic %}
+                            <img class="h-12 w-12 rounded-full" src="{{ transfer.sender.profile_pic.url }}" alt="Sender Profile Picture">
+                        {% else %}
+                            <img class="h-12 w-12 rounded-full" src="https://bootdey.com/img/Content/avatar/avatar7.png" alt="Default Sender Picture">
+                        {% endif %}
+                    </div>
+
+                    <!-- Info de transfert -->
+                    <div class="text-sm text-gray-800">
+                        <strong>{{ transfer.sender.username }}</strong>
+                        → 
+                        <strong>{{ transfer.receiver.username }}</strong> :
+                        {{ transfer.points_transferred }} points
+                        <div class="text-xs text-gray-500">
+                            {{ transfer.timestamp|date:"d M Y à H:i" }}
+                        </div>
+                    </div>
+
+                    <!-- Photo du receiver -->
+                    <div class="flex-shrink-0 ml-auto">
+                        {% if transfer.receiver.profile_pic %}
+                            <img class="h-12 w-12 rounded-full" src="{{ transfer.receiver.profile_pic.url }}" alt="Receiver Profile Picture">
+                        {% else %}
+                            <img class="h-12 w-12 rounded-full" src="https://bootdey.com/img/Content/avatar/avatar7.png" alt="Default Receiver Picture">
+                        {% endif %}
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+
+        <!-- Pagination -->
+        <!-- Pagination -->
+{% if history.has_other_pages %}
+<div class="mt-6 flex justify-center">
+    <nav aria-label="Pagination de l’historique">
+        <ul class="flex space-x-2">
+            {% if history.has_previous %}
+            <li>
+                <a href="?page=1" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">&laquo; Première</a>
+            </li>
+            <li>
+                <a href="?page={{ history.previous_page_number }}" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">&lsaquo;</a>
+            </li>
+            {% endif %}
+
+            <li>
+                <span class="px-3 py-1 bg-blue-500 text-white rounded">
+                    {{ history.number }}
+                </span>
+            </li>
+
+            {% if history.has_next %}
+            <li>
+                <a href="?page={{ history.next_page_number }}" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">&rsaquo;</a>
+            </li>
+            <li>
+                <a href="?page={{ history.paginator.num_pages }}" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">Dernière &raquo;</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endif %}
+
+        
+    {% else %}
+        <p class="text-center text-gray-500">Aucun transfert enregistré.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% load static form_tags %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+  <div class="bg-white shadow-lg rounded-xl w-full max-w-2xl p-8 space-y-6">
+    <div class="text-center">
+      <img src="{% static 'img/logoo.png' %}" alt="Logo" class="h-12 mx-auto mb-4">
+      <h2 class="text-3xl font-bold text-blue-700">Créer une publicité</h2>
+    </div>
+
+    {% if messages %}
+      {% for message in messages %}
+        <p class="{% if message.tags == 'error' %}text-red-500{% else %}text-green-600{% endif %} text-center text-sm">
+          {{ message }}
+        </p>
+      {% endfor %}
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" class="space-y-4">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+
+      <div>
+        {{ form.title.label_tag }}
+        {{ form.title|add_class:"input-field w-full" }}
+        <p class="text-sm text-red-500">{{ form.title.errors|striptags }}</p>
+      </div>
+
+      <div>
+        {{ form.description.label_tag }}
+        {{ form.description|add_class:"input-field w-full" }}
+        <p class="text-sm text-red-500">{{ form.description.errors|striptags }}</p>
+      </div>
+
+      <div>
+        {{ form.url.label_tag }}
+        {{ form.url|add_class:"input-field w-full" }}
+        <p class="text-sm text-red-500">{{ form.url.errors|striptags }}</p>
+      </div>
+
+      <div>
+        <label class="font-semibold">Rechercher un store</label>
+        <input type="text" id="storeSearchInput" class="input-field w-full" placeholder="Tapez le nom du store..." autocomplete="off">
+        <input type="hidden" name="store" id="selectedStoreId">
+        <div id="storeSuggestions" class="border mt-1 bg-white rounded shadow-md hidden z-10 relative"></div>
+      </div>
+
+      {% comment %} <div class="flex gap-4">
+        <div class="w-1/2">
+          {{ form.max_likes.label_tag }}
+          {{ form.max_likes|add_class:"input-field w-full" }}
+          <p class="text-sm text-red-500">{{ form.max_likes.errors|striptags }}</p>
+        </div>
+        <div class="w-1/2">
+          {{ form.max_shares.label_tag }}
+          {{ form.max_shares|add_class:"input-field w-full" }}
+          <p class="text-sm text-red-500">{{ form.max_shares.errors|striptags }}</p>
+        </div>
+      </div> {% endcomment %}
+      <div>
+        {{ form.max_interactions.label_tag }}
+        {{ form.max_interactions|add_class:"input-field w-full" }}
+        <p class="text-sm text-red-500">{{ form.max_interactions.errors|striptags }}</p>
+      </div>
+      <div class="flex items-center gap-2">
+        {{ form.target_all_users }}
+        {{ form.target_all_users.label_tag }}
+        <p class="text-sm text-red-500">{{ form.target_all_users.errors|striptags }}</p>
+      </div>
+
+      <div class="flex gap-4">
+        <div class="w-1/2">
+          {{ form.target_country.label_tag }}
+          {{ form.target_country|add_class:"input-field w-full" }}
+          <p class="text-sm text-red-500">{{ form.target_country.errors|striptags }}</p>
+        </div>
+        <div class="w-1/2">
+          {{ form.target_city.label_tag }}
+          {{ form.target_city|add_class:"input-field w-full" }}
+          <p class="text-sm text-red-500">{{ form.target_city.errors|striptags }}</p>
+        </div>
+      </div>
+
+      <div>
+        {{ form.media_type.label_tag }}
+        {{ form.media_type|add_class:"input-field w-full" }}
+        <p class="text-sm text-red-500">{{ form.media_type.errors|striptags }}</p>
+      </div>
+
+      <div>
+        {{ form.media_file.label_tag }}
+        {{ form.media_file|add_class:"input-field w-full" }}
+        <p class="text-sm text-red-500">{{ form.media_file.errors|striptags }}</p>
+        <div id="mediaPreview" class="mt-4"></div>
+      </div>
+
+      <div>
+        {{ form.thumbnail_url.label_tag }}
+        {{ form.thumbnail_url|add_class:"input-field w-full" }}
+        <p class="text-sm text-red-500">{{ form.thumbnail_url.errors|striptags }}</p>
+      </div>
+
+      <div>
+        <label class="font-semibold">Ajouter des images à la galerie</label>
+        <input type="file" name="gallery_images" id="galleryImagesInput" multiple class="input-field w-full">
+        <div id="galleryPreview" class="flex flex-wrap gap-2 mt-2"></div>
+      </div>
+
+      <button type="submit" class="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition duration-300">
+        Créer la publicité
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- SCRIPT JS -->
+<script>
+  // Recherche dynamique de store
+  document.addEventListener('DOMContentLoaded', function () {
+    const input = document.getElementById('storeSearchInput');
+    const hiddenInput = document.getElementById('selectedStoreId');
+    const suggestionsBox = document.getElementById('storeSuggestions');
+
+    input.addEventListener('input', function () {
+      const query = this.value.trim();
+      if (query.length < 2) {
+        suggestionsBox.classList.add('hidden');
+        return;
+      }
+
+      fetch(`/api/search-stores/?q=${query}`)
+        .then(response => response.json())
+        .then(data => {
+          suggestionsBox.innerHTML = '';
+          if (data.length === 0) {
+            suggestionsBox.classList.add('hidden');
+            return;
+          }
+
+          data.forEach(store => {
+            const div = document.createElement('div');
+            div.textContent = store.name;
+            div.classList.add('p-2', 'cursor-pointer', 'hover:bg-gray-100');
+            div.onclick = function () {
+              input.value = store.name;
+              hiddenInput.value = store.id;
+              suggestionsBox.innerHTML = '';
+              suggestionsBox.classList.add('hidden');
+            };
+            suggestionsBox.appendChild(div);
+          });
+
+          suggestionsBox.classList.remove('hidden');
+        });
+    });
+
+    document.addEventListener('click', function (e) {
+      if (!suggestionsBox.contains(e.target) && e.target !== input) {
+        suggestionsBox.classList.add('hidden');
+      }
+    });
+  });
+
+  // Prévisualisation média principal
+  document.addEventListener('DOMContentLoaded', function () {
+    const mediaInput = document.getElementById("id_media_file");
+    const previewContainer = document.getElementById("mediaPreview");
+
+    mediaInput?.addEventListener('change', function () {
+      const file = this.files[0];
+      previewContainer.innerHTML = "";
+
+      if (!file) return;
+
+      const fileUrl = URL.createObjectURL(file);
+
+      if (file.type.startsWith("image/")) {
+        const img = document.createElement("img");
+        img.src = fileUrl;
+        img.classList.add("w-full", "max-h-64", "object-contain", "rounded", "shadow");
+        previewContainer.appendChild(img);
+      } else if (file.type.startsWith("video/")) {
+        const video = document.createElement("video");
+        video.src = fileUrl;
+        video.controls = true;
+        video.classList.add("w-full", "max-h-64", "rounded", "shadow");
+        previewContainer.appendChild(video);
+      } else {
+        previewContainer.innerHTML = "<p class='text-red-600 text-sm'>Fichier non supporté.</p>";
+      }
+    });
+  });
+
+  // Prévisualisation images galerie
+  document.addEventListener('DOMContentLoaded', function () {
+    const galleryInput = document.getElementById("galleryImagesInput");
+    const galleryPreview = document.getElementById("galleryPreview");
+
+    galleryInput?.addEventListener('change', function () {
+      galleryPreview.innerHTML = "";
+      Array.from(this.files).forEach(file => {
+        if (!file.type.startsWith("image/")) return;
+        const img = document.createElement("img");
+        img.src = URL.createObjectURL(file);
+        img.classList.add("w-20", "h-20", "object-cover", "rounded", "shadow");
+        galleryPreview.appendChild(img);
+      });
+    });
+  });
+</script>
+{% endblock %}

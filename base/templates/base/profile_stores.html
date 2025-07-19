@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto mt-8 text-center">
+    <div class="flex flex-col sm:flex-row justify-center gap-4">
+        <!-- Lien vers la création d'une catégorie -->
+        <a href="{% url 'create_store' %}" 
+           class="w-auto px-4 py-2 sm:px-6 sm:py-3 text-white bg-green-600 hover:bg-green-800 rounded-md transition duration-300 mx-auto sm:mx-0">
+           Ajouter un store (reserver au gerant de store)
+        </a>
+    </div>
+</div>
+
+<section class="mt-12 pb-12 px-4 sm:px-6 lg:px-12">
+    
+    <h2 class="text-3xl font-bold text-center mb-8">Vos Stores</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        {% for store in stores %}
+        <div class="transform transition-transform hover:scale-105 hover:shadow-lg duration-300 mb-6">  <!-- Margin bottom ajouté ici -->
+            <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-2xl">
+                {% if store.thumbnail %}
+                <img class="w-full h-48 object-cover rounded-t-lg" src="{{ store.thumbnail.url }}" alt="{{ store.name }}">
+                {% else %}
+                <img class="w-full h-48 object-cover rounded-t-lg" src="{% static 'img/default-store.jpg' %}" alt="Default Store Image">
+                {% endif %}
+                
+                <!-- Contenu de la carte -->
+                <h3 class="text-xl font-semibold text-gray-800 mt-4">{{ store.name }}</h3>
+                <p class="text-lg text-gray-600">{{ store.commune }}</p>
+                
+                <!-- Boutons de gestion pour le propriétaire -->
+                {% if store.owner == user %}
+                <div class="mt-4 flex space-x-4">
+                    <!-- Bouton Edit -->
+                    <a href="{% url 'edit_store' store.slug %}" class="inline-block px-6 py-3 text-white bg-yellow-500 hover:bg-yellow-600 rounded-md font-semibold transition duration-300">
+                        Modifier
+                    </a>
+    
+                    <!-- Bouton Delete -->
+<a href="{% url 'delete_store' store.slug %}" class="inline-block px-6 py-3 text-white bg-red-600 hover:bg-red-700 rounded-md font-semibold transition duration-300 delete-store-btn">
+    Supprimer
+</a>
+                </div>
+                {% endif %}
+                
+                <!-- Bouton Voir Plus -->
+                <div class="mt-4">
+                    <a href="{% url 'store_detail' store.slug %}" class="inline-block px-6 py-3 text-white bg-blue-600 hover:bg-blue-800 rounded-md font-semibold transition duration-300">
+                        Voir plus
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <p class="text-center text-lg text-gray-600">Vous n'avez pas encore de stores.</p>
+        {% endfor %}
+    </div>
+    
+</section>
+
+
+<!-- Modal de confirmation -->
+<div id="deleteModal" class="fixed inset-0 z-50 hidden bg-gray-900 bg-opacity-50 flex justify-center items-center">
+    <div class="bg-white p-8 rounded-lg shadow-xl max-w-sm w-full">
+        <h2 class="text-2xl font-semibold text-center mb-4">Êtes-vous sûr de vouloir supprimer ce store ?</h2>
+        <div class="flex justify-center space-x-4">
+            <!-- Bouton Annuler -->
+            <button id="cancelDelete" class="px-6 py-2 text-white bg-gray-500 rounded-md hover:bg-gray-600">Annuler</button>
+            <!-- Bouton Confirmer -->
+            <a id="confirmDelete" href="#" class="px-6 py-2 text-white bg-red-600 rounded-md hover:bg-red-700">Confirmer</a>
+        </div>
+    </div>
+</div>
+<script>
+    // Récupérer l'élément du modal et les boutons
+    const deleteModal = document.getElementById('deleteModal');
+    const confirmDelete = document.getElementById('confirmDelete');
+    const cancelDelete = document.getElementById('cancelDelete');
+    
+    // Récupérer tous les boutons "Supprimer" (les liens)
+    const deleteButtons = document.querySelectorAll('.delete-store-btn');
+    
+    let deleteUrl = ""; // Variable pour stocker l'URL de suppression
+    
+    // Lorsque le bouton de suppression est cliqué, afficher le modal et enregistrer l'URL de suppression
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function(event) {
+            event.preventDefault(); // Empêche la redirection immédiate
+            deleteUrl = button.getAttribute('href'); // Enregistre l'URL du store à supprimer
+            deleteModal.classList.remove('hidden'); // Affiche le modal
+        });
+    });
+    
+    // Si l'utilisateur clique sur "Annuler", masquer le modal
+    cancelDelete.addEventListener('click', function() {
+        deleteModal.classList.add('hidden'); // Masquer le modal
+    });
+    
+    // Si l'utilisateur clique sur "Confirmer", rediriger vers l'URL de suppression
+    confirmDelete.addEventListener('click', function() {
+        window.location.href = deleteUrl; // Rediriger vers l'URL de suppression
+    });
+</script>
+
+{% endblock %}

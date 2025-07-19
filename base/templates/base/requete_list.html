@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<section id="recherche-section" class="py-16 bg-white">
+    <div class="max-w-6xl mx-auto text-center">
+        <h2 class="text-3xl font-semibold mb-8">
+            Consultez les demandes de clients à la recherche rapide d’un bien immobilier.
+        </h2>
+
+        <button id="toggle-form" class="sm:hidden py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4">
+            Ouvrir le formulaire de recherche
+        </button>
+
+        <form id="search-form" method="GET" action="#biens-immobiliers" class="space-y-4 max-w-5xl mx-auto hidden sm:block">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label for="country" class="block text-sm font-medium text-gray-700">Pays</label>
+                    <select name="country" id="country" class="w-full px-4 py-2 border rounded-lg">
+                        <option value="">Tous les pays</option>
+                        {% for c in countries %}
+                            <option value="{{ c.id }}" {% if c.id|stringformat:"s" == country %}selected{% endif %}>{{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label for="city" class="block text-sm font-medium text-gray-700">Ville</label>
+                    <select name="city" id="city" class="w-full px-4 py-2 border rounded-lg">
+                        <option value="">Toutes les villes</option>
+                        {% for v in cities %}
+                            <option value="{{ v.id }}" {% if v.id|stringformat:"s" == city %}selected{% endif %}>{{ v.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label for="commune" class="block text-sm font-medium text-gray-700">Commune</label>
+                    <input type="text" name="commune" id="commune" value="{{ commune }}" placeholder="Ex: Katuba" class="w-full px-4 py-2 border rounded-lg">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                <div>
+                    <label for="type_bien" class="block text-sm font-medium text-gray-700">Type de Bien</label>
+                    <select name="type_bien" id="type_bien" class="w-full px-4 py-2 border rounded-lg">
+                        <option value="">Tous les types</option>
+                        {% for value, label in types_bien %}
+                            <option value="{{ value }}" {% if value == type_bien %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                    <input type="text" name="description" id="description" value="{{ description }}" class="w-full px-4 py-2 border rounded-lg" placeholder="Mots clés dans la description">
+                </div>
+            </div>
+
+            <div class="mt-6">
+                <button type="submit" class="w-full sm:w-auto py-2 px-6 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    Rechercher
+                </button>
+            </div>
+        </form>
+    </div>
+</section>
+
+
+<!-- Résultats -->
+<section id="biens-immobiliers" class="py-16 px-8 bg-gray-100">
+    <div class="max-w-6xl mx-auto text-center">
+        <h2 class="text-3xl font-semibold mb-8">Requêtes de clients</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for requete in requetes %}
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300">
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Recherche : {{ requete.type_bien }}</h3>
+                    <p class="text-sm text-gray-500 mb-2">{{ requete.commune }}</p>
+                    <p class="text-gray-600 mb-4">{{ requete.description|truncatewords:15 }}</p>
+                    <div class="mt-4">
+                        <a href="{% url 'requete_detail' requete.id %}" class="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            Voir les détails
+                        </a>
+                    </div>
+                </div>
+            {% empty %}
+                <p>Aucune requête pour le moment.</p>
+            {% endfor %}
+        </div>
+
+        {% if requetes.has_other_pages %}
+        <div class="mt-8">
+            <nav aria-label="Pagination" class="flex justify-center">
+                <ul class="flex space-x-4">
+                    {% if requetes.has_previous %}
+                    <li><a href="?page=1{{ request.GET.urlencode|cut:'page=' }}" class="px-4 py-2 bg-blue-600 text-white rounded-lg">&laquo; Première</a></li>
+                    <li><a href="?page={{ requetes.previous_page_number }}{{ request.GET.urlencode|cut:'page=' }}" class="px-4 py-2 bg-blue-600 text-white rounded-lg">Précédente</a></li>
+                    {% endif %}
+
+                    {% for page in requetes.paginator.page_range %}
+                        {% if page == requetes.number %}
+                            <li><a href="#" class="px-4 py-2 bg-blue-600 text-white rounded-lg">{{ page }}</a></li>
+                        {% else %}
+                            <li><a href="?page={{ page }}{{ request.GET.urlencode|cut:'page=' }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg">{{ page }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if requetes.has_next %}
+                    <li><a href="?page={{ requetes.next_page_number }}{{ request.GET.urlencode|cut:'page=' }}" class="px-4 py-2 bg-blue-600 text-white rounded-lg">Suivante</a></li>
+                    <li><a href="?page={{ requetes.paginator.num_pages }}{{ request.GET.urlencode|cut:'page=' }}" class="px-4 py-2 bg-blue-600 text-white rounded-lg">Dernière &raquo;</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% if ad_popup and ad_popup.is_active %}
+<div id="popupAd" class="modal show d-block" tabindex="-1"
+     style="background: rgba(0,0,0,0.5); position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; display: flex; justify-content: center;
+            align-items: center; z-index: 9999;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 90%; width: auto;">
+        <div class="modal-content position-relative">
+            <button type="button" class="btn-close" onclick="closePopup()"
+                    style="border: none; background: none; font-size: 30px;
+                           color: #fff; position: absolute; top: 20px; right: 20px;">&times;
+            </button>
+            <div class="modal-body text-center" style="display: flex; flex-direction: column;
+                                                        justify-content: space-between; max-height: 80vh;">
+
+                {% if ad_popup.media_type == "image" %}
+                    <img src="{{ ad_popup.file.url }}" class="img-fluid"
+                         style="max-height: 70vh; width: auto; margin-bottom: 20px;" alt="Publicité">
+                {% else %}
+                    <video autoplay controls class="img-fluid"
+                           style="max-height: 70vh; width: auto; margin-bottom: 20px;">
+                        <source src="{{ ad_popup.file.url }}" type="video/mp4">
+                    </video>
+                {% endif %}
+
+                <div class="mt-4 d-flex flex-wrap justify-content-center gap-3">
+
+                    {% if ad_popup.url %}
+                        <a href="{{ ad_popup.url }}" target="_blank"
+                           class="btn btn-danger"
+                           style="font-size: 18px; padding: 10px 20px; background-color: #ff5733;
+                                  border: none; color: white; border-radius: 5px;
+                                  transition: background-color 0.3s ease;">
+                            🔗 Voir l'annonce
+                        </a>
+                    {% endif %}
+
+                    {% if ad_popup.store %}
+                        <a href="{% url 'store_detail' ad_popup.store.slug %}"
+                           class="btn btn-primary"
+                           style="font-size: 18px; padding: 10px 20px; background-color: #007bff;
+                                  border: none; color: white; border-radius: 5px;
+                                  transition: background-color 0.3s ease;">
+                            🏬 Visiter le store
+                        </a>
+                    {% endif %}
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+<script>
+    function closePopup() {
+        const popup = document.getElementById("popupAd");
+    
+        // Stopper la vidéo s'il y en a une
+        const video = popup.querySelector("video");
+        if (video) {
+            video.pause();
+            video.currentTime = 0; // optionnel : remet la vidéo au début
+        }
+    
+        // Cacher le popup
+        popup.style.display = "none";
+    }
+</script>
+<script>
+    document.getElementById("toggle-form").addEventListener("click", function() {
+        const form = document.getElementById("search-form");
+        form.classList.toggle("hidden");
+    });
+</script>
+{% endblock %}

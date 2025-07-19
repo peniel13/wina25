@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mx-auto mt-8">
+  <h2 class="text-2xl font-bold text-center mb-4">Créer un Produit pour {{ store.name }}</h2>
+
+  {% if messages %}
+    <div class="mb-4">
+      {% for message in messages %}
+        <div class="
+            {% if message.tags == 'error' %}
+              bg-red-100 text-red-700
+            {% else %}
+              bg-green-100 text-green-700
+            {% endif %}
+            p-4 rounded-lg mb-2">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div class="grid grid-cols-1 gap-6">
+      <!-- Nom -->
+      <div class="mb-4">
+        {{ form.name.label_tag }}{{ form.name }}
+        {% if form.name.errors %}
+          <p class="text-red-500 text-sm">{{ form.name.errors.0 }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Description -->
+      <div class="mb-4">
+        {{ form.description.label_tag }}{{ form.description }}
+        {% if form.description.errors %}
+          <p class="text-red-500 text-sm">{{ form.description.errors.0 }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Prix -->
+      <div class="mb-4">
+        {{ form.price.label_tag }}{{ form.price }}
+        {% if form.price.errors %}
+          <p class="text-red-500 text-sm">{{ form.price.errors.0 }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Stock -->
+      <div class="mb-4">
+        {{ form.stock.label_tag }}{{ form.stock }}
+        {% if form.stock.errors %}
+          <p class="text-red-500 text-sm">{{ form.stock.errors.0 }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Image principale -->
+      <div class="mb-4">
+        {{ form.image.label_tag }}{{ form.image }}
+        {% if form.image.errors %}
+          <p class="text-red-500 text-sm">{{ form.image.errors.0 }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Type de produit -->
+      <div class="mb-4">
+        {{ form.type_product.label_tag }}{{ form.type_product }}
+        {% if form.type_product.errors %}
+          <p class="text-red-500 text-sm">{{ form.type_product.errors.0 }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Galerie d’images -->
+      <div class="mb-4">
+        <label class="block text-lg font-medium mb-2">Sélectionnez des images pour la galerie :</label>
+        <input required name="image_galerie" type="file" multiple class="form-control-file bg-gray-200 border border-gray-300 rounded-md p-2">
+        <p class="text-gray-500 text-sm mt-1">Vous pouvez sélectionner plusieurs fichiers.</p>
+      </div>
+
+      <!-- ✅ Vidéo (optionnelle) -->
+      <div class="mb-4">
+        <label for="{{ form.video.id_for_label }}" class="block text-lg font-medium mb-2">
+          Vidéo du produit (facultative, max. 1 min)
+        </label>
+        {{ form.video }}
+        {% if form.video.help_text %}
+          <p class="text-sm text-gray-500 mt-1">{{ form.video.help_text }}</p>
+        {% endif %}
+        {% if form.video.errors %}
+          <p class="text-red-500 text-sm">{{ form.video.errors.0 }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <button type="submit" class="bg-blue-500 text-white px-6 py-3 rounded hover:bg-blue-700 mt-4">
+      Créer le Produit
+    </button>
+  </form>
+</div>
+{% endblock %}
+
+
+
+{% comment %} {% extends 'base.html' %}
+
+{% block content %}
+  <div class="container mx-auto mt-8">
+    <h2 class="text-2xl font-bold text-center mb-4">Créer un Produit pour {{ store.name }}</h2>
+    
+    {% if messages %}
+      <div class="mb-4">
+        {% for message in messages %}
+          <div class="bg-green-100 text-green-700 p-4 rounded-lg mb-2">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    
+    <form method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+      
+      <div class="grid grid-cols-1 gap-6">
+        <div class="mb-4">
+          {{ form.name }}
+        </div>
+
+        <div class="mb-4">
+          {{ form.description }}
+        </div>
+
+        <div class="mb-4">
+          {{ form.price }}
+        </div>
+
+        <div class="mb-4">
+          {{ form.stock }}
+        </div>
+
+        <div class="mb-4">
+          {{ form.image }}
+        </div>
+
+        <!-- ✅ Nouveau champ : Type de produit (select) -->
+        <div class="mb-4">
+          <label for="{{ form.type_product.id_for_label }}" class="block text-lg font-medium mb-2">Type de produit :</label>
+          {{ form.type_product }}
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-lg font-medium mb-2">Sélectionnez des images pour la galerie :</label>
+          <input required name="image_galerie" type="file" multiple class="form-control-file bg-gray-200 border border-gray-300 rounded-md p-2">
+          <p class="text-gray-500 text-sm mt-1">Vous pouvez sélectionner plusieurs fichiers.</p>
+        </div>
+      </div>
+
+      <button type="submit" class="bg-blue-500 text-white px-6 py-3 rounded hover:bg-blue-700 mt-4">
+        Créer le Produit
+      </button>
+    </form>
+  </div>
+{% endblock %} {% endcomment %}

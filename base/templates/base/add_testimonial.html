@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+{% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                    <div class="text-green-600 text-center">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+<section class="container mx-auto py-16">
+    <h2 class="text-3xl font-bold text-center mb-8">Laissez un témoignage pour {{ store.name }}</h2>
+    
+    <form method="POST" class="w-full max-w-lg mx-auto">
+        {% csrf_token %}
+        
+        <div class="space-y-6">
+            <div>
+                <label for="id_content" class="block text-sm font-medium text-gray-700">Votre témoignage</label>
+                {{ form.content }}
+                {% if form.content.errors %}
+                    <div class="text-red-500 text-sm mt-2">
+                        {% for error in form.content.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div>
+                <label for="id_rating" class="block text-sm font-medium text-gray-700">Votre note</label>
+                {{ form.rating }}
+                {% if form.rating.errors %}
+                    <div class="text-red-500 text-sm mt-2">
+                        {% for error in form.rating.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <button type="submit" class="mt-6 px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-300">
+            Soumettre le témoignage
+        </button>
+    </form>
+</section>
+{% endblock %}

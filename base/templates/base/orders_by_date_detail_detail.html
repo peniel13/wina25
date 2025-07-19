@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2 class="text-3xl font-bold text-center mt-8 mb-8">Détails des Commandes de {{ client_username }} (Téléphone : {{ user_phone }}) - {{ order_date }}</h2>
+<!-- Affichage du montant global -->
+<div class="text-center mb-4 text-xl font-semibold">
+    <p>Total Montant Global : {{ total_global_amount|floatformat:2 }} {{ store.country.devise_info.devise }}</p>
+    <p><strong>Nombre total de commandes :</strong> {{ total_orders }} pour le client {{ client_username }}</p>  <!-- Affichage du nombre total de commandes -->
+</div>
+{% if order_data %}
+    <div class="overflow-x-auto">
+        <table class="min-w-full table-auto bg-white shadow-lg rounded-lg">
+            <thead class="bg-blue-600 text-white">
+                <tr>
+                    <th class="px-6 py-3 text-left">ID de la commande</th>
+                    {% comment %} <th class="px-6 py-3 text-left">Articles Commandés</th>  <!-- Modification ici --> {% endcomment %}
+                    <th class="px-6 py-3 text-left">Nombre d'articles</th>
+                    <th class="px-6 py-3 text-left">Montant Total</th>
+                    <th class="px-6 py-3 text-left">Actions</th>  <!-- Ajout de la colonne Actions -->
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in order_data %}
+                    <tr class="border-t">
+                        <td class="px-6 py-4">{{ order.order_id }}</td>
+                        {% comment %} <td class="px-6 py-4">{{ order.item_names }}</td>  <!-- Affichage des noms des articles --> {% endcomment %}
+                        <td class="px-6 py-4">{{ order.total_items_in_order }}</td>
+                        <td class="px-6 py-4">{{ order.total_order_amount|floatformat:2 }} {{ store.country.devise_info.devise }}</td>
+                        <td class="px-6 py-4">
+                            <a href="{% url 'generer_word' slug=store.slug order_date=order_date client_username=client_username %}?order_id={{ order.order_id }}" 
+                               class="text-blue-600 hover:text-blue-800">
+                               Télécharger le fichier Word
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <p class="text-center text-lg text-gray-600">Aucune commande trouvée pour ce client.</p>
+{% endif %}
+{% endblock %}

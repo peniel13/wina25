@@ -1,0 +1,536 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+  <div class="container mx-auto mt-8">
+
+    <div class="bg-white p-8 rounded-lg shadow-lg">
+      <div class="flex items-center justify-between mb-6">
+    
+        {% if product.store.country.flag %}
+          <div class="flex items-center ml-4">
+            <img src="{{ product.store.country.flag.url }}" alt="{{ product.store.country.name }}" class="w-6 h-4 object-cover mr-2 rounded-sm">
+            <span class="text-sm text-gray-700">{{ product.store.country.name }}</span>
+          </div>
+        {% endif %}
+      </div>
+      
+      <h2 class="text-3xl font-semibold mb-6">{{ product.name }} - à {{ product.price_with_commission }} {{ currency }}</h2>
+      
+<!-- Affichage de la moyenne des notes -->
+<div class="flex flex-col items-center my-4">
+  <h3 class="text-xl font-semibold mb-2">Note du produit</h3> <!-- Titre de la note -->
+  <div class="flex items-center justify-center my-2">
+    <div class="flex text-yellow-500 text-sm">
+      {% with rating=product.average_rating|default:0 %}
+        {% for i in "12345" %}
+          {% if rating >= forloop.counter %}
+            <i class="bx bxs-star text-yellow-400 text-xs"></i>
+          {% elif rating >= forloop.counter0|add:"0.5" %}
+            <i class="bx bxs-star-half text-yellow-400 text-xs"></i>
+          {% else %}
+            <i class="bx bx-star text-yellow-400 text-xs"></i>
+          {% endif %}
+        {% endfor %}
+      {% endwith %}
+    </div>
+  </div>
+  <p><strong>Total d'unités vendues :</strong> {{ product.total_purchased }}</p>
+  <p><strong>Nombre d'acheteurs uniques :</strong> {{ product.total_buyers }}</p>
+
+</div>
+      <!-- Affichage du nom du store et du lien vers le store -->
+      <div class="mb-4">
+        <p class="text-gray-600"><strong>{{ product.store.typestore }} : </strong>
+          <a href="{% url 'store_detail' product.store.slug %}" class="text-blue-500 font-semibold hover:underline">{{ product.store.name }}</a>
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div>
+          {% if product.video %}
+  <video 
+    autoplay 
+    muted 
+    loop 
+    playsinline 
+    class="w-full h-80 object-cover rounded-lg mb-4 cursor-pointer"
+    onclick="this.muted = !this.muted; this.controls = true;"
+  >
+    <source src="{{ product.video.url }}" type="video/mp4">
+    Votre navigateur ne supporte pas la lecture vidéo.
+  </video>
+{% elif product.image %}
+  <img src="{{ product.image.url }}" alt="Image principale" class="w-full h-80 object-cover rounded-lg mb-4">
+{% else %}
+  <div class="w-full h-80 flex items-center justify-center bg-gray-200 rounded-lg mb-4 text-gray-600">
+    Aucune image ou vidéo disponible
+  </div>
+{% endif %}
+
+        </div>
+      
+        <div>
+          <a href="{% url 'buyers_of_product' product.id %}" class="inline-block mt-3 px-4 py-2 bg-black text-white rounded hover:bg-gray-900 transition">
+            Voir les acheteurs
+          </a>
+        
+          <p class="text-gray-600"><strong>Description : </strong>{{ product.description }}</p>
+          <p class="text-gray-600"><strong>Catégorie : </strong>{{ product.category }}</p>
+          <p class="text-gray-600"><strong>Type : </strong>{{ product.type_product }}</p>
+          <p class="text-gray-600"><strong>Stock : </strong>
+            {% if product.stock > 0 %}
+              {{ product.stock }} en stock
+            {% else %}
+              Rupture de stock
+            {% endif %}
+          </p>
+        </div>
+        
+        <form id="add-to-cart-form-{{ product.id }}" action="{% url 'add_to_cart_ajax' product.id %}" method="POST">
+          {% csrf_token %}
+          <button type="submit" class="px-6 py-2 bg-black text-white rounded-full text-lg hover:bg-gray-900 transition duration-300">
+            Ajouter au panier
+          </button>
+        </form>
+        
+        <!-- Bouton "Contacter pour ce produit" -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mt-4">
+          <a href="{% url 'contact_product_wina' product.id %}"
+             class="inline-block px-6 py-3 bg-black text-white rounded-md hover:bg-gray-900 transition duration-300">
+              Contacter pour ce produit
+          </a>
+        
+          {% if product.store.owner == user %}
+            <a href="{% url 'contact_product_list' product.id %}"
+               class="inline-block px-6 py-3 bg-black text-white rounded-md hover:bg-gray-900 transition duration-300 mt-2 sm:mt-0">
+                📨 Voir les contacts pour ce produit
+            </a>
+          {% endif %}
+        </div>
+        
+    
+      
+    </div>
+  </div>
+
+  <!-- Affichage des images de la galerie dans le template -->
+  <h2 class="text-2xl font-semibold text-center mt-4 mb-6">Galerie d'images du produit</h2>
+
+
+  <!-- Conteneur de la galerie avec padding -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-6 p-4">
+      {% if product.photos.all.count == 0 %}
+          <p class="col-span-4 text-center text-gray-500">Aucune photo dans la galerie</p>
+      {% else %}
+          {% for photo in product.photos.all %}
+              <div class="photo">
+                  <img src="{{ photo.image.url }}" alt="Image de la galerie" class="rounded-lg cursor-pointer" onclick="openGallery('{{ photo.image.url }}')">
+              </div>
+          {% endfor %}
+      {% endif %}
+  </div>
+  
+  <!-- Modal pour afficher l'image en grand -->
+<!-- Modal pour afficher l'image en grand -->
+<div id="imageModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden">
+    <span class="absolute top-4 right-4 text-white text-3xl cursor-pointer" onclick="closeGallery()">×</span>
+    <img id="modalImage" class="max-w-full max-h-screen p-4">
+    
+    <!-- Bouton Suivant (flèche droite) -->
+    <button class="absolute bottom-4 right-1/4 transform translate-x-1/4 text-white px-4 py-2 bg-blue-500 rounded" onclick="nextImage()"> > </button>
+    
+    <!-- Bouton Précédent (flèche gauche) -->
+    <button class="absolute bottom-4 left-1/4 transform -translate-x-1/4 text-white px-4 py-2 bg-blue-500 rounded" onclick="previousImage()"> < </button>
+</div>
+
+
+  <section id="temoignages" class="py-16 bg-gray-50">
+    <div class="max-w-6xl mx-auto px-4 text-center">
+      
+      {% if user.is_authenticated %}
+        <a href="{% url 'add_testimonialproduct_wina' product.id %}" class="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-800 transition duration-300 mb-6 inline-block">
+          Laisser un témoignage
+        </a>
+      {% else %}
+        <p class="text-center text-gray-600 mb-6">Veuillez vous connecter pour laisser un témoignage.</p>
+      {% endif %}
+  
+      <h2 class="text-3xl font-bold mb-4">Témoignages du produit</h2>
+      <h3 class="text-2xl font-semibold mb-10">{{ product.name }}</h3>
+  
+      {% if testimonials %}
+        <p class="text-gray-600 mb-10 text-sm">{{ testimonials|length }} témoignage{{ testimonials|length|pluralize }} pour ce produit</p>
+  
+        <!-- Carrousel Glide -->
+        <div class="relative w-full glide-03">
+          <div class="overflow-hidden" data-glide-el="track">
+            <ul class="flex p-0 m-0 gap-6">
+              {% for testimonial in testimonials %}
+              <li class="min-w-[250px] md:w-[calc(33.33%-24px)]">
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                  <div class="text-center relative z-10">
+                    {% if testimonial.user.profile_pic %}
+                      <img src="{{ testimonial.user.profile_pic.url }}" alt="{{ testimonial.user.username }}" class="w-20 h-20 rounded-full mx-auto mb-4">
+                    {% else %}
+                      <img src="https://bootdey.com/img/Content/avatar/avatar7.png" alt="Default" class="w-20 h-20 rounded-full mx-auto mb-4">
+                    {% endif %}
+                    <h3 class="text-lg font-semibold">{{ testimonial.user.username }}</h3>
+                    <small class="text-blue-500 block mb-2">{{ testimonial.rating }}/10</small>
+  
+                    <div class="text-yellow-500 mb-4 text-xl">
+                      {% for i in range_10 %}
+                        {% if i <= testimonial.rating %}
+                          &#9733;
+                        {% else %}
+                          &#9734;
+                        {% endif %}
+                      {% endfor %}
+                    </div>
+  
+                    <div class="text-gray-700 overflow-y-auto max-h-20">
+                      <p>{{ testimonial.content }}</p>
+                    </div>
+                    <button 
+                      class="mt-4 text-blue-600 hover:underline text-sm font-medium"
+                      onclick="openModal('{{ testimonial.id }}')">
+                      Voir plus
+                    </button>
+                  </div>
+                </div>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+  
+          <!-- Flèches de navigation -->
+          <div class="absolute top-1/2 left-0 right-0 flex justify-between items-center px-4 -translate-y-1/2" data-glide-el="controls">
+            <button data-glide-dir="<" class="w-10 h-10 bg-white rounded-full shadow hover:bg-gray-200 transition">&#9664;</button>
+            <button data-glide-dir=">" class="w-10 h-10 bg-white rounded-full shadow hover:bg-gray-200 transition">&#9654;</button>
+          </div>
+        </div>
+      {% else %}
+        <p class="text-gray-600 mt-6">Aucun témoignage pour le moment.</p>
+      {% endif %}
+    </div>
+  </section>
+  
+<!-- Modale -->
+<div id="testimonialModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white p-6 rounded-xl max-w-xl w-full relative">
+      <button onclick="closeModal()" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl">&times;</button>
+      <h3 id="modalUsername" class="text-lg font-bold mb-2"></h3>
+      <p id="modalRating" class="text-blue-500 mb-4 text-sm"></p>
+      <div id="modalContent" class="text-gray-800 text-left"></div>
+    </div>
+  </div>
+    
+  
+
+<!-- Affichage des produits de la même catégorie -->
+<section id="produits-categorie" class="py-16 bg-gray-100">
+    <h2 class="text-3xl font-semibold text-center mb-8">Produits similaires</h2>
+    <div class="flex flex-wrap gap-6 justify-center">
+        {% for product in related_products %}
+            <div class="flex-shrink-0 border-2 border-secondary bg-slate-100 text-black rounded-xl mb-6 cursor-pointer hover:scale-95 hover:bg-slate-200 transition duration-200 ease-linear w-64 h-full flex flex-col">
+                    <!-- Drapeau du pays -->
+{% if product.store.country.flag %}
+<div class="flex justify-center items-center mb-2">
+  <img src="{{ product.store.country.flag.url }}" alt="{{ product.store.country.name }}" class="w-6 h-4 object-cover mr-2 rounded-sm">
+  <span class="text-sm text-gray-700">{{ product.store.country.name }}</span>
+</div>
+{% endif %}  
+              
+<div>
+  {% if product.video %}
+    <video autoplay muted loop playsinline
+           class="rounded-t-xl w-full h-40 object-cover cursor-pointer"
+           onclick="this.muted = !this.muted; this.controls = true;">
+      <source src="{{ product.video.url }}" type="video/mp4">
+      Votre navigateur ne supporte pas la lecture vidéo.
+    </video>
+  {% elif product.image %}
+    <img src="{{ product.image.url }}" alt="{{ product.name }}"
+         class="rounded-t-xl w-full h-40 object-cover"
+         onclick="showImagePopup('{{ product.image.url }}')" />
+  {% else %}
+    <div class="rounded-t-xl w-full h-40 bg-gray-300 flex items-center justify-center text-gray-600 text-sm">
+      Pas de média
+    </div>
+  {% endif %}
+</div>
+                <div class="flex flex-col justify-between flex-grow p-4">
+                    <!-- Bouton "Ajouter au panier" -->
+                    <form id="add-to-cart-form-{{ product.id }}" action="" method="POST">
+                        {% csrf_token %}
+                        <button type="submit" class="px-6 py-2 bg-blue-500 text-white rounded-full text-lg hover:bg-blue-600 transition duration-300">
+                            Ajouter au panier
+                        </button>
+                    </form>
+
+                    <!-- Nom du produit et prix -->
+                    <div class="flex flex-col items-center my-4">
+                        <h1 class="font-semibold text-xl text-primary pt-2 text-center">{{ product.name }}</h1>
+                        <h2 class="font-medium text-lg text-center">{{ product.price }} {{ currency }}</h2>
+                    </div>
+
+                    <!-- Bouton "Voir les détails" -->
+                    <a href="{% url 'product_detail_wina' product.id %}" class="px-6 py-2 bg-blue-500 text-white rounded-full text-lg hover:bg-blue-600 transition duration-300">
+                        Voir les détails
+                    </a>
+                </div>
+            </div>
+        {% empty %}
+            <p>Aucun produit similaire trouvé.</p>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination des produits -->
+     <!-- Pagination des produits -->
+{% if related_products.has_other_pages %}
+<div class="mt-8">
+    <nav aria-label="Pagination" class="flex justify-center">
+        <ul class="flex space-x-4">
+
+            {% if related_products.has_previous %}
+            <li>
+                <a href="?page=1#produits-categorie" 
+                   class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    &laquo; Première
+                </a>
+            </li>
+            <li>
+                <a href="?page={{ related_products.previous_page_number }}#produits-categorie" 
+                   class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <
+                </a>
+            </li>
+            {% endif %}
+
+            <!-- Page actuelle -->
+            <li>
+                <span class="px-4 py-2 bg-blue-600 text-white rounded-lg">
+                    {{ related_products.number }}
+                </span>
+            </li>
+
+            {% if related_products.has_next %}
+            <li>
+                <a href="?page={{ related_products.next_page_number }}#produits-categorie" 
+                   class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    >
+                </a>
+            </li>
+            <li>
+                <a href="?page={{ related_products.paginator.num_pages }}#produits-categorie" 
+                   class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    Dernière &raquo;
+                </a>
+            </li>
+            {% endif %}
+
+        </ul>
+    </nav>
+</div>
+{% endif %}
+
+     
+        </div>
+    
+</section>
+
+
+</section>  
+<section id="favorite_stores" class="pt-4 pb-10 bg-gray-100">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <h2 class="text-3xl font-semibold mt-6 mb-6 text-center">Stores favoris</h2>
+
+
+    <div class="relative w-full glide-01">
+      <!-- Glide Track -->
+      <div class="overflow-hidden" data-glide-el="track">
+        <ul class="flex gap-6">
+          {% for featured in featured_stores %}
+            {% with store=featured.store %}
+              <li class="min-w-[250px] md:w-[calc(33.33%-24px)]">
+                <a href="{% url 'store_detail' store.slug %}" class="block bg-white rounded-lg shadow-lg hover:shadow-2xl overflow-hidden relative">
+                  <div class="h-40 bg-cover bg-center" style="background-image: url('{% if store.thumbnail %}{{ store.thumbnail.url }}{% else %}{% static 'img/default-thumbnail.jpg' %}{% endif %}')">
+                    {% if store.country.flag %}
+                      <div class="absolute top-2 right-2">
+                        <img src="{{ store.country.flag.url }}" class="w-5 h-5 rounded-full border border-white shadow" alt="{{ store.country.name }}">
+                      </div>
+                    {% endif %}
+                  </div>
+                  <div class="bg-black bg-opacity-60 text-white p-3 text-sm">
+                    <h3 class="font-semibold truncate">{{ store.name }}</h3>
+                    <p class="text-xs text-blue-200 italic">{{ store.typestore.nom }}</p>
+                    <div class="flex items-center space-x-1 text-xs mt-1">
+                      {% with rating=store.average_rating|default:0 %}
+                        {% for i in "12345" %}
+                          {% if rating >= forloop.counter %}
+                            <i class="bx bxs-star text-yellow-400 text-xs"></i>
+                          {% elif rating >= forloop.counter0|add:"0.5" %}
+                            <i class="bx bxs-star-half text-yellow-400 text-xs"></i>
+                          {% else %}
+                            <i class="bx bx-star text-yellow-400 text-xs"></i>
+                          {% endif %}
+                        {% endfor %}
+                      {% endwith %}
+                    </div>
+                    <p class="truncate mt-1">{{ store.adresse }}</p>
+                    <p class="text-xs">{{ store.city.name }}, {{ store.country.name }}</p>
+                  </div>
+                </a>
+              </li>
+            {% endwith %}
+          {% endfor %}
+        </ul>
+      </div>
+
+      <!-- Contrôles -->
+      <div class="absolute left-0 flex items-center justify-between w-full h-0 px-4 top-1/2" data-glide-el="controls">
+        <button class="inline-flex items-center justify-center w-8 h-8 transition duration-300 border rounded-full lg:w-12 lg:h-12 text-slate-700 border-slate-700 hover:text-slate-900 hover:border-slate-900 bg-white/20" data-glide-dir="<">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 15.75L3 12m0 0l3.75-3.75M3 12h18"/>
+          </svg>
+        </button>
+        <button class="inline-flex items-center justify-center w-8 h-8 transition duration-300 border rounded-full lg:w-12 lg:h-12 text-slate-700 border-slate-700 hover:text-slate-900 hover:border-slate-900 bg-white/20" data-glide-dir=">">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12H3"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Glide.js Script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Glide.js/3.0.2/glide.js"></script>
+
+<script>
+  var glide01 = new Glide('.glide-01', {
+      type: 'carousel',
+      focusAt: 'center',
+      perView: 3,
+      autoplay: 3000,
+      animationDuration: 700,
+      gap: 24,
+      classes: {
+          activeNav: '[&>*]:bg-slate-700',
+      },
+      breakpoints: {
+          1024: {
+              perView: 2
+          },
+          640: {
+              perView: 1
+          }
+      },
+  });
+
+  glide01.mount();
+</script>
+<!-- Popup pour afficher l'image agrandie -->
+<div id="imagePopup" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center hidden">
+    <div class="bg-white p-4 rounded-xl max-w-lg">
+        <span class="absolute top-0 right-0 p-3 cursor-pointer text-white bg-red-600 rounded-full text-3xl flex justify-center items-center" onclick="hideImagePopup()">X</span>
+        <img id="popupImage" src="" alt="Image agrandie" class="w-full h-auto rounded-lg">
+    </div>
+</div>
+  <script>
+  // JavaScript pour la lecture des images en galerie
+  
+  let images = [];
+  let currentIndex = 0;
+  
+  // Fonction pour ouvrir la galerie et afficher une image en grand
+  function openGallery(imageUrl) {
+      // Crée un tableau des URL des images
+      images = [{% for photo in product.photos.all %}'{{ photo.image.url }}',{% endfor %}];
+      
+      // Récupère l'index de l'image cliquée
+      currentIndex = images.indexOf(imageUrl);
+      
+      // Met l'URL de l'image dans le modal
+      document.getElementById('modalImage').src = imageUrl;
+      
+      // Affiche le modal
+      document.getElementById('imageModal').classList.remove('hidden');
+  }
+  
+  // Fonction pour fermer la galerie
+  function closeGallery() {
+      document.getElementById('imageModal').classList.add('hidden');
+  }
+  
+  // Fonction pour afficher l'image suivante dans la galerie
+  function nextImage() {
+      currentIndex = (currentIndex + 1) % images.length;
+      document.getElementById('modalImage').src = images[currentIndex];
+  }
+  
+  // Fonction pour afficher l'image précédente dans la galerie
+  function previousImage() {
+      currentIndex = (currentIndex - 1 + images.length) % images.length;
+      document.getElementById('modalImage').src = images[currentIndex];
+  }
+
+   // Afficher le popup avec l'image agrandie
+   function showImagePopup(imageUrl) {
+    document.getElementById('popupImage').src = imageUrl;
+    document.getElementById('imagePopup').classList.remove('hidden');
+}
+
+// Masquer le popup
+function hideImagePopup() {
+    document.getElementById('imagePopup').classList.add('hidden');
+}
+  </script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Glide.js/3.0.2/glide.js"></script>
+
+  <script>
+    // Glide init pour la section produit
+    var glide03 = new Glide('.glide-03', {
+      type: 'carousel',
+      focusAt: 'center',
+      perView: 3,
+      autoplay: 3000,
+      animationDuration: 700,
+      gap: 24,
+      classes: {
+        activeNav: '[&>*]:bg-slate-700',
+      },
+      breakpoints: {
+        1024: { perView: 2 },
+        640: { perView: 1 }
+      },
+    });
+  
+    glide03.mount();
+  </script>
+  
+  <script>
+    const testimonialsData = {
+      {% for t in testimonials %}
+        "{{ t.id }}": {
+          "username": "{{ t.user.username|escapejs }}",
+          "rating": "{{ t.rating }}/10",
+          "content": `{{ t.content|linebreaksbr|escapejs }}`
+        },
+      {% endfor %}
+    };
+  
+    function openModal(id) {
+      const data = testimonialsData[id];
+      document.getElementById("modalUsername").textContent = data.username;
+      document.getElementById("modalRating").textContent = data.rating;
+      document.getElementById("modalContent").innerHTML = data.content;
+      document.getElementById("testimonialModal").classList.remove("hidden");
+    }
+  
+    function closeModal() {
+      document.getElementById("testimonialModal").classList.add("hidden");
+    }
+  </script>
+  
+{% endblock %}

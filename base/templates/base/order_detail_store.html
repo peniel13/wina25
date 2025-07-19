@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2 class="text-3xl font-bold text-center mb-8">Détails de la commande de {{ user.username }} - {{ order.created_at }}</h2>
+
+    <div class="mb-4">
+        <p><strong>Montant Total :</strong> {{ total_order_amount|floatformat:2 }} {{ store.country.devise_info.devise }}</p>
+        <p><strong>Nombre d'articles :</strong> {{ total_items_in_order }}</p>
+        <p><strong>Statut de la commande :</strong> {{ order.status }}</p>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="min-w-full table-auto bg-white shadow-lg rounded-lg">
+            <thead class="bg-blue-600 text-white">
+                <tr>
+                    <th class="px-6 py-3 text-left">Produit</th>
+                    <th class="px-6 py-3 text-left">Quantité</th>
+                    <th class="px-6 py-3 text-left">Prix Unitaire</th>
+                    <th class="px-6 py-3 text-left">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order_items %}
+                <tr class="border-t">
+                    <td class="px-6 py-4">{{ item.product.name }}</td>
+                    <td class="px-6 py-4">{{ item.quantity }}</td>
+                    <td class="px-6 py-4">{{ item.price_at_time_of_order|floatformat:2 }} {{ store.country.devise_info.devise }} </td>
+                    <td class="px-6 py-4">{{ item.total_price|floatformat:2 }} {{ store.country.devise_info.devise }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

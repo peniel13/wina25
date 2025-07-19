@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block title %}Supprimer le produit - {{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-8 px-4 bg-white rounded-lg shadow-md">
+    <h2 class="text-3xl font-semibold mb-6">Êtes-vous sûr de vouloir supprimer ce produit ?</h2>
+
+    <form method="POST">
+        {% csrf_token %}
+        <div class="flex justify-between items-center">
+            <button type="submit" class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 w-full sm:w-auto">
+                Oui, supprimer
+            </button>
+            <a href="{% url 'manage_product_store' product.store.slug %}" class="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 w-full sm:w-auto">
+                Annuler
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

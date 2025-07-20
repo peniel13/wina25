@@ -29,7 +29,7 @@ SECRET_KEY = 'django-insecure-axjztq6jei-z5z(maqpef$wxm$*^zub#^77_m%wcd1bw=_ttx=
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['13.247.185.21','127.0.0.1', 'winamarche.com', 'www.winamarche.com',]
+ALLOWED_HOSTS = ['13.247.185.21','127.0.0.1','winamarche.com','www.winamarche.com',]
 
 # CSRF_COOKIE_SECURE = False
     

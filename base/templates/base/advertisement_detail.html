@@ -12,12 +12,14 @@
 
         <!-- Affichage de l'image ou de la vidéo -->
         {% if ad.media_type == 'image' %}
-            <img src="{{ ad.media_file.url }}" alt="{{ ad.title }}" class="w-full rounded-lg mb-4">
-        {% elif ad.media_type == 'video' %}
-            <video class="w-full rounded-lg mb-4" controls poster="{{ ad.thumbnail_url.url }}">
-                <source src="{{ ad.media_file.url }}" type="video/mp4">
-            </video>
-        {% endif %}
+    <img src="{{ ad.media_file.url }}" alt="{{ ad.title }}" class="w-full mt-4 rounded">
+{% elif ad.media_type == 'video' %}
+    <video class="w-full mt-4 rounded" autoplay muted playsinline controls>
+        <source src="{{ ad.media_file.url }}" type="video/mp4">
+        Votre navigateur ne supporte pas la lecture vidéo.
+    </video>
+{% endif %}
+
 
         <!-- Statistiques -->
         <div class="flex justify-between text-gray-600 text-lg mt-4">

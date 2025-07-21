@@ -540,12 +540,14 @@
         
 
         {% if ad.media_type == 'image' %}
-          <img src="{{ ad.media_file.url }}" alt="{{ ad.title }}" class="w-full mt-4 rounded">
-        {% elif ad.media_type == 'video' %}
-          <video class="w-full mt-4 rounded" controls poster="{{ ad.thumbnail_url.url }}">
-              <source src="{{ ad.media_file.url }}" type="video/mp4">
-          </video>
-        {% endif %}
+    <img src="{{ ad.media_file.url }}" alt="{{ ad.title }}" class="w-full mt-4 rounded">
+{% elif ad.media_type == 'video' %}
+    <video class="w-full mt-4 rounded" autoplay muted playsinline controls>
+        <source src="{{ ad.media_file.url }}" type="video/mp4">
+        Votre navigateur ne supporte pas la lecture vidéo.
+    </video>
+{% endif %}
+
 
         {% if ad.url %}
           <a href="{% url 'visit_ad_url' ad.slug %}" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-800 mt-4 inline-block">

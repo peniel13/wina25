@@ -44,9 +44,23 @@
     Total d'unités achetées : <strong>{{ total_quantity }}</strong>
   </p>
   <p class="text-gray-700 mb-6">
-    Nombre total d'acheteurs : <strong>{{ buyers.paginator.count }}</strong>
+    Nombre total d'acheteurs : <strong>{{ total_buyers }}</strong>
   </p>
-
+ 
+   <!-- Bouton Masquer / Rendre visible -->
+   {% if user.is_authenticated %}
+   <form method="post" action="{% url 'toggle_hidden' product.id %}" class="mb-6">
+     {% csrf_token %}
+     <button type="submit"
+             class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">
+       {% if has_hidden %}
+         Se rendre visible
+       {% else %}
+         Se masquer
+       {% endif %}
+     </button>
+   </form>
+ {% endif %}
   <!-- 🔍 Barre de recherche -->
   <form method="get" action="#acheteurs" class="mb-4 flex">
     <input type="text" name="search" value="{{ search_query }}" placeholder="Rechercher un utilisateur..." class="px-4 py-2 border rounded-l w-full">

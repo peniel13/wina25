@@ -313,6 +313,7 @@ from .models import Product
 from django import forms
 from decimal import Decimal
 from .models import Product
+from decimal import Decimal, ROUND_HALF_UP
 
 
 class ProductForm(forms.ModelForm):
@@ -370,7 +371,9 @@ class ProductForm(forms.ModelForm):
 
         if product.price is not None:
             commission = product.price * Decimal('0.30')
-            product.price_with_commission = product.price + commission
+            total = product.price + commission
+            product.price_with_commission = total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
 
         if commit:
             product.save()

@@ -4612,6 +4612,19 @@ def lottery_list(request):
     })
 
 
+
+@login_required
+def toggle_hidden(request, product_id):
+    user = request.user
+    OrderItem.objects.filter(
+        product_id=product_id,
+        order__user=user
+    ).update(
+        hidden_by_user=~F('hidden_by_user')
+    )
+    return redirect('buyers_of_product', product_id=product_id)
+
+
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render
 from django.db.models import Sum, Count
@@ -4633,43 +4646,50 @@ from django.db.models import Sum, Q
 from core.models import Product, OrderItem, FeaturedStore
 
 User = get_user_model()
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.db.models import Sum, Q, F
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+from django.db.models import Sum, Count, Q
 
 @login_required
 def buyers_of_product_view(request, product_id):
-    user = request.user
     product = get_object_or_404(Product, id=product_id)
 
-    # 🔎 Recherche
     search_query = request.GET.get('search', '').strip()
     search_terms = search_query.lower().split()
 
-    # 🔢 Total unités achetées
     total_quantity = OrderItem.objects.filter(product=product).aggregate(
         total=Sum('quantity')
     )['total'] or 0
 
-    # 👥 Acheteurs distincts
-    raw_buyers = (
-        OrderItem.objects
-        .filter(product=product)
-        .values('order__user')
-        .annotate(total_bought=Sum('quantity'))
-        .order_by('-total_bought')
+    total_buyers = OrderItem.objects.filter(product=product).aggregate(
+        buyers_count=Count('order__user', distinct=True)
+    )['buyers_count'] or 0
+
+    raw_buyer_items = OrderItem.objects.filter(
+        product=product,
+        hidden_by_user=False
     )
 
-    # 🎯 Filtrage avec recherche
-    buyers = []
-    for entry in raw_buyers:
-        try:
-            user = User.objects.get(id=entry['order__user'])
-            full_name_email = f"{user.username} {user.first_name} {user.last_name} {user.email}".lower()
-            if all(term in full_name_email for term in search_terms):  # Tous les mots doivent être présents
-                buyers.append({'user': user, 'total_bought': entry['total_bought']})
-        except User.DoesNotExist:
-            continue
+    raw_buyers = raw_buyer_items.values('order__user').annotate(
+        total_bought=Sum('quantity')
+    ).order_by('-total_bought')
 
-    # ✅ Pagination
-    paginator = Paginator(buyers, 6)
+    buyers_list = []
+    for entry in raw_buyers:
+        u = User.objects.filter(id=entry['order__user']).first()
+        if not u:
+            continue
+        full_name_email = f"{u.username} {u.first_name} {u.last_name} {u.email}".lower()
+        if all(term in full_name_email for term in search_terms):
+            buyers_list.append({'user': u, 'total_bought': entry['total_bought']})
+
+    # ✅ Pagination (6 par page)
+    paginator = Paginator(buyers_list, 6)
     page = request.GET.get('page')
     try:
         buyers = paginator.page(page)
@@ -4678,23 +4698,112 @@ def buyers_of_product_view(request, product_id):
     except EmptyPage:
         buyers = paginator.page(paginator.num_pages)
 
-    # ⭐ Stores favoris
-    featured_stores = FeaturedStore.objects.filter(
-        Q(show_in_all=True) |
-        Q(show_in_all=False, store__country=request.user.country) |
-        Q(show_in_all=False, store__city=request.user.city)
-    ).select_related('store', 'store__country', 'store__city').order_by('-created_at') if request.user.is_authenticated else FeaturedStore.objects.filter(
-        show_in_all=True
-    ).select_related('store', 'store__country', 'store__city').order_by('-created_at')
+    has_hidden = OrderItem.objects.filter(
+        product=product,
+        order__user=request.user,
+        hidden_by_user=True
+    ).exists()
+
+    # Récupérez featured_stores comme avant...
+    #⭐ Stores favoris
+    if request.user.is_authenticated:
+        featured_stores = FeaturedStore.objects.filter(
+            Q(show_in_all=True) |
+            Q(show_in_all=False, store__country=request.user.country) |
+            Q(show_in_all=False, store__city=request.user.city)
+        ).select_related('store', 'store__country', 'store__city').order_by('-created_at')
+    else:
+        featured_stores = FeaturedStore.objects.filter(
+            show_in_all=True
+        ).select_related('store', 'store__country', 'store__city').order_by('-created_at')
 
     return render(request, 'base/buyers_of_product.html', {
         'product': product,
         'total_quantity': total_quantity,
+        'total_buyers': total_buyers,
         'buyers': buyers,
         'search_query': search_query,
         'featured_stores': featured_stores,
+        'has_hidden': has_hidden,
     })
 
+# @login_required
+# def buyers_of_product_view(request, product_id):
+#     user = request.user
+#     product = get_object_or_404(Product, id=product_id)
+
+#     # 🔎 Recherche
+#     search_query = request.GET.get('search', '').strip()
+#     search_terms = search_query.lower().split()
+
+#     # 🔢 Total unités achetées (excluant les masqués)
+#     raw_buyer_items = OrderItem.objects.filter(
+#         product=product,
+#         hidden_by_user=False
+#     )
+#     total_quantity = raw_buyer_items.aggregate(
+#         total=Sum('quantity')
+#     )['total'] or 0
+
+#     # 👥 Acheteurs distincts (excluant les masqués)
+#     raw_buyers = (
+#         raw_buyer_items
+#         .values('order__user')
+#         .annotate(total_bought=Sum('quantity'))
+#         .order_by('-total_bought')
+#     )
+
+#     # 🎯 Filtrage avec recherche
+#     buyers_list = []
+#     for entry in raw_buyers:
+#         try:
+#             u = User.objects.get(id=entry['order__user'])
+#         except User.DoesNotExist:
+#             continue
+
+#         full_name_email = f"{u.username} {u.first_name} {u.last_name} {u.email}".lower()
+#         if all(term in full_name_email for term in search_terms):
+#             buyers_list.append({'user': u, 'total_bought': entry['total_bought']})
+
+#     # ✅ Pagination (6 par page)
+#     paginator = Paginator(buyers_list, 6)
+#     page = request.GET.get('page')
+#     try:
+#         buyers = paginator.page(page)
+#     except PageNotAnInteger:
+#         buyers = paginator.page(1)
+#     except EmptyPage:
+#         buyers = paginator.page(paginator.num_pages)
+    
+#     has_hidden = OrderItem.objects.filter(
+#     product=product,
+#     order__user=request.user,
+#     hidden_by_user=True
+#     ).exists()
+
+
+#     # ⭐ Stores favoris
+#     if request.user.is_authenticated:
+#         featured_stores = FeaturedStore.objects.filter(
+#             Q(show_in_all=True) |
+#             Q(show_in_all=False, store__country=request.user.country) |
+#             Q(show_in_all=False, store__city=request.user.city)
+#         ).select_related('store', 'store__country', 'store__city').order_by('-created_at')
+#     else:
+#         featured_stores = FeaturedStore.objects.filter(
+#             show_in_all=True
+#         ).select_related('store', 'store__country', 'store__city').order_by('-created_at')
+
+#     return render(request, 'base/buyers_of_product.html', {
+#         'product': product,
+#         'total_quantity': total_quantity,
+#         'buyers': buyers,
+#         'search_query': search_query,
+#         'featured_stores': featured_stores,
+#         'has_hidden': has_hidden,
+#     })
+
+# views.py
 
 
 def apropos(request):

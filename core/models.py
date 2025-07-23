@@ -337,6 +337,13 @@ from django.contrib.auth import get_user_model
 
 CustomUser = get_user_model()
 
+from django.db import models
+from django.core.files.base import ContentFile
+from django.db.models import Sum, Avg
+from decimal import Decimal, ROUND_HALF_UP
+from PIL import Image
+from io import BytesIO
+import os
 
 class Product(models.Model):
     store = models.ForeignKey('Store', on_delete=models.CASCADE, related_name="products")
@@ -357,7 +364,6 @@ class Product(models.Model):
 
     @property
     def average_rating(self):
-        from django.db.models import Avg
         average = self.testimonials.aggregate(avg=Avg('rating'))['avg'] or 0
         return round(average / 2, 1)
 
@@ -407,9 +413,13 @@ class Product(models.Model):
 
         if self.store.apply_commission and self.price is not None:
             commission_rate = Decimal('0.30')
-            self.price_with_commission = self.price + (self.price * commission_rate)
+            total = self.price + (self.price * commission_rate)
+            self.price_with_commission = total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         else:
-            self.price_with_commission = self.price
+            if self.price is not None:
+                self.price_with_commission = Decimal(self.price).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            else:
+                self.price_with_commission = None
 
         if self.image and not hasattr(self.image, '_compressed'):
             compressed_file, name = self.compress_image(self.image)
@@ -424,7 +434,6 @@ class Product(models.Model):
                 self.image_galerie._compressed = True
 
         super().save(*args, **kwargs)
-
 
 # class Product(models.Model):
 #     store = models.ForeignKey('Store', on_delete=models.CASCADE, related_name="products")
@@ -624,7 +633,8 @@ class OrderItem(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='order_items')
     quantity = models.PositiveIntegerField()
     price_at_time_of_order = models.DecimalField(max_digits=10, decimal_places=2)
-
+    hidden_by_user = models.BooleanField(default=False)
+    
     def __str__(self):
         return f"{self.product.name} - {self.quantity} x {self.price_at_time_of_order}"
 

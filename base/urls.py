@@ -108,5 +108,9 @@ urlpatterns = [
     path('contacts/<int:contact_id>/detail/', views.contact_store_detail, name='contact_store_detail'),
     path('product/<int:product_id>/contacts/', views.contact_product_list, name='contact_product_list'),
     path('product/contact/<int:contact_id>/detail/', views.contact_product_detail, name='contact_product_detail'),
-
+    path(
+        'product/<int:product_id>/toggle-hidden/',
+        views.toggle_hidden,
+        name='toggle_hidden'
+    ),
 ]

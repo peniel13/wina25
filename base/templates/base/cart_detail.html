@@ -78,7 +78,7 @@
             <div class="mt-6 text-center">
               {% if data.country %}
   <a href="{% url 'mobile_money_checkout_by_country' country_id=data.country.id %}" class="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition duration-300">
-    Payer pour {{ data.country.name }} via mobile money
+    Payer via mobile money
   </a>
 {% else %}
   <p class="text-red-500 text-sm">Aucun pays associé à ce panier.</p>

@@ -1507,7 +1507,7 @@ def stores_by_typestore_django(request, typestore_id):
     city_id = request.GET.get("city")
     name = request.GET.get("name", "").strip()
 
-    stores = Store.objects.filter(typestore_id=typestore_id, is_active=True)
+    stores = Store.objects.filter(typestore_id=typestore_id, is_active=True).order_by('-created_at')
 
     if country_id:
         stores = stores.filter(country_id=country_id)
@@ -1572,7 +1572,7 @@ def stores_by_country_django(request, country_id):
 
     user = request.user
 
-    stores = Store.objects.filter(country_id=country.id, is_active=True)
+    stores = Store.objects.filter(country_id=country.id, is_active=True).order_by('-created_at')
 
     if city_id:
         stores = stores.filter(city_id=city_id)
@@ -1636,7 +1636,7 @@ def stores_by_city_wina(request, city_id):
 
     user = request.user
 
-    stores = Store.objects.filter(city_id=city.id, is_active=True)
+    stores = Store.objects.filter(city_id=city.id, is_active=True).order_by('-created_at')
 
     if typestore_id:
         stores = stores.filter(typestore_id=typestore_id)
@@ -1867,7 +1867,7 @@ def store_list_all_view(request):
     user = request.user
 
     # 🔽 Tous les stores actifs
-    stores = Store.objects.filter(is_active=True).select_related('country', 'city', 'typestore', 'typebusiness')
+    stores = Store.objects.filter(is_active=True).select_related('country', 'city', 'typestore', 'typebusiness').order_by('-created_at')
 
     # 🧠 Filtrage intelligent : si aucun filtre, filtre par défaut par ville/pays utilisateur
     default_filter_applied = False

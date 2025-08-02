@@ -55,8 +55,8 @@
                 <p><strong>Ville :</strong> {{ store.city.name }}</p>
                 <p class="text-white mb-4">
                   <strong>Adresse :</strong>
-                  {{ store.adresse|truncatechars:50 }}
-                  {% if store.adresse|length > 50 %}
+                  {{ store.adresse|truncatechars:30 }}
+                  {% if store.adresse|length > 30 %}
                     <button 
                       type="button" 
                       class="text-white underline ml-2 hover:text-gray-200" 
@@ -370,7 +370,7 @@ class="w-auto px-4 py-2 sm:px-6 sm:py-3 text-white bg-green-600 hover:bg-green-8
 <!-- Affichage des produits -->
  
 <section id="produits" class="pb-10 pt-12 bg-gray-100">
-    <p class="text-center mb-8">Faites défiler verticalement pour découvrir vos articles ou services  populaires.</p>
+   
     <div class="flex flex-wrap gap-6 justify-center">
       {% for product in products %}
       <div class="flex-shrink-0 border-2 border-secondary bg-slate-100 text-black rounded-xl mb-6 cursor-pointer hover:scale-95 hover:bg-slate-200 transition duration-200 ease-linear w-64 h-full flex flex-col">

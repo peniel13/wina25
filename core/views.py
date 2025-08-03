@@ -1650,6 +1650,10 @@ class AdInteractionCreateAPIView(generics.CreateAPIView):
 
         serializer.instance = interaction
 
+from rest_framework import generics, permissions, serializers
+from .models import Comment
+from .serializers import CommentSerializer
+
 
 class CommentCreateAPIView(generics.CreateAPIView):
     queryset = Comment.objects.all()

@@ -55,8 +55,8 @@
                 <p><strong>Ville :</strong> {{ store.city.name }}</p>
                 <p class="text-white mb-4">
                   <strong>Adresse :</strong>
-                  {{ store.adresse|truncatechars:30 }}
-                  {% if store.adresse|length > 30 %}
+                  {{ store.adresse|truncatechars:20 }}
+                  {% if store.adresse|length > 20 %}
                     <button 
                       type="button" 
                       class="text-white underline ml-2 hover:text-gray-200" 

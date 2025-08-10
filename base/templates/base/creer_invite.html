@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load static form_tags %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+  <div class="bg-white shadow-lg rounded-xl w-full max-w-2xl p-8 space-y-6">
+    <div class="text-center">
+      <img src="{% static 'img/logoo.png' %}" alt="Logo" class="h-12 mx-auto mb-4">
+      <h2 class="text-3xl font-bold text-blue-700">Créer une invite de visibilité</h2>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="space-y-4">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+
+      {% if store %}
+        <!-- Cas création invitation store : champ type_invite forcé -->
+        <input type="hidden" name="type_invite" value="store" />
+        <input type="hidden" name="store" value="{{ store.id }}" />
+
+        <p><strong>Invitation pour le store :</strong> {{ store.name }}</p>
+
+      {% else %}
+        <!-- Cas lien externe : choix du type d'invitation -->
+        <div>
+          {{ form.type_invite.label_tag }}
+          {{ form.type_invite|add_class:"input-field w-full" }}
+          <p class="text-sm text-red-500">{{ form.type_invite.errors|striptags }}</p>
+        </div>
+
+        <div>
+          {{ form.store.label_tag }}
+          {{ form.store|add_class:"input-field w-full" }}
+          <p class="text-sm text-red-500">{{ form.store.errors|striptags }}</p>
+        </div>
+      {% endif %}
+
+      <!-- Image & URL uniquement si type_invite == 'lien' ou pas de store -->
+      {% if not store %}
+        <div>
+          {{ form.image.label_tag }}
+          {{ form.image|add_class:"input-field w-full" }}
+          <p class="text-sm text-red-500">{{ form.image.errors|striptags }}</p>
+        </div>
+
+        <div>
+          {{ form.url_redirection.label_tag }}
+          {{ form.url_redirection|add_class:"input-field w-full" }}
+          <p class="text-sm text-red-500">{{ form.url_redirection.errors|striptags }}</p>
+        </div>
+      {% endif %}
+
+      <div>
+        {{ form.nombre_invites.label_tag }}
+        {{ form.nombre_invites|add_class:"input-field w-full" }}
+        <p class="text-sm text-red-500">{{ form.nombre_invites.errors|striptags }}</p>
+      </div>
+
+      <div>
+        {{ form.temps_minimum.label_tag }}
+        {{ form.temps_minimum|add_class:"input-field w-full" }}
+        <p class="text-sm text-red-500">{{ form.temps_minimum.errors|striptags }}</p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        {{ form.cibler_tout_user }}
+        {{ form.cibler_tout_user.label_tag }}
+        <p class="text-sm text-red-500">{{ form.cibler_tout_user.errors|striptags }}</p>
+      </div>
+
+      <div class="flex gap-4">
+        <div class="w-1/2">
+          {{ form.country.label_tag }}
+          {{ form.country|add_class:"input-field w-full" }}
+          <p class="text-sm text-red-500">{{ form.country.errors|striptags }}</p>
+        </div>
+        <div class="w-1/2">
+          {{ form.city.label_tag }}
+          {{ form.city|add_class:"input-field w-full" }}
+          <p class="text-sm text-red-500">{{ form.city.errors|striptags }}</p>
+        </div>
+      </div>
+
+      <button type="submit" class="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition duration-300">
+        Créer l'invite
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

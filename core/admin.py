@@ -969,3 +969,65 @@ class PointSharingGroupAdmin(admin.ModelAdmin):
     list_display = ['name', 'creator', 'created_at', 'member_count']
     filter_horizontal = ['members']
     search_fields = ['name', 'creator__username']
+
+
+from django.contrib import admin
+from .models import VisiteMoney, InviteVisibilite
+
+@admin.register(VisiteMoney)
+class VisiteMoneyAdmin(admin.ModelAdmin):
+    list_display = ('user', 'total_gain_usd', 'store_count')
+    search_fields = ('user__email',)
+
+    def store_count(self, obj):
+        return obj.visited_stores.count()
+    store_count.short_description = 'Stores visités'
+
+
+# admin.py
+from django.contrib import admin
+from .models import InviteVisibilite
+@admin.register(InviteVisibilite)
+class InviteVisibiliteAdmin(admin.ModelAdmin):
+    list_display = ('id', 'owner', 'invite_type_display', 'store_or_link', 'nombre_invites', 'visites_restantes', 'is_active', 'created_at')
+    list_filter = ('is_active', 'created_at', 'type_invite')
+    search_fields = ('owner__email', 'store__name', 'url_redirection')
+    ordering = ('-created_at',)
+    actions = ['valider_invites', 'invalider_invites']
+
+    def invite_type_display(self, obj):
+        return obj.get_type_invite_display()
+    invite_type_display.short_description = "Type"
+
+    def store_or_link(self, obj):
+        if obj.type_invite == 'store':
+            return obj.store.name if obj.store else "—"
+        else:
+            return obj.url_redirection or "—"
+    store_or_link.short_description = "Store / Lien"
+
+    @admin.action(description="Activer les invitations sélectionnées")
+    def valider_invites(self, request, queryset):
+        updated = queryset.update(is_active=True)
+        self.message_user(request, f"{updated} invitation(s) ont été activées.")
+
+    @admin.action(description="Désactiver les invitations sélectionnées")
+    def invalider_invites(self, request, queryset):
+        updated = queryset.update(is_active=False)
+        self.message_user(request, f"{updated} invitation(s) ont été désactivées.")
+
+
+# admin.py
+
+from django.contrib import admin
+from .models import InviteVisibilitePayment,UniteVisite
+
+@admin.register(InviteVisibilitePayment)
+class InviteVisibilitePaymentAdmin(admin.ModelAdmin):
+    list_display = ('invite', 'utilisateur', 'montant_total', 'transaction_id', 'numero_telephone', 'date_paiement', 'est_valide')
+    list_filter = ('est_valide', 'date_paiement')
+    search_fields = ('transaction_id', 'numero_telephone')
+    list_editable = ('est_valide',)
+    date_hierarchy = 'date_paiement'
+
+admin.site.register(UniteVisite)

@@ -17,6 +17,14 @@
 
     {% if numero %}
     <div class="mt-4">
+      <h2 class="text-2xl font-semibold mb-4">Instructions de Paiement</h2>
+      <ul class="list-decimal pl-6 text-gray-800">
+          <li>Sélectionnez le numéro de votre opérateur ci-dessous.</li>
+          <li>Payez le montant : </strong> {{ montant_total }} $</strong></li>
+          <li>Remplissez les informations de la transaction ci-dessous.</li>
+          <li>Cliquez sur "Soumettre le paiement".</li>
+          <li>Suivez le statut de votre commande.</li>
+      </ul>
       <p class="font-semibold">Numéro de paiement pour {{ numero.country.name }} :</p>
       <div class="flex items-center gap-4 mt-2">
         <img src="{{ numero.image.url }}" alt="Logo opérateur" class="w-12 h-12 rounded-full shadow">

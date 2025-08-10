@@ -43,6 +43,10 @@
       <a href="{% url 'user_dashboard' %}" class="block px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 flex items-center">
         <i class="bx bx-star text-xl mr-3 text-purple-600"></i> Mes points de fidélité
       </a>
+      <a href="{% url 'visite_money_solde' %}" class="block px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 flex items-center">
+        <i class="bx bx-wallet text-xl mr-3 text-green-600"></i> Mon solde VisiteMoney
+      </a>
+      
 
       <a href="{% url 'update_profile' %}" class="block px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 flex items-center">
         <i class="bx bx-user text-xl mr-3 text-purple-600"></i> Modifier mon profil
@@ -51,7 +55,14 @@
       <a href="{% url 'list_product_rewards' %}" class="block px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 flex items-center">
         <i class="bx bx-gift text-xl mr-3 text-purple-600"></i> Produits à échanger contre des points
       </a>
-
+      <a href="{% url 'creer_invite_visibilite' %}" class="block px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 flex items-center">
+        <i class="bx bx-bullhorn text-xl mr-3 text-purple-600"></i> Inviter la visibilité
+      </a>
+      <a href="{% url 'invite_visibilite_payment_list' %}" 
+   class="block px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 flex items-center">
+  <i class="bx bx-credit-card text-xl mr-3 text-blue-600"></i>
+   Mes invitations payées
+</a>
       <a href="{% url 'create_advertisement' %}" class="block px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 flex items-center">
         <i class="bx bx-bullhorn text-xl mr-3 text-purple-600"></i> Créer une publicité
       </a>

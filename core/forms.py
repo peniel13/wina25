@@ -882,3 +882,117 @@ class PointSharingGroupForm(forms.ModelForm):
         labels = {
             'name': 'Nom du groupe'
         }
+
+
+from django import forms
+from .models import InviteVisibilite
+
+from django import forms
+from .models import InviteVisibilite
+
+from django import forms
+from .models import InviteVisibilite
+
+class InviteVisibiliteForm(forms.ModelForm):
+    class Meta:
+        model = InviteVisibilite
+        fields = [
+            'type_invite',
+            'store',
+            'image',
+            'url_redirection',
+            'country',
+            'city',
+            'nombre_invites',
+            'temps_minimum',
+            'cibler_tout_user',  # ✅ Nouveau champ
+        ]
+
+    def clean(self):
+        cleaned_data = super().clean()
+        type_invite = cleaned_data.get('type_invite')
+        store = cleaned_data.get('store')
+        image = cleaned_data.get('image')
+        url = cleaned_data.get('url_redirection')
+
+        # Validation selon le type
+        if type_invite == 'store' and not store:
+            raise forms.ValidationError("Vous devez sélectionner un store pour ce type d'invitation.")
+        if type_invite == 'lien':
+            if not image:
+                raise forms.ValidationError("Vous devez fournir une image pour une annonce externe.")
+            if not url:
+                raise forms.ValidationError("Vous devez fournir un lien de redirection pour une annonce externe.")
+
+        # Si "cibler_tout_user" est coché, on efface country et city
+        if cleaned_data.get('cibler_tout_user'):
+            cleaned_data['country'] = None
+            cleaned_data['city'] = None
+
+        return cleaned_data
+
+
+from django import forms
+from decimal import Decimal
+
+class RetraitMobileMoneyForm(forms.Form):
+    nom_utilisateur = forms.CharField(
+        label="Nom de l'utilisateur",
+        max_length=100,
+        widget=forms.TextInput(attrs={
+            'class': 'w-full p-2 border border-gray-300 rounded',
+            'placeholder': 'Votre nom complet'
+        })
+    )
+    numero_mobilemoney = forms.CharField(
+        label="Numéro Mobile Money / Compte bancaire",
+        max_length=20,
+        widget=forms.TextInput(attrs={
+            'class': 'w-full p-2 border border-gray-300 rounded',
+            'placeholder': 'Exemple : +243812345678'
+        })
+    )
+    nom_compte = forms.CharField(
+        label="Nom du compte Mobile Money / bancaire",
+        max_length=100,
+        widget=forms.TextInput(attrs={
+            'class': 'w-full p-2 border border-gray-300 rounded',
+            'placeholder': 'Nom associé au compte'
+        })
+    )
+    montant = forms.DecimalField(
+        label="Montant à retirer (USD)",
+        max_digits=10,
+        decimal_places=2,
+        min_value=Decimal('5.00'),
+        widget=forms.NumberInput(attrs={
+            'class': 'w-full p-2 border border-gray-300 rounded',
+            'placeholder': 'Minimum 5 USD'
+        })
+    )
+
+    def clean_montant(self):
+        montant = self.cleaned_data['montant']
+        if montant < Decimal('5.00'):
+            raise forms.ValidationError("Le montant minimum pour un retrait est de 5 USD.")
+        return montant
+
+
+
+# forms.py
+
+from django import forms
+from .models import InviteVisibilitePayment, UniteVisite
+
+class InviteVisibilitePaymentForm(forms.ModelForm):
+    class Meta:
+        model = InviteVisibilitePayment
+        fields = ['invite', 'utilisateur', 'unite_visite', 'montant_total', 'transaction_id', 'numero_telephone']
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user:
+            self.fields['invite'].queryset = InviteVisibilite.objects.filter(owner=user)
+            self.fields['utilisateur'].queryset = [user]
+            self.fields['unite_visite'].queryset = UniteVisite.objects.all()

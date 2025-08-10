@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Redirection en cours...</title>
+  <script>
+    // Timer 60 secondes puis reload page pour vérification serveur
+    setTimeout(function() {
+      location.reload();
+    }, 60000);
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 flex items-center justify-center min-h-screen p-4">
+  <div class="max-w-md w-full bg-white rounded-lg shadow-lg p-6 text-center">
+
+    <!-- Image de l'invitation si présente -->
+    {% if invite.image %}
+    <div class="mb-4 rounded overflow-hidden">
+      <img src="{{ invite.image.url }}" alt="Image invitation" class="w-full h-48 object-cover rounded" />
+    </div>
+    {% endif %}
+
+    <h1 class="text-2xl font-semibold text-gray-800 mb-3">Merci de patienter</h1>
+    <p class="text-gray-600 mb-4">Vous allez être redirigé vers le lien dans <span class="font-bold">1 minute</span>.</p>
+
+    <p class="text-blue-600 underline break-all">
+      <a href="{{ invite.url_redirection }}" target="_blank" rel="noopener noreferrer">
+        {{ invite.url_redirection }}
+      </a>
+    </p>
+
+    <div class="mt-6">
+      <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+      </svg>
+    </div>
+
+  </div>
+</body>
+{% endblock %}

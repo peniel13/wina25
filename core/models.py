@@ -1478,3 +1478,217 @@ class PointSharingGroup(models.Model):
 
     def __str__(self):
         return f"Groupe {self.name} (Membres: {self.member_count()})"
+
+from decimal import Decimal
+
+class VisiteMoney(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="visite_money")
+    total_gain_usd = models.DecimalField(default=Decimal('0.0'), max_digits=10, decimal_places=4)
+    visited_stores = models.ManyToManyField('Store', blank=True)
+    visited_links = models.ManyToManyField('InviteVisibilite', blank=True)  # Nouveau
+
+    UNITE_VISITE = Decimal('0.001')
+    GAIN_PAR_VISITE = UNITE_VISITE / Decimal('2')  # 0.0005 USD
+    GAIN_PAR_LIEN = UNITE_VISITE / Decimal('2')    # Même valeur pour les liens externes
+
+    def add_visite(self, store):
+        """Ajoute une visite pour un store."""
+        if store is None:
+            return False
+        if not self.visited_stores.filter(id=store.id).exists():
+            self.visited_stores.add(store)
+            self.total_gain_usd += self.GAIN_PAR_VISITE
+            self.save()
+            return True
+        return False
+
+    def add_visite_link(self, invite):
+        """Ajoute une visite pour un lien externe."""
+        if not self.visited_links.filter(id=invite.id).exists():
+            self.visited_links.add(invite)
+            self.total_gain_usd += self.GAIN_PAR_LIEN
+            self.save()
+            return True
+        return False
+
+    def __str__(self):
+        return f"VisiteMoney({self.user.email}): {self.total_gain_usd} USD"
+
+class InviteVisite(models.Model):
+    invite = models.ForeignKey('InviteVisibilite', on_delete=models.CASCADE, related_name='visites')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    visited_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('invite', 'user')  # Pour qu’un user ne visite qu’une fois
+
+
+from django.db import models
+from django.conf import settings
+class InviteVisibilite(models.Model):
+    TYPE_CHOICES = [
+        ('store', 'Store'),
+        ('lien', 'Lien externe'),
+    ]
+    CIBLAGE_CHOICES = [
+        ('all', 'Tous les utilisateurs'),
+        ('country', 'Par pays'),
+        ('city', 'Par ville'),
+    ]
+
+    type_invite = models.CharField(max_length=10, choices=TYPE_CHOICES, default='store')
+    ciblage_type = models.CharField(max_length=10, choices=CIBLAGE_CHOICES, default='all')
+
+    store = models.ForeignKey('Store', on_delete=models.CASCADE, related_name='invites_visibilite', null=True, blank=True)
+    image = models.ImageField(upload_to="invites_images", null=True, blank=True)
+    url_redirection = models.URLField(null=True, blank=True)
+
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='invites_lancees')
+    country = models.ForeignKey('Country', on_delete=models.SET_NULL, null=True, blank=True)
+    city = models.ForeignKey('City', on_delete=models.SET_NULL, null=True, blank=True)
+
+    nombre_invites = models.PositiveIntegerField()
+    visites_restantes = models.PositiveIntegerField(default=0)
+    unite_visite = models.DecimalField(default=0.001, max_digits=6, decimal_places=4)
+    montant_total = models.DecimalField(max_digits=10, decimal_places=4, default=0.0)
+    temps_minimum = models.PositiveIntegerField(default=60)
+    cibler_tout_user = models.BooleanField(default=False)
+
+    compteur_visites = models.PositiveIntegerField(default=0)
+    utilisateurs_ayant_visite = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name="invites_visitees"
+    )
+
+    is_active = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            self.montant_total = self.nombre_invites * self.unite_visite
+            self.visites_restantes = self.nombre_invites
+            self.is_active = False
+        super().save(*args, **kwargs)
+
+    def enregistrer_visite(self, user):
+        from .models import VisiteMoney, InviteVisite
+
+        if self.is_active and self.visites_restantes > 0:
+            if InviteVisite.objects.filter(invite=self, user=user).exists():
+                return False  # Déjà visité
+
+            visite_money, _ = VisiteMoney.objects.get_or_create(user=user)
+
+            if self.type_invite == 'store':
+                gain_ok = visite_money.add_visite(self.store)
+            else:
+                gain_ok = visite_money.add_visite_link(self)
+
+            if gain_ok:
+                InviteVisite.objects.create(invite=self, user=user)
+                self.utilisateurs_ayant_visite.add(user)  # ✅ Pour que ça disparaisse de la liste
+                self.visites_restantes -= 1
+                if self.visites_restantes == 0:
+                    self.is_active = False
+                self.save()
+                return True
+        return False
+
+    def est_visible_pour(self, user):
+        if not self.is_active:
+            return False
+        if self.utilisateurs_ayant_visite.filter(id=user.id).exists():
+            return False
+        if self.ciblage_type == 'all':
+            return True
+        if self.ciblage_type == 'country' and user.country == self.country:
+            return True
+        if self.ciblage_type == 'city' and user.city == self.city:
+            return True
+        return False
+
+    def __str__(self):
+        cible = dict(self.CIBLAGE_CHOICES).get(self.ciblage_type, "Inconnu")
+        if self.type_invite == 'store':
+            return f"[{cible}] Invite Store: {self.store.name} ({self.visites_restantes} restants)"
+        return f"[{cible}] Invite Lien: {self.url_redirection} ({self.visites_restantes} restants)"
+    
+
+class RetraitMobileMoney(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='retraits_mobile_money')
+    nom_utilisateur = models.CharField(max_length=150)  # Nom du titulaire Mobile Money ou bancaire
+    numero_beneficiaire = models.CharField(max_length=50, help_text="Numéro Mobile Money ou compte bancaire bénéficiaire")
+    nom_compte_beneficiaire = models.CharField(max_length=150, help_text="Nom du compte Mobile Money ou bancaire")
+    montant = models.DecimalField(max_digits=10, decimal_places=2)
+    date_retrait = models.DateTimeField(auto_now_add=True)
+    est_valide = models.BooleanField(default=False)
+    est_traite = models.BooleanField(default=False)
+    message_admin = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Retrait {self.montant} USD de {self.user.username} le {self.date_retrait.strftime('%Y-%m-%d')}"
+
+
+# models.py
+from django.conf import settings
+from django.db import models
+
+class WithdrawalHistory(models.Model):
+    STATUS_CHOICES = [
+        ('success', 'Succès'),
+        ('failed', 'Échec'),
+        ('pending', 'En attente'),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="withdrawals"
+    )
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    payment_number = models.CharField(max_length=50)  # Numéro mobile money
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES)
+    message = models.TextField(blank=True, null=True)  # Info supplémentaire
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user} - {self.amount} ({self.status})"
+
+
+from django.db import models
+from django.conf import settings
+
+from django.db import models
+
+class UniteVisite(models.Model):
+    montant = models.DecimalField(max_digits=10, decimal_places=4, default=0.002)
+    date_creation = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.montant} USD/visite"
+
+
+from django.db import models
+from django.conf import settings
+from django.utils import timezone
+from .models import InviteVisibilite, UniteVisite
+
+class InviteVisibilitePayment(models.Model):
+    """Enregistrement d'un paiement pour une invitation."""
+    invite = models.ForeignKey(InviteVisibilite, on_delete=models.CASCADE)
+    utilisateur = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    unite_visite = models.ForeignKey(UniteVisite, on_delete=models.SET_NULL, null=True)
+    montant_total = models.DecimalField(max_digits=10, decimal_places=4)
+    transaction_id = models.CharField(max_length=255)
+    numero_telephone = models.CharField(max_length=15)
+    date_paiement = models.DateTimeField(default=timezone.now)
+    est_valide = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Paiement {self.transaction_id} - {self.invite}"
+
+    class Meta:
+        verbose_name = "Paiement d'invitation"
+        verbose_name_plural = "Paiements d'invitations"

@@ -7,7 +7,27 @@
      class="fixed bottom-6 right-6 bg-gray-900 text-white px-4 py-3 rounded-lg shadow-lg z-50 hidden transition-opacity duration-500">
   <span id="toast-message"></span>
 </div>
+{% if invite_timer_active %}
+<div id="timer-message" style="background:#d4edda; color:#155724; padding:10px; margin-bottom:20px; border-radius:4px;">
+  Vous êtes en visite validante, restez sur la page 1 minute pour gagner votre visite.
+  <br>
+  Temps restant : <span id="timer">60</span> secondes
+</div>
 
+<script>
+  let timeLeft = 60;
+  const timerEl = document.getElementById('timer');
+
+  const countdown = setInterval(() => {
+    timeLeft--;
+    timerEl.textContent = timeLeft;
+    if (timeLeft <= 0) {
+      clearInterval(countdown);
+      document.getElementById('timer-message').textContent = "Temps écoulé, votre visite sera comptabilisée au prochain chargement de la page.";
+    }
+  }, 1000);
+</script>
+{% endif %}
 
 <!-- Header section avec l'image de fond -->
 <section class="relative bg-cover bg-center h-96" style="background-image: url('{{ store.thumbnail.url }}');">
@@ -114,7 +134,10 @@
 class="w-auto px-4 py-2 sm:px-6 sm:py-3 text-white bg-green-600 hover:bg-green-800 rounded-md transition duration-300 mx-auto sm:mx-0">
  Créer une notification
 </a>
-
+<a href="{% url 'creer_invite_visibilite_store' store.id %}" 
+class="w-auto px-4 py-2 sm:px-6 sm:py-3 text-white bg-green-600 hover:bg-green-800 rounded-md transition duration-300 mx-auto sm:mx-0">
+ Créer visibites
+</a>
     </div>
 </div>
 
@@ -860,6 +883,8 @@ class="w-auto px-4 py-2 sm:px-6 sm:py-3 text-white bg-green-600 hover:bg-green-8
       <p class="text-gray-700 leading-relaxed text-sm" id="modalContent"></p>
     </div>
   </div>
+ 
+
 <script>
     // Sélectionner tous les formulaires d'ajout au panier
     document.querySelectorAll('.add-to-cart-form').forEach(form => {
@@ -1110,6 +1135,39 @@ function hideImagePopup() {
           }
         }
       </script>
+      <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          const isVisiteActive = {{ is_visite_active|yesno:"true,false" }};
+          const storeId = {{ store.id }};
+          const csrfToken = "{{ csrf_token }}";
+      
+          if (isVisiteActive) {
+            setTimeout(() => {
+              fetch("{% url 'confirmer_visite_ajax' %}", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "X-CSRFToken": csrfToken,
+                },
+                body: JSON.stringify({store_id: storeId})
+              })
+              .then(response => response.json())
+              .then(data => {
+                if (data.success) {
+                  // Reload page pour voir le message Django affiché
+                  window.location.reload();
+                } else if (data.error) {
+                  alert("⚠️ " + data.error);
+                }
+              })
+              .catch(err => {
+                console.error('Erreur confirmation visite:', err);
+              });
+            }, 60000);
+          }
+        });
+      </script>
+      
       
         
         

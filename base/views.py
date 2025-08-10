@@ -487,13 +487,256 @@ from django.db.models import QuerySet
 from django.utils import timezone
 from datetime import timedelta
 from core.utils import get_client_ip
-
+import time
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from core.models import Store, InviteVisibilite
+from django.utils.dateparse import parse_datetime
 from django.shortcuts import render, get_object_or_404, redirect
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Avg, Count, Sum, F
 from core.models import Store, Category, Product, StoreSubscription, Testimonial
 from core.forms import TestimonialForm
 from datetime import date
+
+# def store_detail(request, slug):
+#     user = request.user
+#     store = get_object_or_404(Store, slug=slug)
+#     categories = Category.objects.filter(store=store)
+#     products_qs = Product.objects.filter(store=store).order_by('-created_at')
+#     featured_products = products_qs
+#     range_10 = range(1, 11)
+
+#     # Filtres
+#     category_filter = request.GET.get('categorie', '')
+#     if category_filter:
+#         products_qs = products_qs.filter(category__id=category_filter)
+
+#     product_name = request.GET.get('nom', '').strip()
+#     if product_name:
+#         product_name = ' '.join(product_name.split())
+#         products_qs = products_qs.filter(name__icontains=product_name) | products_qs.filter(description__icontains=product_name)
+
+#     prix_min = request.GET.get('prix_min', '')
+#     prix_max = request.GET.get('prix_max', '')
+#     if prix_min:
+#         try:
+#             products_qs = products_qs.filter(price__gte=float(prix_min))
+#         except ValueError:
+#             pass
+#     if prix_max:
+#         try:
+#             products_qs = products_qs.filter(price__lte=float(prix_max))
+#         except ValueError:
+#             pass
+
+#     # Pagination des produits
+#     paginator = Paginator(products_qs, 6)
+#     page = request.GET.get('page')
+#     try:
+#         products = paginator.page(page)
+#     except PageNotAnInteger:
+#         products = paginator.page(1)
+#     except EmptyPage:
+#         products = paginator.page(paginator.num_pages)
+
+#     # Formulaire témoignage
+#     if request.method == 'POST':
+#         form = TestimonialForm(request.POST)
+#         if form.is_valid():
+#             testimonial = form.save(commit=False)
+#             testimonial.store = store
+#             testimonial.user = request.user
+#             testimonial.save()
+#             return redirect('store_detail', slug=slug)
+#     else:
+#         form = TestimonialForm()
+
+#     # Témoignages
+#     testimonials_qs = Testimonial.objects.filter(store=store)
+#     average_rating = testimonials_qs.aggregate(Avg('rating'))['rating__avg'] or 0
+#     rounded_rating = round(average_rating)
+#     testimonial_paginator = Paginator(testimonials_qs, 3)
+#     testimonial_page = request.GET.get('testimonial_page')
+#     try:
+#         testimonials = testimonial_paginator.page(testimonial_page)
+#     except PageNotAnInteger:
+#         testimonials = testimonial_paginator.page(1)
+#     except EmptyPage:
+#         testimonials = testimonial_paginator.page(testimonial_paginator.num_pages)
+
+#     # Abonnement
+#     is_subscribed = False
+
+#     if request.user.is_authenticated:
+#         is_subscribed = StoreSubscription.objects.filter(
+#             store=store, user=request.user
+#         ).exists()
+#     # ✅ Featured stores selon ciblage intelligent
+#     if user.is_authenticated:
+#         featured_stores = FeaturedStore.objects.filter(
+#             Q(show_in_all=True) |
+#             Q(show_in_all=False, country=user.country) |
+#             Q(show_in_all=False, city=user.city)
+#         ).select_related('store', 'store__country', 'store__city').order_by('-created_at')
+#     else:
+#         featured_stores = FeaturedStore.objects.filter(
+#             show_in_all=True
+#         ).select_related('store', 'store__country', 'store__city').order_by('-created_at')
+    
+#     # Initialiser les commandes par date, filtrées par les produits du store
+#     orders_by_date = Order.objects.filter(
+#         items__product__store=store,  # Assurez-vous d'utiliser 'items' si c'est le nom du champ qui lie Order à OrderItem
+#         activated=True
+#     ).annotate(order_date=TruncDate('created_at'))  # Truncate 'created_at' to date only
+
+#     # Si la barre de recherche est utilisée pour filtrer par date
+#     order_date = request.GET.get('order_date', None)
+#     if order_date:
+#         try:
+#             # Convertir la date en format valide
+#             order_date = datetime.strptime(order_date, '%Y-%m-%d').date()
+#             orders_by_date = orders_by_date.filter(order_date=order_date)
+#         except ValueError:
+#             messages.error(request, "La date fournie est invalide. Veuillez entrer une date correcte.")
+#             orders_by_date = []
+
+#     # Appliquer l'agrégation pour compter les commandes et calculer le montant total
+#     # Agrégation pour compter les commandes distinctes et calculer le montant total
+#     # Agrégation pour compter les commandes distinctes et calculer le montant total
+#     orders_by_date = orders_by_date.values('order_date').annotate(
+#     total_orders=Count('id', distinct=True),  # Compte les commandes distinctes
+#     total_amount_sum=Sum(
+#         F('items__price_at_time_of_order') * F('items__quantity')
+#     )  # Calculer le montant total des produits pour chaque commande
+#     ).order_by('-order_date')
+    
+#     # Pagination des commandes par date
+#     order_paginator = Paginator(orders_by_date, 6)
+#     order_page = request.GET.get('order_page')
+#     try:
+#         orders_by_date_page = order_paginator.page(order_page)
+#     except PageNotAnInteger:
+#         orders_by_date_page = order_paginator.page(1)
+#     except EmptyPage:
+#         orders_by_date_page = order_paginator.page(order_paginator.num_pages)
+
+#     today = timezone.now().date()
+#     week_ago = today - timedelta(days=6) 
+#     daily_visits = StoreVisit.objects.filter(store=store, date=today).count()
+#     weekly_visits = StoreVisit.objects.filter(store=store, date__gte=week_ago).count()
+
+#     if request.user.is_authenticated:
+#         visit, created = StoreVisit.objects.get_or_create(
+#             store=store,
+#             user=request.user,
+#             date=today,
+#             defaults={'count': 1}
+#         )
+#     else:
+#         ip_address = get_client_ip(request)
+#         visit, created = StoreVisit.objects.get_or_create(
+#             store=store,
+#             user=None,
+#             ip_address=ip_address,
+#             date=today,
+#             defaults={'count': 1}
+#         )
+    
+#     product_count = products.count() if isinstance(products, QuerySet) else len(products)
+#     category_count = categories.count() if isinstance(categories, QuerySet) else len(categories)
+#     # Récupérer tous les produits avant pagination
+#     # Nombre total de produits sans pagination
+#     total_products = Product.objects.filter(store=store).count()
+    
+    
+#     invite_id = request.GET.get('invite_id')
+# if invite_id:
+#     try:
+#         invite = InviteVisibilite.objects.get(id=invite_id, store=store, is_active=True)
+#         # Si première visite depuis cette invite, enregistrer le début
+#         if not request.session.get('invite_visite_start'):
+#             request.session['invite_visite_start'] = timezone.now().isoformat()
+#             request.session['invite_id'] = invite.id
+#     except InviteVisibilite.DoesNotExist:
+#         invite = None
+# else:
+#     invite = None
+
+# # Vérification pour comptabiliser la visite après 1 minute
+# invite_session_id = request.session.get('invite_id')
+# start_time_str = request.session.get('invite_visite_start')
+
+# if invite_session_id and start_time_str:
+#     invite = InviteVisibilite.objects.filter(id=invite_session_id, store=store, is_active=True).first()
+#     if invite:
+#         start_time = parse_datetime(start_time_str)
+#         if start_time and timezone.now() - start_time >= timedelta(minutes=1):
+#             if user.is_authenticated:
+#                 visite_comptee = invite.enregistrer_visite(user)
+#                 if visite_comptee:
+#                     # Optionnel: message succès ou autre logique
+#                     pass
+#             # Nettoyer la session pour éviter double comptage
+#             try:
+#                 del request.session['invite_visite_start']
+#                 del request.session['invite_id']
+#             except KeyError:
+#                 pass
+
+
+
+#     context = {
+#         'store': store,
+#         'categories': categories,
+#         'products': products,
+#         'paginator': paginator,
+#         'category_filter': category_filter,
+#         'product_name': product_name,
+#         'prix_min': prix_min,
+#         'prix_max': prix_max,
+#         'form': form,
+#         'testimonials': testimonials,
+#         'testimonial_paginator': testimonial_paginator,
+#         'product_count': product_count,
+#         'total_products': total_products,
+#         'category_count': category_count,
+#         'daily_visits': daily_visits,
+#         'weekly_visits': weekly_visits,
+#         'range_10': range_10,
+#         'average_rating': average_rating,
+#         'rounded_rating': rounded_rating,
+#         'featured_products': featured_products,
+#         'is_subscribed': is_subscribed,
+#         "featured_stores": featured_stores,
+#         'orders_by_date': orders_by_date_page,
+#         'order_date': order_date, 
+#         'order_paginator': order_paginator,
+#     }
+
+#     return render(request, 'base/store_detail.html', context)
+from datetime import timedelta, datetime
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.db.models import Q, Count, Sum, F, Avg
+from django.utils.dateparse import parse_datetime
+from django.contrib import messages
+from django.db.models.functions import TruncDate
+from django.db.models.query import QuerySet
+from django.db.models.query import QuerySet
+# Tes imports modèles et fonctions complémentaires
+# from .models import Store, Category, Product, Testimonial, StoreSubscription, FeaturedStore, Order, StoreVisit, InviteVisibilite
+# from .forms import TestimonialForm
+# from .utils import get_client_ip
+
+from django.shortcuts import get_object_or_404, redirect, render
+from django.db.models import Q, Avg, Count, Sum, F
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.utils.dateparse import parse_datetime
+from django.utils import timezone
+from datetime import timedelta, datetime
+from django.contrib import messages
 
 def store_detail(request, slug):
     user = request.user
@@ -645,6 +888,37 @@ def store_detail(request, slug):
     # Nombre total de produits sans pagination
     total_products = Product.objects.filter(store=store).count()
 
+    # --- GESTION INVITE VISIBILITE AVEC TIMER SIMPLIFIÉ ---
+
+    # Démarrage timer visite invite
+    invite_id = request.GET.get('invite_id')
+    if invite_id and not request.session.get('invite_visite_start'):
+        request.session['invite_visite_start'] = timezone.now().isoformat()
+        request.session['invite_id'] = invite_id
+
+    invite_timer_active = False
+    visite_comptee = False
+    invite_session_id = request.session.get('invite_id')
+    start_time_str = request.session.get('invite_visite_start')
+
+    if invite_session_id and start_time_str:
+        invite_timer_active = True
+        invite = InviteVisibilite.objects.filter(id=invite_session_id, store=store, is_active=True).first()
+        if invite:
+            start_time = parse_datetime(start_time_str)
+            if start_time and timezone.now() - start_time >= timedelta(minutes=1):
+                if user.is_authenticated:
+                    visite_comptee = invite.enregistrer_visite(user)
+                    if visite_comptee:
+                        messages.success(request, "Félicitations ! Votre visite a bien été prise en compte et vous avez gagné.")
+                # Nettoyage session
+                try:
+                    del request.session['invite_visite_start']
+                    del request.session['invite_id']
+                    invite_timer_active = False
+                except KeyError:
+                    pass
+
     context = {
         'store': store,
         'categories': categories,
@@ -667,13 +941,531 @@ def store_detail(request, slug):
         'rounded_rating': rounded_rating,
         'featured_products': featured_products,
         'is_subscribed': is_subscribed,
-        "featured_stores": featured_stores,
+        'featured_stores': featured_stores,
         'orders_by_date': orders_by_date_page,
-        'order_date': order_date, 
+        'order_date': order_date,
         'order_paginator': order_paginator,
+        'invite_timer_active': invite_timer_active,
     }
 
     return render(request, 'base/store_detail.html', context)
+
+
+
+
+# @login_required
+# def detail_store(request, store_id):
+#     store = get_object_or_404(Store, id=store_id)
+#     request.session['visite_start'] = time.time()
+#     return render(request, 'stores/detail.html', {'store': store})
+from django.http import JsonResponse
+from django.utils import timezone
+
+@login_required
+def demarrer_visite_invite(request, invite_id):
+    """
+    Appelée quand un utilisateur clique sur une invite de visibilité.
+    Enregistre en session le début du timer pour comptabiliser la visite après 1 minute.
+    """
+    try:
+        invite = InviteVisibilite.objects.get(id=invite_id, is_active=True)
+    except InviteVisibilite.DoesNotExist:
+        return JsonResponse({'error': 'Invitation invalide ou inactive'}, status=404)
+    
+    request.session['invite_visite_start'] = timezone.now().isoformat()
+    request.session['invite_id'] = invite.id
+    return JsonResponse({'message': 'Visite démarrée'})
+
+# @login_required
+# def confirmer_visite(request, invite_id):
+#     invite = get_object_or_404(InviteVisibilite, id=invite_id, type_invite='store')
+#     start_time = request.session.get('visite_start', None)
+
+#     if start_time and (time.time() - start_time) >= invite.temps_minimum:
+#         if invite.enregistrer_visite(request.user):
+#             messages.success(request, "Votre visite a été comptabilisée 🎉")
+#         else:
+#             messages.warning(request, "Vous avez déjà visité ce store.")
+#     else:
+#         messages.error(request, "Vous devez rester au moins 1 minute avant de valider.")
+
+#     return redirect('detail_store', store_id=invite.store.id)
+
+
+from django.shortcuts import get_object_or_404, render, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from core.forms import InviteVisibiliteForm
+from core.models import Store
+# @login_required
+# def creer_invite_visibilite(request, store_id=None):
+#     store = None
+#     if store_id:
+#         store = get_object_or_404(Store, id=store_id, owner=request.user)
+
+#     if request.method == "POST":
+#         form = InviteVisibiliteForm(request.POST, request.FILES)
+#         if form.is_valid():
+#             invite = form.save(commit=False)
+#             invite.owner = request.user
+#             # Si store_id fourni, on force type_invite à 'store' et le store
+#             if store:
+#                 invite.type_invite = 'store'
+#                 invite.store = store
+#             invite.is_active = False  # En attente validation
+#             invite.save()
+#             messages.success(request, "Invitation créée, en attente de validation par l'admin.")
+#             return redirect('liste_invites')
+#     else:
+#         initial_data = {}
+#         if store:
+#             initial_data['type_invite'] = 'store'
+#             initial_data['store'] = store.id
+#         form = InviteVisibiliteForm(initial=initial_data)
+
+#     return render(request, 'base/creer_invite.html', {'form': form, 'store': store})
+from decimal import Decimal
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def creer_invite_visibilite(request, store_id=None):
+    store = None
+    if store_id:
+        store = get_object_or_404(Store, id=store_id, owner=request.user)
+
+    if request.method == "POST":
+        form = InviteVisibiliteForm(request.POST, request.FILES)
+        if form.is_valid():
+            invite = form.save(commit=False)
+            invite.owner = request.user
+            if store:
+                invite.type_invite = 'store'
+                invite.store = store
+            invite.is_active = False  # En attente validation/paiement
+            invite.save()
+            messages.success(request, "Invitation créée, en attente de paiement pour activation.")
+            return redirect('invite_visibilite_payment', invite_id=invite.id)
+    else:
+        initial_data = {}
+        if store:
+            initial_data['type_invite'] = 'store'
+            initial_data['store'] = store.id
+        form = InviteVisibiliteForm(initial=initial_data)
+
+    return render(request, 'base/creer_invite.html', {'form': form, 'store': store})
+
+from decimal import Decimal
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from core.models import InviteVisibilite, UniteVisite, InviteVisibilitePayment
+
+@login_required
+def invite_visibilite_payment_view(request, invite_id):
+    invite = get_object_or_404(InviteVisibilite, id=invite_id, owner=request.user)
+
+    unite_visite_obj = UniteVisite.objects.first()
+    unite_visite = unite_visite_obj.montant if unite_visite_obj else Decimal('0.002')
+    montant_total = Decimal(invite.nombre_invites) * unite_visite
+
+    if request.method == 'POST':
+        transaction_id = request.POST.get('transaction_id')
+        phone_number = request.POST.get('phone_number')
+
+        if not transaction_id or not phone_number:
+            messages.error(request, "Veuillez remplir toutes les informations de paiement.")
+        else:
+            InviteVisibilitePayment.objects.create(
+                invite=invite,
+                utilisateur=request.user,
+                unite_visite=unite_visite_obj,
+                montant_total=montant_total,
+                transaction_id=transaction_id,
+                numero_telephone=phone_number,
+                est_valide=False  # Reste en attente de validation
+            )
+            messages.success(request, "Paiement enregistré. Le statut sera validé par l'administrateur.")
+            return redirect('liste_invites')
+
+    return render(request, 'base/payment_invite_visibilite.html', {
+        'invite': invite,
+        'unite_visite': unite_visite,
+        'montant_total': montant_total,
+    })
+
+
+
+
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from core.models import InviteVisibilite,WithdrawalHistory
+@login_required
+def liste_invites(request):
+    user = request.user
+
+    invites = InviteVisibilite.objects.filter(
+        owner=user,
+        is_active=True,
+        visites_restantes__gt=0
+    ).filter(
+        Q(ciblage_type='all') |
+        Q(ciblage_type='country', country=user.country) |
+        Q(ciblage_type='city', city=user.city)
+    ).exclude(
+        utilisateurs_ayant_visite=user
+    ).order_by('-visites_restantes')
+
+    return render(request, 'base/liste_invites.html', {'invites': invites})
+
+from django.shortcuts import get_object_or_404, redirect
+from core.models import Store
+
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from django.http import HttpResponse
+from core.models import Store
+
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.http import HttpResponse
+from django.utils import timezone
+from decimal import Decimal
+from core.models import InviteVisibilite, VisiteMoney
+
+
+@login_required
+def invite_redirect(request, invite_id):
+    invite = get_object_or_404(InviteVisibilite, id=invite_id, is_active=True)
+
+    if invite.type_invite == 'store' and invite.store:
+        return redirect('visit_store', store_id=invite.store.id)
+
+    elif invite.type_invite == 'lien':
+        return redirect('visit_link', invite_id=invite.id)
+
+    return HttpResponse("Type d'invitation inconnu.", status=400)
+
+
+@login_required
+def visit_store(request, store_id):
+    store = get_object_or_404(Store, id=store_id)
+    request.session['visit_start_time'] = timezone.now().isoformat()
+    request.session['visited_store_id'] = store_id
+    return redirect('store_detail', slug=store.slug)
+
+
+@login_required
+def visit_link(request, invite_id):
+    invite = get_object_or_404(
+        InviteVisibilite,
+        id=invite_id,
+        is_active=True,
+        type_invite='lien'
+    )
+
+    visite_comptee = invite.enregistrer_visite(request.user)
+
+    if visite_comptee:
+        visite_money = VisiteMoney.objects.get(user=request.user)
+        messages.success(
+            request,
+            f"🎉 Visite comptabilisée, vous avez gagné {visite_money.GAIN_PAR_LIEN} USD sur ce lien !"
+        )
+    else:
+        messages.warning(
+            request,
+            "⛔ Vous avez déjà visité ce lien ou il n'y a plus de visites disponibles."
+        )
+
+    if invite.url_redirection:
+        return redirect(invite.url_redirection)
+
+    return HttpResponse("Lien externe non défini.", status=404)
+
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, get_object_or_404
+from core.models import VisiteMoney
+
+@login_required
+def visite_money_solde(request):
+    visite_money = get_object_or_404(VisiteMoney, user=request.user)
+    context = {
+        'solde': visite_money.total_gain_usd,
+    }
+    return render(request, 'base/solde.html', context)
+
+
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from django.contrib import messages
+
+@login_required
+def confirmer_mot_de_passe(request):
+    if request.method == 'POST':
+        mot_de_passe = request.POST.get('mot_de_passe')
+        user = request.user
+        
+        # authenticate attend le paramètre username, ici c'est en fait email (USERNAME_FIELD)
+        user_auth = authenticate(request, username=user.email, password=mot_de_passe)
+        
+        if user_auth is not None:
+            # Mot de passe correct, on peut enregistrer en session
+            request.session['auth_retrait'] = True
+            return redirect('retirer_mobile_money')
+        else:
+            messages.error(request, "Mot de passe incorrect. Veuillez réessayer.")
+    
+    return render(request, 'base/confirmer_mot_de_passe.html')
+
+from decimal import Decimal
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from django.utils.timezone import now
+from django.db.models import Sum
+from core.forms import RetraitMobileMoneyForm
+from core.models import RetraitMobileMoney, VisiteMoney
+from django.contrib import messages
+from decimal import Decimal
+from django.contrib.auth.decorators import login_required
+from core.forms import RetraitMobileMoneyForm
+from decimal import Decimal
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from core.forms import RetraitMobileMoneyForm
+from core.models import WithdrawalHistory
+
+@login_required
+def retirer_mobile_money(request):
+    if not request.session.get('auth_retrait'):
+        messages.error(request, "Veuillez confirmer votre mot de passe avant de retirer.")
+        return redirect('confirmer_mot_de_passe')
+
+    visite_money = getattr(request.user, 'visite_money', None)
+    if not visite_money:
+        messages.error(request, "Aucun compte de gains trouvé pour cet utilisateur.")
+        return redirect('home')
+
+    if request.method == 'POST':
+        form = RetraitMobileMoneyForm(request.POST)
+        if form.is_valid():
+            nom_utilisateur = form.cleaned_data['nom_utilisateur']
+            numero_mobilemoney = form.cleaned_data['numero_mobilemoney']
+            nom_compte = form.cleaned_data['nom_compte']
+            montant = form.cleaned_data['montant']
+
+            if montant < Decimal('5.00'):
+                messages.error(request, "Le montant minimum pour un retrait est de 5 USD.")
+            elif visite_money.total_gain_usd < montant:
+                messages.error(request, "Solde insuffisant pour effectuer ce retrait.")
+            else:
+                # Débiter le solde
+                visite_money.total_gain_usd -= montant
+                visite_money.save()
+
+                # Créer l'historique du retrait
+                WithdrawalHistory.objects.create(
+                    user=request.user,
+                    amount=montant,
+                    payment_number=numero_mobilemoney,
+                    status='pending',
+                    message="Demande de retrait enregistrée, en attente de validation."
+                )
+
+                messages.success(
+                    request,
+                    "Votre demande de retrait a été enregistrée avec succès. L’administrateur vous transfert d'ici peu 🎉."
+                )
+                return redirect('retirer_mobile_money')
+        else:
+            messages.error(request, "Formulaire invalide, veuillez vérifier les champs.")
+    else:
+        form = RetraitMobileMoneyForm()
+
+    return render(request, 'base/retirer_mobile_money.html', {'form': form})
+
+# @login_required
+# def retirer_mobile_money(request):
+#     if not request.session.get('auth_retrait'):
+#         messages.error(request, "Veuillez confirmer votre mot de passe avant de retirer.")
+#         return redirect('confirmer_mot_de_passe')
+
+#     # Récupérer l'objet VisiteMoney lié à l'utilisateur
+#     visite_money = getattr(request.user, 'visite_money', None)
+#     if not visite_money:
+#         messages.error(request, "Aucun compte de gains trouvé pour cet utilisateur.")
+#         return redirect('home')  # Ou une autre page
+
+#     if request.method == 'POST':
+#         form = RetraitMobileMoneyForm(request.POST)
+#         if form.is_valid():
+#             nom_utilisateur = form.cleaned_data['nom_utilisateur']
+#             numero_mobilemoney = form.cleaned_data['numero_mobilemoney']
+#             nom_compte = form.cleaned_data['nom_compte']
+#             montant = form.cleaned_data['montant']
+
+#             # Vérification du montant minimal
+#             if montant < Decimal('5.00'):
+#                 messages.error(request, "Le montant minimum pour un retrait est de 5 USD.")
+#             elif visite_money.total_gain_usd < montant:
+#                 messages.error(request, "Solde insuffisant pour effectuer ce retrait.")
+#             else:
+#                 # Débiter le solde
+#                 visite_money.total_gain_usd -= montant
+#                 visite_money.save()
+
+#                 # Tu peux ici créer une instance de RetraitMobileMoney pour loguer la demande
+#                 # RetraitMobileMoney.objects.create(user=request.user, montant=montant, ...)
+
+#                 messages.success(
+#                     request,
+#                     "Votre demande de retrait a été enregistrée avec succès. L’administrateur vous transfert d'ici peu."
+#                 )
+
+#             return redirect('retirer_mobile_money')
+#         else:
+#             messages.error(request, "Formulaire invalide, veuillez vérifier les champs.")
+#     else:
+#         form = RetraitMobileMoneyForm()
+
+#     return render(request, 'base/retirer_mobile_money.html', {'form': form})
+
+
+# views.py
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
+@login_required
+def withdrawal_history_view(request):
+    historiques = WithdrawalHistory.objects.filter(user=request.user).order_by('-created_at')
+    paginator = Paginator(historiques, 6)  # 12 par page
+    page = request.GET.get('page')
+    try:
+        historiques_page = paginator.page(page)
+    except PageNotAnInteger:
+        historiques_page = paginator.page(1)
+    except EmptyPage:
+        historiques_page = paginator.page(paginator.num_pages)
+
+    return render(request, "base/withdrawal_history.html", {"historiques": historiques_page})
+
+
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from core.models import InviteVisibilitePayment
+
+@login_required
+def invite_visibilite_payment_list_view(request):
+    payments_qs = InviteVisibilitePayment.objects.filter(
+        utilisateur=request.user, est_valide=True
+    ).select_related('invite').order_by('-date_paiement')
+
+    paginator = Paginator(payments_qs, 6)
+    page = request.GET.get('page')
+    try:
+        payments = paginator.page(page)
+    except PageNotAnInteger:
+        payments = paginator.page(1)
+    except EmptyPage:
+        payments = paginator.page(paginator.num_pages)
+
+    return render(request, 'base/invite_visibilite_payment_list.html', {
+        'payments': payments,
+    })
+
+# @login_required
+# def visit_link(request, invite_id):
+#     invite = get_object_or_404(
+#         InviteVisibilite,
+#         id=invite_id,
+#         is_active=True,
+#         type_invite='lien'
+#     )
+
+#     # Comptabiliser la visite
+#     visite_comptee = invite.enregistrer_visite(request.user)
+
+#     if visite_comptee:
+#         # Récupérer ou créer le portefeuille de gains
+#         visite_money, _ = VisiteMoney.objects.get_or_create(user=request.user)
+
+#         # Appliquer le gain spécifique aux liens
+#         GAIN_PAR_LIEN = Decimal('0.001')  # tu peux changer la valeur ici
+#         visite_money.total_gain_usd += GAIN_PAR_LIEN
+#         visite_money.save()
+
+#         messages.success(
+#             request,
+#             f"🎉 Visite comptabilisée, vous avez gagné {GAIN_PAR_LIEN} USD sur ce lien !"
+#         )
+#     else:
+#         messages.warning(
+#             request,
+#             "⛔ Vous avez déjà visité ce lien ou il n'y a plus de visites disponibles."
+#         )
+
+#     # Redirection vers le lien externe
+#     if invite.url_redirection:
+#         return redirect(invite.url_redirection)
+
+#     return HttpResponse("Lien externe non défini.", status=404)
+
+
+
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+import json
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404
+
+@login_required
+@csrf_exempt
+def confirmer_visite_ajax(request):
+    if request.method == 'POST':
+        import json
+        try:
+            data = json.loads(request.body)
+            store_id = data.get('store_id')
+            store = get_object_or_404(Store, id=store_id)
+
+            invite = InviteVisibilite.objects.filter(store=store, type_invite='store', is_active=True).first()
+            if not invite:
+                return JsonResponse({"error": "Aucune invitation active trouvée pour ce store."})
+
+            visite_comptee = invite.enregistrer_visite(request.user)
+            if visite_comptee:
+                visite_money = VisiteMoney.objects.get(user=request.user)
+
+                # Ajout message Django
+                messages.success(request, f"🎉 Visite comptabilisée, vous avez gagné {visite_money.total_gain_usd} USD !")
+
+                # Nettoyer session visite
+                request.session.pop('visit_start_time', None)
+                request.session.pop('visited_store_id', None)
+
+                return JsonResponse({"success": True})
+            else:
+                return JsonResponse({"error": "Vous avez déjà visité ce store ou plus de visites restantes."})
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)})
+    return JsonResponse({"error": "Méthode non autorisée."}, status=405)
 
 
 # @login_required

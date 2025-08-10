@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load static form_tags %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+  <div class="bg-white shadow-lg rounded-xl w-full max-w-md p-8 space-y-6">
+    <div class="text-center">
+      <img src="{% static 'img/logoo.png' %}" alt="Logo" class="h-12 mx-auto mb-4">
+      <h2 class="text-3xl font-bold text-blue-700">Formulaire de retrait Mobile Money</h2>
+      <p class="text-gray-600 mt-2">Retirez un montant minimum de 5 USD</p>
+    </div>
+
+    <form method="post" novalidate class="space-y-4">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+
+      <div>
+        {{ form.nom_utilisateur.label_tag }}
+        {{ form.nom_utilisateur|add_class:"input-field w-full p-2 border border-gray-300 rounded" }}
+        <p class="text-sm text-red-500 mt-1">{{ form.nom_utilisateur.errors|striptags }}</p>
+      </div>
+
+      <div>
+        {{ form.numero_mobilemoney.label_tag }}
+        {{ form.numero_mobilemoney|add_class:"input-field w-full p-2 border border-gray-300 rounded" }}
+        <p class="text-sm text-red-500 mt-1">{{ form.numero_mobilemoney.errors|striptags }}</p>
+      </div>
+
+      <div>
+        {{ form.nom_compte.label_tag }}
+        {{ form.nom_compte|add_class:"input-field w-full p-2 border border-gray-300 rounded" }}
+        <p class="text-sm text-red-500 mt-1">{{ form.nom_compte.errors|striptags }}</p>
+      </div>
+
+      <div>
+        {{ form.montant.label_tag }}
+        {{ form.montant|add_class:"input-field w-full p-2 border border-gray-300 rounded" }}
+        <p class="text-sm text-red-500 mt-1">{{ form.montant.errors|striptags }}</p>
+      </div>
+
+      <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition duration-300">
+        Envoyer la demande
+      </button>
+    </form>
+
+    {% if messages %}
+    <div class="mt-4 space-y-2">
+      {% for message in messages %}
+        <p class="text-{{ message.tags }}-600">{{ message }}</p>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

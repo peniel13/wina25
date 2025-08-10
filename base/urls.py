@@ -17,6 +17,8 @@ urlpatterns = [
     path('products/grouped-by-type/', views.products_grouped_by_type_by_city_view, name='products_grouped_by_type_by_city'),
     path('stores/', views.store_list_all_view, name='store_list_wina'),
     path('stores/create/', views.create_store_view, name='create_store'),
+    path('store/<int:store_id>/visit/', views.visit_store, name='visit_store'),
+    path('invite/redirect/<int:invite_id>/', views.invite_redirect, name='invite_redirect'),
     path('stores/<slug:slug>/', views.store_detail, name='store_detail'),
     path('products/list/', views.product_list_view, name='product_list_wina'),
     path('product/<int:id>/', views.product_detail, name='product_detail_wina'),
@@ -112,5 +114,23 @@ urlpatterns = [
         'product/<int:product_id>/toggle-hidden/',
         views.toggle_hidden,
         name='toggle_hidden'
+    ),
+    path('invites/', views.liste_invites, name='liste_invites'),
+    path('invites/creer/', views.creer_invite_visibilite, name='creer_invite_visibilite'),
+
+    # Ou pour créer une invitation liée à un store (optionnel)
+    path('invites/creer/<int:store_id>/', views.creer_invite_visibilite, name='creer_invite_visibilite_store'),
+    path('invite/redirect/<int:invite_id>/', views.invite_redirect, name='invite_redirect'),
+    path('invite/confirmer_visite_ajax/', views.confirmer_visite_ajax, name='confirmer_visite_ajax'),
+    path('invite/visit-link/<int:invite_id>/', views.visit_link, name='visit_link'),
+    path('mon-solde/', views.visite_money_solde, name='visite_money_solde'),
+    path('retirer-mobile-money/', views.retirer_mobile_money, name='retirer_mobile_money'),
+    path('confirmer-mot-de-passe/', views.confirmer_mot_de_passe, name='confirmer_mot_de_passe'),
+    path("historique-retraits/", views.withdrawal_history_view, name="withdrawal_history"),
+    path('invite/<int:invite_id>/payment/', views.invite_visibilite_payment_view, name='invite_visibilite_payment'),
+    path(
+        'mes-invitations-payees/',
+        views.invite_visibilite_payment_list_view,
+        name='invite_visibilite_payment_list'
     ),
 ]

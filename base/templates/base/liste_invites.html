@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+  <h2 class="text-2xl font-bold mb-6">Visite + de Pub et gagne: +💵</h2>
+
+  <div id="invites" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6 mb-4">
+    {% for invite in invites %}
+      {% if invite.type_invite == 'store' and invite.store %}
+      <a href="{% url 'store_detail' slug=invite.store.slug %}?invite_id={{ invite.id }}" target="_blank" class="flex-shrink-0 relative border rounded-lg shadow hover:shadow-lg overflow-hidden bg-white">
+        <div class="h-40 bg-cover bg-center" style="background-image: url('{% if invite.store.thumbnail %}{{ invite.store.thumbnail.url }}{% else %}{% static 'img/default-thumbnail.jpg' %}{% endif %}')">
+          {% if invite.store.country.flag %}
+            <div class="absolute top-2 right-2">
+              <img src="{{ invite.store.country.flag.url }}" class="w-5 h-5 rounded-full border border-white shadow" alt="{{ invite.store.country.name }}">
+            </div>
+          {% endif %}
+        </div>
+        <div class="bg-black bg-opacity-60 text-white p-3 text-sm">
+          <h3 class="font-semibold truncate">{{ invite.store.name }}</h3>
+          <p class="text-xs text-blue-200 italic">{{ invite.store.typestore.nom }}</p>
+          <p class="truncate mt-1">{{ invite.store.adresse }}</p>
+          <p class="text-xs">{{ invite.store.city.name }}, {{ invite.store.country.name }}</p>
+          <p class="mt-1 text-xs">Visites restantes : {{ invite.visites_restantes }}</p>
+        </div>
+      </a>
+      
+      {% elif invite.type_invite == 'lien' %}
+        <a href="{% url 'invite_redirect' invite.id %}" target="_blank" class="flex-shrink-0 relative border rounded-lg shadow hover:shadow-lg overflow-hidden bg-white">
+          <div class="h-40 bg-cover bg-center" style="background-image: url('{% if invite.image %}{{ invite.image.url }}{% else %}{% static 'img/default-thumbnail.jpg' %}{% endif %}')"></div>
+          <div class="bg-black bg-opacity-60 text-white p-3 text-sm">
+            <h3 class="font-semibold truncate">Lien externe</h3>
+            <p class="truncate mt-1 text-blue-200 underline">{{ invite.url_redirection }}</p>
+            <p class="mt-1 text-xs">Visites restantes : {{ invite.visites_restantes }}</p>
+          </div>
+        </a>
+      {% endif %}
+    {% empty %}
+      <p class="text-gray-500">Aucune invitation de visibilité active trouvée.</p>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

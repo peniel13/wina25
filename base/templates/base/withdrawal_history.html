@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="text-2xl font-bold mb-6">Historique des retraits</h2>
+
+<div class="overflow-x-auto">
+  <table class="min-w-full bg-white shadow rounded-lg overflow-hidden">
+    <thead>
+      <tr class="bg-gray-100 text-left text-gray-600 uppercase text-sm leading-normal">
+        <th class="py-3 px-6">Montant</th>
+        <th class="py-3 px-6">Numéro</th>
+        <th class="py-3 px-6">Statut</th>
+        <th class="py-3 px-6">Date</th>
+      </tr>
+    </thead>
+    <tbody class="text-gray-700">
+      {% for retrait in historiques %}
+      <tr class="border-b border-gray-200 hover:bg-gray-100">
+        <td class="py-3 px-6">{{ retrait.amount }} USD</td>
+        <td class="py-3 px-6">{{ retrait.payment_number }}</td>
+        <td class="py-3 px-6">
+          {% if retrait.status == "success" %}
+            <span class="text-green-600 font-semibold">Succès</span>
+          {% elif retrait.status == "failed" %}
+            <span class="text-red-600 font-semibold">Échec</span>
+          {% else %}
+            <span class="text-yellow-600 font-semibold">En attente</span>
+          {% endif %}
+        </td>
+        <td class="py-3 px-6">{{ retrait.created_at|date:"d/m/Y H:i" }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="4" class="py-4 text-center text-gray-500">Aucun retrait effectué.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if historiques.has_other_pages %}
+<div class="mt-8">
+  <nav aria-label="Pagination des retraits" class="flex justify-center">
+    <ul class="flex space-x-4">
+      {% if historiques.has_previous %}
+        <li>
+          <a href="?page=1#withdrawals" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">&laquo; Première</a>
+        </li>
+        <li>
+          <a href="?page={{ historiques.previous_page_number }}#withdrawals" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">&lt;</a>
+        </li>
+      {% endif %}
+
+      <li>
+        <span class="px-4 py-2 bg-blue-600 text-white rounded-lg">{{ historiques.number }}</span>
+      </li>
+
+      {% if historiques.number < historiques.paginator.num_pages %}
+        <li>
+          <a href="?page={{ historiques.paginator.num_pages }}#withdrawals" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-blue-600 hover:text-white">
+            {{ historiques.paginator.num_pages }}
+          </a>
+        </li>
+      {% endif %}
+
+      {% if historiques.has_next %}
+        <li>
+          <a href="?page={{ historiques.next_page_number }}#withdrawals" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">&gt;</a>
+        </li>
+        <li>
+          <a href="?page={{ historiques.paginator.num_pages }}#withdrawals" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Dernière &raquo;</a>
+        </li>
+      {% endif %}
+    </ul>
+  </nav>
+</div>
+{% endif %}
+{% endblock %}

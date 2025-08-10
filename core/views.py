@@ -2082,3 +2082,4 @@ class StoreByTypeBusinessListAPIView(generics.ListAPIView):
 
         # Si non connecté ou sans ville/pays → tous les stores du typebusiness
         return queryset.order_by('-created_at')
+

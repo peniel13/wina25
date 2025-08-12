@@ -4,7 +4,7 @@
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-  <h2 class="text-2xl font-bold mb-6">Visite + de Pub et gagne: +💵</h2>
+  <h2 class="text-2xl font-bold mb-6">Visite + et gagne +💵</h2>
 
   <div id="invites" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6 mb-4">
     {% for invite in invites %}
@@ -42,4 +42,71 @@
   </div>
 
 </div>
+{% if ad_popup and ad_popup.is_active %}
+<div id="popupAd" class="modal show d-block" tabindex="-1"
+     style="background: rgba(0,0,0,0.5); position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; display: flex; justify-content: center;
+            align-items: center; z-index: 9999;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 90%; width: auto;">
+        <div class="modal-content position-relative">
+            <button type="button" class="btn-close" onclick="closePopup()"
+                    style="border: none; background: none; font-size: 30px;
+                           color: #fff; position: absolute; top: 20px; right: 20px;">&times;
+            </button>
+            <div class="modal-body text-center" style="display: flex; flex-direction: column;
+                                                        justify-content: space-between; max-height: 80vh;">
+
+                {% if ad_popup.media_type == "image" %}
+                    <img src="{{ ad_popup.file.url }}" class="img-fluid"
+                         style="max-height: 70vh; width: auto; margin-bottom: 20px;" alt="Publicité">
+                {% else %}
+                    <video autoplay controls class="img-fluid"
+                           style="max-height: 70vh; width: auto; margin-bottom: 20px;">
+                        <source src="{{ ad_popup.file.url }}" type="video/mp4">
+                    </video>
+                {% endif %}
+
+                <div class="mt-4 d-flex flex-wrap justify-content-center gap-3">
+
+                    {% if ad_popup.url %}
+                        <a href="{{ ad_popup.url }}" target="_blank"
+                           class="btn btn-danger"
+                           style="font-size: 18px; padding: 10px 20px; background-color: #ff5733;
+                                  border: none; color: white; border-radius: 5px;
+                                  transition: background-color 0.3s ease;">
+                            🔗 Voir l'annonce
+                        </a>
+                    {% endif %}
+
+                    {% if ad_popup.store %}
+                        <a href="{% url 'store_detail' ad_popup.store.slug %}"
+                           class="btn btn-primary"
+                           style="font-size: 18px; padding: 10px 20px; background-color: #007bff;
+                                  border: none; color: white; border-radius: 5px;
+                                  transition: background-color 0.3s ease;">
+                            🏬 Visiter le store
+                        </a>
+                    {% endif %}
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+<script>
+    function closePopup() {
+        const popup = document.getElementById("popupAd");
+    
+        // Stopper la vidéo s'il y en a une
+        const video = popup.querySelector("video");
+        if (video) {
+            video.pause();
+            video.currentTime = 0; // optionnel : remet la vidéo au début
+        }
+    
+        // Cacher le popup
+        popup.style.display = "none";
+    }
+</script>
 {% endblock %}

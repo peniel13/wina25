@@ -1102,23 +1102,38 @@ def invite_visibilite_payment_view(request, invite_id):
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from core.models import InviteVisibilite,WithdrawalHistory
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.db.models import Q
+from core.models import InviteVisibilite, InviteVisite
 @login_required
 def liste_invites(request):
     user = request.user
 
+    # IDs des invitations déjà visitées par l'utilisateur
+    invites_visitees_ids = InviteVisite.objects.filter(user=user).values_list('invite_id', flat=True)
+
+    # Invitations actives, visites restantes > 0, non visitées
     invites = InviteVisibilite.objects.filter(
-        owner=user,
         is_active=True,
         visites_restantes__gt=0
-    ).filter(
-        Q(ciblage_type='all') |
-        Q(ciblage_type='country', country=user.country) |
-        Q(ciblage_type='city', city=user.city)
     ).exclude(
-        utilisateurs_ayant_visite=user
-    ).order_by('-visites_restantes')
+        id__in=invites_visitees_ids
+    )
 
-    return render(request, 'base/liste_invites.html', {'invites': invites})
+    from django.db.models import Q
+
+    # Construire le filtre sur les champs directs
+    q_filter = Q(cibler_tout_user=True)
+    if user.country:
+        q_filter |= Q(country=user.country)
+    if user.city:
+        q_filter |= Q(city=user.city)
+
+    invites = invites.filter(q_filter).order_by('-visites_restantes')
+    ad_popup = get_targeted_popup(user)
+    return render(request, 'base/liste_invites.html', {'invites': invites,'ad_popup': ad_popup,})
+
 
 from django.shortcuts import get_object_or_404, redirect
 from core.models import Store
@@ -1191,14 +1206,133 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404
 from core.models import VisiteMoney
 
+
 @login_required
 def visite_money_solde(request):
-    visite_money = get_object_or_404(VisiteMoney, user=request.user)
-    context = {
-        'solde': visite_money.total_gain_usd,
-    }
-    return render(request, 'base/solde.html', context)
+    visite_money = VisiteMoney.objects.filter(user=request.user).first()
+    solde = visite_money.total_gain_usd if visite_money else 0
 
+    return render(request, 'base/solde.html', {'solde': solde})
+
+
+from decimal import Decimal
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from decimal import Decimal
+from django.contrib.auth import get_user_model
+User = get_user_model()
+from decimal import Decimal
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.models import User
+from core.models import VisiteMoney, TransferVisiteMoney
+from decimal import Decimal
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.models import User
+from core.models import VisiteMoney, TransferVisiteMoney
+from decimal import Decimal
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from django.contrib.auth.models import User
+from core.models import VisiteMoney, TransferVisiteMoney
+
+@login_required
+def get_received_transfer_count(user):
+    return TransferVisiteMoney.objects.filter(receiver=user).count()
+
+@login_required
+def is_user_allowed_to_transfer(user):
+    received_count = get_received_transfer_count(user)
+    visite_money = getattr(user, 'visite_money', None)
+    current_points = visite_money.total_gain_usd if visite_money else Decimal('0.0')
+    return (received_count == 0) or (received_count <= 5 and current_points == 0)
+
+@login_required
+def transfer_visite_money(request):
+    user = request.user
+    received_count = get_received_transfer_count(user)
+    user_cannot_transfer = not is_user_allowed_to_transfer(user)
+
+    if user_cannot_transfer:
+        messages.error(request, "❌ Vous ne pouvez pas transférer vos gains dans votre situation actuelle.")
+        return redirect('insufficient_transfer_visitemoney')
+
+    if request.method == "POST":
+        receiver_username = request.POST.get('receiver')
+
+        if not receiver_username:
+            messages.error(request, "❌ Veuillez sélectionner un bénéficiaire valide.")
+            return redirect('transfer_visitemoney')
+
+        try:
+            receiver = User.objects.get(username=receiver_username)
+        except User.DoesNotExist:
+            messages.error(request, "❌ Utilisateur bénéficiaire introuvable.")
+            return redirect('transfer_visitemoney')
+
+        if get_received_transfer_count(receiver) >= 5:
+            messages.error(request, f"❌ {receiver.email} a déjà atteint la limite de 5 transferts reçus.")
+            return redirect('transfer_visitemoney')
+
+        sender_visite = getattr(user, 'visite_money', None)
+        if sender_visite is None or sender_visite.total_gain_usd <= 0:
+            messages.error(request, "❌ Vous n'avez pas suffisamment de gains pour faire ce transfert.")
+            return redirect('transfer_visitemoney')
+
+        receiver_visite, _ = VisiteMoney.objects.get_or_create(user=receiver)
+        transferred_points = sender_visite.total_gain_usd
+
+        receiver_visite.total_gain_usd += transferred_points
+        receiver_visite.save()
+
+        sender_visite.total_gain_usd = Decimal('0.0')
+        sender_visite.save()
+
+        TransferVisiteMoney.objects.create(
+            sender=user,
+            receiver=receiver,
+            amount=transferred_points
+        )
+
+        messages.success(request, f"✅ Vous avez transféré {transferred_points} USD à {receiver.email}.")
+        return redirect('transfer_visite_money_success')
+
+    users = User.objects.exclude(id=user.id)
+    return render(request, 'base/transfer_visitemoney.html', {
+        'users': users,
+        'user_cannot_transfer': user_cannot_transfer,
+        'received_count': received_count,
+    })
+
+
+
+
+@login_required
+def transfer_visite_money_history(request):
+    history_list = TransferVisiteMoney.objects.filter(
+        Q(sender=request.user) | Q(receiver=request.user)
+    ).order_by('-timestamp')
+
+    paginator = Paginator(history_list, 6)  # 6 transferts par page
+    page_number = request.GET.get('page')
+    history = paginator.get_page(page_number)
+
+    return render(request, 'base/transfer_visite_money_history.html', {'history': history})
+
+
+def transfer_visite_money_success(request):
+    return render(request, 'base/transfer_visite_money_success.html')
+
+def transfer_visite_money_insufficient(request):
+    return render(request, 'base/transfer_visite_money_insufficient.html')
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate
@@ -1255,8 +1389,8 @@ def retirer_mobile_money(request):
 
     visite_money = getattr(request.user, 'visite_money', None)
     if not visite_money:
-        messages.error(request, "Aucun compte de gains trouvé pour cet utilisateur.")
-        return redirect('home')
+        messages.error(request, "Vous n'avez pas encore de gains pour retirer .")
+        return redirect('index')
 
     if request.method == 'POST':
         form = RetraitMobileMoneyForm(request.POST)
@@ -3265,7 +3399,7 @@ def update_profile_view(request):
         if form.is_valid():
             form.save()
             messages.success(request, "Profil mis à jour avec succès.")
-            return redirect('update_profile')
+            return redirect('profile')
     else:
         form = UpdateProfileForm(instance=user)
 

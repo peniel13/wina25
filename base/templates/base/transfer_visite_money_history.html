@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto mt-10 bg-white shadow-lg rounded-lg p-6">
+  <h2 class="text-2xl font-semibold mb-6 text-center">Historique des transferts VisiteMoney</h2>
+
+  {% if history %}
+    <ul class="space-y-4">
+      {% for transfer in history %}
+      <li class="flex justify-between items-center p-4 bg-gray-100 rounded-lg">
+        <div class="flex items-center space-x-4">
+          <!-- Sender -->
+          <div class="flex items-center space-x-2">
+            <img src="{% if transfer.sender.profile_pic %}{{ transfer.sender.profile_pic.url }}{% else %}https://bootdey.com/img/Content/avatar/avatar7.png{% endif %}" alt="Profil {{ transfer.sender.username }}" class="w-10 h-10 rounded-full object-cover">
+            <p class="font-semibold">{{ transfer.sender.username }}</p>
+          </div>
+          <span>➔</span>
+          <!-- Receiver -->
+          <div class="flex items-center space-x-2">
+            <img src="{% if transfer.receiver.profile_pic %}{{ transfer.receiver.profile_pic.url }}{% else %}https://bootdey.com/img/Content/avatar/avatar7.png{% endif %}" alt="Profil {{ transfer.receiver.username }}" class="w-10 h-10 rounded-full object-cover">
+            <p class="font-semibold">{{ transfer.receiver.username }}</p>
+          </div>
+          <p class="text-sm text-gray-600 ml-6">
+            {{ transfer.timestamp|date:"d/m/Y H:i" }}
+          </p>
+        </div>
+        <span class="text-xl font-bold">{{ transfer.amount }} USD</span>
+      </li>
+      {% endfor %}
+    </ul>
+
+    <div class="mt-6 text-center">
+      {% if history.has_previous %}
+        <a href="?page=1" class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400">Première</a>
+        <a href="?page={{ history.previous_page_number }}" class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400">Précédente</a>
+      {% endif %}
+      <span class="mx-2">Page {{ history.number }} sur {{ history.paginator.num_pages }}</span>
+      {% if history.has_next %}
+        <a href="?page={{ history.next_page_number }}" class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400">Suivante</a>
+        <a href="?page={{ history.paginator.num_pages }}" class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400">Dernière</a>
+      {% endif %}
+    </div>
+  {% else %}
+    <p class="text-center text-gray-600">Aucun transfert de VisiteMoney enregistré.</p>
+  {% endif %}
+</div>
+{% endblock %}

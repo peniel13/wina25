@@ -21,7 +21,7 @@
     </div>
 
     <div class="text-5xl font-extrabold text-indigo-700 mb-8">
-      {{ solde }} <span class="text-2xl font-normal">USD</span>
+      {{ solde }} <span class="text-2xl font-normal">$</span>
     </div>
     <p class="text-gray-500">Continuez à visiter des stores et liens pour augmenter votre solde !</p>
 
@@ -39,7 +39,10 @@
       class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-6 rounded-lg transition duration-300">
      Historique de retrait
    </a>
-      
+   <a href="{% url 'transfer_visitemoney' %}" 
+   class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-6 rounded-lg transition duration-300">
+  Transfert ton solde à un(e) ami(e) 
+</a>
     </div>
   </div>
 </div>

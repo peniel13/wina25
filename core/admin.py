@@ -987,36 +987,27 @@ class VisiteMoneyAdmin(admin.ModelAdmin):
 # admin.py
 from django.contrib import admin
 from .models import InviteVisibilite
+from django import forms
+from django.contrib import admin
+from .models import InviteVisibilite
+from django.contrib import admin
+from .models import InviteVisibilite,InviteVisite,TransferVisiteMoney
+
 @admin.register(InviteVisibilite)
 class InviteVisibiliteAdmin(admin.ModelAdmin):
-    list_display = ('id', 'owner', 'invite_type_display', 'store_or_link', 'nombre_invites', 'visites_restantes', 'is_active', 'created_at')
-    list_filter = ('is_active', 'created_at', 'type_invite')
-    search_fields = ('owner__email', 'store__name', 'url_redirection')
-    ordering = ('-created_at',)
-    actions = ['valider_invites', 'invalider_invites']
-
-    def invite_type_display(self, obj):
-        return obj.get_type_invite_display()
-    invite_type_display.short_description = "Type"
-
-    def store_or_link(self, obj):
-        if obj.type_invite == 'store':
-            return obj.store.name if obj.store else "—"
-        else:
-            return obj.url_redirection or "—"
-    store_or_link.short_description = "Store / Lien"
-
-    @admin.action(description="Activer les invitations sélectionnées")
-    def valider_invites(self, request, queryset):
-        updated = queryset.update(is_active=True)
-        self.message_user(request, f"{updated} invitation(s) ont été activées.")
-
-    @admin.action(description="Désactiver les invitations sélectionnées")
-    def invalider_invites(self, request, queryset):
-        updated = queryset.update(is_active=False)
-        self.message_user(request, f"{updated} invitation(s) ont été désactivées.")
+    list_display = ('type_invite', 'ciblage_type', 'nombre_invites', 'visites_restantes', 'compteur_visites', 'is_active')
+    list_filter = ('type_invite', 'ciblage_type', 'is_active')
+    search_fields = ('type_invite', 'ciblage_type')
+    readonly_fields = ('compteur_visites',)  # Rendre le champ compteur_visites en lecture seule
 
 
+admin.site.register(InviteVisite)
+
+@admin.register(TransferVisiteMoney)
+class TransferVisiteMoneyAdmin(admin.ModelAdmin):
+    list_display = ('sender', 'receiver', 'amount', 'timestamp')
+    search_fields = ('sender__username', 'receiver__username')
+    list_filter = ('timestamp',)
 # admin.py
 
 from django.contrib import admin

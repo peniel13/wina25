@@ -133,4 +133,14 @@ urlpatterns = [
         views.invite_visibilite_payment_list_view,
         name='invite_visibilite_payment_list'
     ),
+    path('transfer-visitemoney/', views.transfer_visite_money, name='transfer_visitemoney'),
+    path('transfer_visite_money_success/', views.transfer_visite_money_success, name='transfer_visite_money_success'),
+    path(
+        'historique-visite-money/',
+        views.transfer_visite_money_history,
+        name='transfer_visite_money_history'
+    ),
+    path('transfer_visite_money_insufficient/', views.transfer_visite_money_insufficient, name='transfer_visite_money_insufficient'),
+    
+    
 ]

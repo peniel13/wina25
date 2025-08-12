@@ -996,3 +996,28 @@ class InviteVisibilitePaymentForm(forms.ModelForm):
             self.fields['invite'].queryset = InviteVisibilite.objects.filter(owner=user)
             self.fields['utilisateur'].queryset = [user]
             self.fields['unite_visite'].queryset = UniteVisite.objects.all()
+
+
+# forms.py
+from django import forms
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+class TransferVisiteMoneyForm(forms.Form):
+    receiver = forms.CharField(
+        label="Nom d'utilisateur du bénéficiaire",
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Nom d’utilisateur du bénéficiaire',
+            'autocomplete': 'off',
+            'id': 'receiver-search-input'
+        })
+    )
+
+    def clean_receiver(self):
+        username = self.cleaned_data['receiver']
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            raise forms.ValidationError("❌ Cet utilisateur n'existe pas.")
+        return user

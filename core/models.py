@@ -1487,7 +1487,7 @@ class VisiteMoney(models.Model):
     visited_stores = models.ManyToManyField('Store', blank=True)
     visited_links = models.ManyToManyField('InviteVisibilite', blank=True)  # Nouveau
 
-    UNITE_VISITE = Decimal('0.001')
+    UNITE_VISITE = Decimal('0.002')
     GAIN_PAR_VISITE = UNITE_VISITE / Decimal('2')  # 0.0005 USD
     GAIN_PAR_LIEN = UNITE_VISITE / Decimal('2')    # Même valeur pour les liens externes
 
@@ -1514,17 +1514,29 @@ class VisiteMoney(models.Model):
     def __str__(self):
         return f"VisiteMoney({self.user.email}): {self.total_gain_usd} USD"
 
+class TransferVisiteMoney(models.Model):
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_visite_money")
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name="received_visite_money")
+    amount = models.DecimalField(max_digits=10, decimal_places=4)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.sender} → {self.receiver}: {self.amount} USD"
+    
+from django.db import models
+from django.conf import settings
 class InviteVisite(models.Model):
     invite = models.ForeignKey('InviteVisibilite', on_delete=models.CASCADE, related_name='visites')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     visited_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('invite', 'user')  # Pour qu’un user ne visite qu’une fois
+        unique_together = ('invite', 'user')
+
+    def __str__(self):
+        return f"{self.user} a visité {self.invite}"
 
 
-from django.db import models
-from django.conf import settings
 class InviteVisibilite(models.Model):
     TYPE_CHOICES = [
         ('store', 'Store'),
@@ -1537,7 +1549,7 @@ class InviteVisibilite(models.Model):
     ]
 
     type_invite = models.CharField(max_length=10, choices=TYPE_CHOICES, default='store')
-    ciblage_type = models.CharField(max_length=10, choices=CIBLAGE_CHOICES, default='all')
+    ciblage_type = models.CharField(max_length=10, choices=CIBLAGE_CHOICES,  blank=True)
 
     store = models.ForeignKey('Store', on_delete=models.CASCADE, related_name='invites_visibilite', null=True, blank=True)
     image = models.ImageField(upload_to="invites_images", null=True, blank=True)
@@ -1555,9 +1567,7 @@ class InviteVisibilite(models.Model):
     cibler_tout_user = models.BooleanField(default=False)
 
     compteur_visites = models.PositiveIntegerField(default=0)
-    utilisateurs_ayant_visite = models.ManyToManyField(
-        settings.AUTH_USER_MODEL, blank=True, related_name="invites_visitees"
-    )
+    # Suppression de utilisateurs_ayant_visite ManyToManyField
 
     is_active = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -1585,7 +1595,6 @@ class InviteVisibilite(models.Model):
 
             if gain_ok:
                 InviteVisite.objects.create(invite=self, user=user)
-                self.utilisateurs_ayant_visite.add(user)  # ✅ Pour que ça disparaisse de la liste
                 self.visites_restantes -= 1
                 if self.visites_restantes == 0:
                     self.is_active = False
@@ -1593,10 +1602,14 @@ class InviteVisibilite(models.Model):
                 return True
         return False
 
+    def a_visite(self, user):
+        from .models import InviteVisite
+        return InviteVisite.objects.filter(invite=self, user=user).exists()
+
     def est_visible_pour(self, user):
         if not self.is_active:
             return False
-        if self.utilisateurs_ayant_visite.filter(id=user.id).exists():
+        if self.a_visite(user):
             return False
         if self.ciblage_type == 'all':
             return True
@@ -1611,7 +1624,7 @@ class InviteVisibilite(models.Model):
         if self.type_invite == 'store':
             return f"[{cible}] Invite Store: {self.store.name} ({self.visites_restantes} restants)"
         return f"[{cible}] Invite Lien: {self.url_redirection} ({self.visites_restantes} restants)"
-    
+   
 
 class RetraitMobileMoney(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='retraits_mobile_money')

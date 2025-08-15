@@ -1243,6 +1243,23 @@ from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
 from core.models import VisiteMoney, TransferVisiteMoney
+@login_required
+def confirmer_mot_de_passe2(request):
+    if request.method == 'POST':
+        mot_de_passe = request.POST.get('mot_de_passe')
+        user = request.user
+        
+        # authenticate attend le paramètre username, ici c'est en fait email (USERNAME_FIELD)
+        user_auth = authenticate(request, username=user.email, password=mot_de_passe)
+        
+        if user_auth is not None:
+            # Mot de passe correct, on peut enregistrer en session
+            request.session['auth_retrait'] = True
+            return redirect('transfer_visitemoney')
+        else:
+            messages.error(request, "Mot de passe incorrect. Veuillez réessayer.")
+    
+    return render(request, 'base/confirmer_mot_de_passe2.html')
 
 @login_required
 def get_received_transfer_count(user):

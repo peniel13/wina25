@@ -126,6 +126,7 @@ urlpatterns = [
     path('mon-solde/', views.visite_money_solde, name='visite_money_solde'),
     path('retirer-mobile-money/', views.retirer_mobile_money, name='retirer_mobile_money'),
     path('confirmer-mot-de-passe/', views.confirmer_mot_de_passe, name='confirmer_mot_de_passe'),
+    path('confirmer-mot-de-passe2/', views.confirmer_mot_de_passe2, name='confirmer_mot_de_passe2'),
     path("historique-retraits/", views.withdrawal_history_view, name="withdrawal_history"),
     path('invite/<int:invite_id>/payment/', views.invite_visibilite_payment_view, name='invite_visibilite_payment'),
     path(

@@ -43,12 +43,95 @@
             {% endfor %}
         </ul>
     </div>
-
-    {% if lottery.image %}
-        <div class="mt-8 text-center">
-            <img src="{{ lottery.image.url }}" alt="Image de la loterie" class="mx-auto rounded-lg shadow-md max-w-sm">
-        </div>
-    {% endif %}
+    <div class="max-w-4xl mx-auto py-10 px-4 text-center">
+      <h1 class="text-3xl font-bold mb-6">🎡 Roulette des participants</h1>
+      <p class="text-gray-600 mb-6">La roue tourne sans arrêt jusqu’à ce que le résultat soit révélé.</p>
+  
+      <!-- Container de la roulette -->
+      <div class="flex justify-center">
+          <canvas id="rouletteCanvas" width="400" height="400" class="max-w-full"></canvas>
+      </div>
+  
+      
+  </div>
+  
+  <script>
+      // On prend soit l'avatar de l'utilisateur soit un avatar par défaut
+      const participants = [
+          {% for participant in participants %}
+              {
+                  img: "{% if participant.user.profile_pic %}{{ participant.user.profile_pic.url }}{% else %}https://bootdey.com/img/Content/avatar/avatar7.png{% endif %}",
+                  name: "{{ participant.full_name }}"
+              },
+          {% endfor %}
+      ];
+  
+      const canvas = document.getElementById("rouletteCanvas");
+      const ctx = canvas.getContext("2d");
+      let startAngle = 0;
+      const arc = Math.PI * 2 / participants.length;
+      const outsideRadius = 180;
+  
+      // Précharger les images
+      const images = [];
+      participants.forEach((p, i) => {
+          const img = new Image();
+          img.src = p.img;
+          images[i] = img;
+      });
+  
+      function drawRoulette() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+          for (let i = 0; i < participants.length; i++) {
+              const angle = startAngle + i * arc;
+              ctx.fillStyle = i % 2 === 0 ? "#3b82f6" : "#f59e0b";
+  
+              ctx.beginPath();
+              ctx.moveTo(200, 200);
+              ctx.arc(200, 200, outsideRadius, angle, angle + arc, false);
+              ctx.fill();
+  
+              // Dessiner l'avatar
+              ctx.save();
+              const img = images[i];
+              if (img.complete) {
+                  const avatarSize = Math.max(20, 120 / Math.sqrt(participants.length)); // taille auto
+                  const x = 200 + Math.cos(angle + arc / 2) * 140 - avatarSize / 2;
+                  const y = 200 + Math.sin(angle + arc / 2) * 140 - avatarSize / 2;
+                  ctx.beginPath();
+                  ctx.arc(x + avatarSize / 2, y + avatarSize / 2, avatarSize / 2, 0, Math.PI * 2);
+                  ctx.closePath();
+                  ctx.clip();
+                  ctx.drawImage(img, x, y, avatarSize, avatarSize);
+              }
+              ctx.restore();
+          }
+      }
+  
+      function rotateRoulette() {
+          startAngle += 0.02; // vitesse
+          drawRoulette();
+          requestAnimationFrame(rotateRoulette);
+      }
+  
+      rotateRoulette(); // tourne sans arrêt
+  
+      // Tirage au sort
+      document.getElementById("spinBtn").addEventListener("click", () => {
+          const winnerIndex = Math.floor(Math.random() * participants.length);
+          alert("🎉 Gagnant: " + participants[winnerIndex].name);
+      });
+  </script>
+  
+  {% if lottery.image %}
+  <div class="mt-8 text-center px-4 sm:px-0">
+      <img src="{{ lottery.image.url }}" 
+           alt="Image de la loterie" 
+           class="mx-auto rounded-lg shadow-md w-full max-w-sm object-cover">
+  </div>
+  {% endif %}
+  
 
     {% if lottery.description %}
         <div class="mt-4 px-4 text-gray-700 text-lg">

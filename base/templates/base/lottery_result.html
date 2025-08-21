@@ -67,11 +67,15 @@
     </form>
 {% endif %}
 <!-- Image et description de la loterie -->
+
 {% if lottery.image %}
-    <div class="mt-8 text-center">
-        <img src="{{ lottery.image.url }}" alt="Image de la loterie" class="mx-auto rounded-lg shadow-md max-w-sm">
-    </div>
+<div class="mt-8 text-center px-4 sm:px-0">
+    <img src="{{ lottery.image.url }}" 
+         alt="Image de la loterie" 
+         class="mx-auto rounded-lg shadow-md w-full max-w-sm object-cover">
+</div>
 {% endif %}
+
 
 {% if lottery.description %}
     <div class="mt-4 px-4 text-gray-700 text-lg">

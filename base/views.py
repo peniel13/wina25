@@ -1106,6 +1106,20 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from core.models import InviteVisibilite, InviteVisite
+from django.db.models import F, Q
+from django.shortcuts import render, redirect
+
+from django.db.models import F, Q
+from django.shortcuts import render, redirect
+from django.contrib.auth.models import AnonymousUser
+
+from django.contrib.auth.models import AnonymousUser
+from django.db.models import F, Q
+from django.shortcuts import render, redirect
+
+
+
+
 @login_required
 def liste_invites(request):
     user = request.user
@@ -1818,16 +1832,18 @@ def assign_category(request, store_id):
             category = get_object_or_404(Category, id=category_id, store=store)
             product = get_object_or_404(Product, id=product_id, store=store)
 
-            # Créer l'assignation
-            AssignerCategory.objects.create(product=product, category=category)
-            product.category = category  # Met à jour la catégorie du produit
+            # ✅ On met juste à jour la catégorie du produit
+            product.category = category
             product.save()
 
             messages.success(request, f"Catégorie '{category.name}' assignée à '{product.name}' avec succès !")
             return redirect('store_detail', slug=store.slug)
   
-
-    return render(request, 'base/assign_category.html', {'store': store, 'categories': categories, 'products': products})
+    return render(request, 'base/assign_category.html', {
+        'store': store,
+        'categories': categories,
+        'products': products
+    })
 
 
 from django.shortcuts import render, redirect, get_object_or_404

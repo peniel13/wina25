@@ -157,7 +157,7 @@
         <img id="popupImage" src="" alt="Image agrandie" class="w-full h-auto rounded-lg">
     </div>
 </div>
-{% if ad_popup and ad_popup.is_active %}
+{% comment %} {% if ad_popup and ad_popup.is_active %}
 <div id="popupAd" class="modal show d-block" tabindex="-1"
      style="background: rgba(0,0,0,0.5); position: fixed; top: 0; left: 0;
             width: 100%; height: 100%; display: flex; justify-content: center;
@@ -208,11 +208,63 @@
         </div>
     </div>
 </div>
-{% endif %}
-
+{% endif %} {% endcomment %}
+<!-- 🎡 Popup Roulette -->
+<div id="roulettePopup" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden p-4">
+    <div class="bg-white rounded-xl relative w-full max-w-4xl text-center flex flex-col max-h-[90vh]">
+      
+      <!-- Bouton fermer -->
+      <button onclick="closeRoulette()" 
+              class="absolute top-2 right-2 text-red-600 text-2xl font-bold z-50">X</button>
+  
+      <!-- Titre -->
+      <h2 class="text-2xl font-bold mb-4 mt-4">🎡 Tirage en cours...</h2>
+  
+      <!-- Contenu -->
+      <div class="flex-1 overflow-y-auto min-h-0 px-4 pb-4">
+        
+        <!-- Roulette -->
+        <div class="flex justify-center mb-6">
+          <canvas id="rouletteCanvas" width="400" height="400"></canvas>
+        </div>
+  
+        <!-- Bande gagnants -->
+        <div class="overflow-hidden relative w-full border-t pt-4">
+          <div id="winnerNames" class="flex text-xl font-bold text-green-600"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <style>
+  @keyframes scrollX {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  
+  .animate-scrollX {
+    display: flex;
+    white-space: nowrap;
+    animation: scrollX 15s linear infinite;
+  }
+  
+  /* Pause au survol */
+  .animate-scrollX:hover {
+    animation-play-state: paused;
+  }
+  
+  /* Espacement des items pour que le nom complet soit visible */
+  .winner-item {
+    flex-shrink: 0;
+    margin-right: 3rem; /* espace suffisant entre les gagnants */
+  }
+  </style>
+  
+  
+  
 <!-- Glide.js Script -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Glide.js/3.0.2/glide.js"></script>
-<script>
+{% comment %} <script>
     function closePopup() {
         const popup = document.getElementById("popupAd");
     
@@ -226,7 +278,7 @@
         // Cacher le popup
         popup.style.display = "none";
     }
-</script>
+</script> {% endcomment %}
 <script>
     var glide01 = new Glide('.glide-01', {
         type: 'carousel',
@@ -264,5 +316,242 @@
         });
     });
 </script>
-
+<script>
+    const participants = [
+      {% for participant in participants %}
+        {
+          img: "{% if participant.user.profile_pic %}{{ participant.user.profile_pic.url }}{% else %}https://bootdey.com/img/Content/avatar/avatar7.png{% endif %}",
+          name: "{{ participant.full_name }}",
+          isWinner: {% if participant.is_winner %}true{% else %}false{% endif %},
+          winnerRank: {% if participant.is_winner %}{{ participant.winner_rank }}{% else %}null{% endif %}
+        },
+      {% endfor %}
+    ];
+    
+    // Trier les gagnants
+    const winners = participants.filter(p => p.isWinner).sort((a,b) => a.winnerRank - b.winnerRank);
+    
+    const canvas = document.getElementById("rouletteCanvas");
+    const ctx = canvas.getContext("2d");
+    let startAngle = 0;
+    const arc = Math.PI * 2 / participants.length;
+    const outsideRadius = 180;
+    
+    let spinTimeout = null;
+    let spinAngleStart = 0;
+    let spinTime = 0;
+    let spinTimeTotal = 0;
+    
+    // Précharger avatars
+    const images = [];
+    participants.forEach((p, i) => {
+      const img = new Image();
+      img.src = p.img;
+      images[i] = img;
+    });
+    
+    function drawRoulette(highlightWinners = false) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+      for (let i = 0; i < participants.length; i++) {
+        const angle = startAngle + i * arc;
+    
+        if (highlightWinners && participants[i].isWinner) {
+          ctx.fillStyle = "#22c55e";
+        } else {
+          ctx.fillStyle = i % 2 === 0 ? "#3b82f6" : "#f59e0b";
+        }
+    
+        ctx.beginPath();
+        ctx.moveTo(200, 200);
+        ctx.arc(200, 200, outsideRadius, angle, angle + arc, false);
+        ctx.fill();
+    
+        ctx.save();
+        const img = images[i];
+        if (img.complete) {
+          const avatarSize = 60;
+          const x = 200 + Math.cos(angle + arc / 2) * 120 - avatarSize / 2;
+          const y = 200 + Math.sin(angle + arc / 2) * 120 - avatarSize / 2;
+    
+          ctx.beginPath();
+          ctx.arc(x + avatarSize/2, y + avatarSize/2, avatarSize/2, 0, Math.PI * 2);
+          ctx.closePath();
+          ctx.clip();
+    
+          ctx.drawImage(img, x, y, avatarSize, avatarSize);
+        }
+        ctx.restore();
+      }
+    }
+    
+    // Spin réaliste
+    function rotateRoulette() {
+      spinTime += 30;
+      if (spinTime >= spinTimeTotal) {
+        stopRoulette();
+        return;
+      }
+      const spinAngle = spinAngleStart - easeOut(spinTime, 0, spinAngleStart, spinTimeTotal);
+      startAngle += (spinAngle * Math.PI / 180);
+      drawRoulette();
+      spinTimeout = setTimeout(rotateRoulette, 30);
+    }
+    
+    function easeOut(t, b, c, d) {
+      const ts = (t/=d)*t;
+      const tc = ts*t;
+      return b+c*(tc + -3*ts + 3*t);
+    }
+    
+    function startRoulette() {
+      document.getElementById("roulettePopup").classList.remove("hidden");
+    
+      spinAngleStart = Math.random() * 10 + 30;
+      spinTime = 0;
+      spinTimeTotal = 30000;
+      rotateRoulette();
+    }
+    
+    function stopRoulette() {
+      clearTimeout(spinTimeout);
+      drawRoulette(true);
+    
+      const winnerContainer = document.getElementById("winnerNames");
+      winnerContainer.innerHTML = "";
+    
+      const track = document.createElement("div");
+      track.className = "flex animate-scrollX";
+    
+      winners.forEach((w, index) => {
+        const div = document.createElement("div");
+        div.className = "winner-item flex items-center px-6 py-2 bg-green-100 rounded-lg shadow hover:bg-green-300 transition cursor-pointer whitespace-nowrap";
+        div.innerHTML = `
+          <img class="h-10 w-10 rounded-full mr-2" src="${w.img}">
+          <span>🥇 ${index + 1}. ${w.name}</span>
+        `;
+        track.appendChild(div);
+      });
+    
+      // Dupliquer pour effet continu
+      winners.forEach((w, index) => {
+        const div = document.createElement("div");
+        div.className = "winner-item flex items-center px-6 py-2 bg-green-100 rounded-lg shadow hover:bg-green-300 transition cursor-pointer whitespace-nowrap";
+        div.innerHTML = `
+          <img class="h-10 w-10 rounded-full mr-2" src="${w.img}">
+          <span>🥇 ${index + 1}. ${w.name}</span>
+        `;
+        track.appendChild(div);
+      });
+    
+      winnerContainer.appendChild(track);
+    }
+    
+    function closeRoulette() {
+      document.getElementById("roulettePopup").classList.add("hidden");
+    }
+    
+    {% if lottery.draw_done %}
+    window.onload = () => {
+      startRoulette();
+    };
+    {% endif %}
+    </script>
+    
+    
+  
+{% comment %} <script>
+    const participants = [
+      {% for participant in participants %}
+        {
+          img: "{% if participant.user.profile_pic %}{{ participant.user.profile_pic.url }}{% else %}https://bootdey.com/img/Content/avatar/avatar7.png{% endif %}",
+          name: "{{ participant.full_name }}",
+          isWinner: {% if participant.is_winner %}true{% else %}false{% endif %}
+        },
+      {% endfor %}
+    ];
+  
+    const winners = participants.filter(p => p.isWinner);
+  
+    const canvas = document.getElementById("rouletteCanvas");
+    const ctx = canvas.getContext("2d");
+    let startAngle = 0;
+    const arc = Math.PI * 2 / participants.length;
+    const outsideRadius = 180;
+  
+    // Précharger avatars
+    const images = [];
+    participants.forEach((p, i) => {
+      const img = new Image();
+      img.src = p.img;
+      images[i] = img;
+    });
+  
+    function drawRoulette() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+      for (let i = 0; i < participants.length; i++) {
+        const angle = startAngle + i * arc;
+        ctx.fillStyle = i % 2 === 0 ? "#3b82f6" : "#f59e0b";
+        ctx.beginPath();
+        ctx.moveTo(200, 200);
+        ctx.arc(200, 200, outsideRadius, angle, angle + arc, false);
+        ctx.fill();
+  
+        // Avatar
+        ctx.save();
+        const img = images[i];
+        if (img.complete) {
+          const avatarSize = 60;
+          const x = 200 + Math.cos(angle + arc / 2) * 120 - avatarSize / 2;
+          const y = 200 + Math.sin(angle + arc / 2) * 120 - avatarSize / 2;
+  
+          ctx.beginPath();
+          ctx.arc(x + avatarSize/2, y + avatarSize/2, avatarSize/2, 0, Math.PI * 2);
+          ctx.closePath();
+          ctx.clip();
+  
+          ctx.drawImage(img, x, y, avatarSize, avatarSize);
+        }
+        ctx.restore();
+      }
+    }
+  
+    function rotateRoulette() {
+      startAngle += 0.05;
+      drawRoulette();
+      requestAnimationFrame(rotateRoulette);
+    }
+  
+    // 🎬 Simulation tirage
+    function startRoulette() {
+      document.getElementById("roulettePopup").classList.remove("hidden");
+  
+      rotateRoulette();
+  
+      setTimeout(() => {
+        stopRoulette();
+      }, 60000); // 1 minute suspense
+    }
+  
+    // 🎯 Arrêt sur gagnants
+    function stopRoulette() {
+      cancelAnimationFrame(rotateRoulette);
+  
+      let winnerNames = winners.map(w => "🎉 " + w.name).join("<br>");
+      document.getElementById("winnerNames").innerHTML = winnerNames;
+    }
+  
+    function closeRoulette() {
+      document.getElementById("roulettePopup").classList.add("hidden");
+    }
+  
+    // ✅ Si un tirage a déjà eu lieu => jouer automatiquement l’animation
+    {% if lottery.draw_done %}
+      window.onload = () => {
+        startRoulette();
+      };
+    {% endif %}
+  </script> {% endcomment %}
+  
 {% endblock %}

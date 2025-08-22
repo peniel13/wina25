@@ -55,7 +55,7 @@
                 <a href="{% url 'apropos' %}" class="hover:bg-gray-700 px-3 py-2 rounded">À propos</a>
                 <a href="{% url 'contact' %}" class="hover:bg-gray-700 px-3 py-2 rounded">Contact</a>
                 <a href="{% url 'politique' %}" class="hover:bg-gray-700 px-3 py-2 rounded">Politique</a>
-                <a href="{% url 'advertisement_list_wina' %}" class="hover:bg-gray-700 px-3 py-2 rounded">Pub</a>
+                <a href="{% url 'liste_invites' %}" class="hover:bg-gray-700 px-3 py-2 rounded">visibilité</a>
                 <a href="{% url 'lottery_list' %}" class="hover:bg-gray-700 px-3 py-2 rounded">lottery</a>
                 <!-- Dropdown Immo -->
                 <!-- Dropdown Immo -->
@@ -68,9 +68,9 @@
     </button>
     <ul class="absolute left-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg z-20 hidden" id="immoDropdown">
         
-        <li>
+        {% comment %} <li>
             <a href="{% url 'liste_invites' %}" class="block px-4 py-2 text-white hover:bg-gray-700">Liste de visibilité</a>
-        </li>
+        </li> {% endcomment %}
         <li>
             <a href="{% url 'product_list_wina' %}" class="block px-4 py-2 text-white hover:bg-gray-700">Liste produits </a>
         </li>
@@ -146,7 +146,7 @@
             <a href="{% url 'apropos' %}" class="block px-4 py-2 text-white hover:bg-gray-700">À propos</a>
             <a href="{% url 'contact' %}" class="block px-4 py-2 text-white hover:bg-gray-700">Contact</a>
             <a href="{% url 'politique' %}" class="block px-4 py-2 text-white hover:bg-gray-700">Politique</a>
-            <a href="{% url 'advertisement_list_wina' %}" class="block px-4 py-2 text-white hover:bg-gray-700">Pub</a>
+            <a href="{% url 'liste_invites' %}" class="block px-4 py-2 text-white hover:bg-gray-700"> visibilité</a>
             <a href="{% url 'lottery_list' %}" class="block px-4 py-2 text-white hover:bg-gray-700">lottery_list</a>
            <!-- Dropdown Immo pour Mobile -->
 <div class="relative">
@@ -160,9 +160,9 @@
     </button>
     
     <ul class="absolute left-0 mt-2 w-full bg-gray-800 rounded-md shadow-lg z-20 hidden" id="immoMobileDropdown">
-        <li>
+        {% comment %} <li>
             <a href="{% url 'liste_invites' %}" class="block px-4 py-2 text-white hover:bg-gray-700">Liste de visibilité</a>
-        </li>
+        </li> {% endcomment %}
         <li>
             <a href="{% url 'product_list_wina' %}" class="block px-4 py-2 text-white hover:bg-gray-700">Liste produits</a>
         </li>

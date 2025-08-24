@@ -943,19 +943,60 @@ from rest_framework.response import Response
 from rest_framework import permissions
 from .models import Cart
 from .serializers import CartSerializer
+from collections import defaultdict
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import permissions
+from .models import Cart
+from .serializers import CartItemSerializer, CountrySerializer
 
 class CartDetailAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
+        # 🔹 Récupération des paniers actifs de l'utilisateur
         carts = Cart.objects.filter(
             user=request.user,
             is_ordered=False,
             is_active=True
-        ).select_related('country').prefetch_related('items__product')
+        ).select_related('country').prefetch_related('items__product__store__country')
+
+        # 🔹 Dictionnaire groupé par pays
+        carts_by_country = defaultdict(lambda: {
+            "country": None,
+            "cart_id": None,
+            "items": [],
+            "total_price": 0,
+            "item_count": 0
+        })
+
+        for cart in carts:
+            for item in cart.items.all():
+                country = item.product.store.country
+                country_id = country.id
+
+                carts_by_country[country_id]["country"] = CountrySerializer(country).data
+                carts_by_country[country_id]["cart_id"] = cart.id
+                serialized_item = CartItemSerializer(item).data
+                carts_by_country[country_id]["items"].append(serialized_item)
+                carts_by_country[country_id]["total_price"] += item.get_total_price()
+                carts_by_country[country_id]["item_count"] += item.quantity
+
+        # 🔹 Retourner sous forme de dict (pas de list)
+        return Response(dict(carts_by_country))
+
+# class CartDetailAPIView(APIView):
+#     permission_classes = [permissions.IsAuthenticated]
+
+#     def get(self, request):
+#         carts = Cart.objects.filter(
+#             user=request.user,
+#             is_ordered=False,
+#             is_active=True
+#         ).select_related('country').prefetch_related('items__product')
         
-        serializer = CartSerializer(carts, many=True)
-        return Response(serializer.data)
+#         serializer = CartSerializer(carts, many=True)
+#         return Response(serializer.data)
 
 
 

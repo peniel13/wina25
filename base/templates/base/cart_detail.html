@@ -38,10 +38,19 @@
                 <tbody>
                   {% for item in data.items %}
                     <tr class="border-b hover:bg-gray-50">
-                      <td class="px-4 py-2 flex flex-col sm:flex-row items-center">
+                      {% comment %} <td class="px-4 py-2 flex flex-col sm:flex-row items-center">
                         <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="w-16 h-16 object-cover mb-2 sm:mb-0 sm:mr-4">
                         <span>{{ item.product.name }}</span>
-                      </td>
+                      </td> {% endcomment %}
+                      <td class="px-4 py-2 flex flex-col sm:flex-row items-center">
+                        {% if item.product.image %}
+                            <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="w-16 h-16 object-cover mb-2 sm:mb-0 sm:mr-4">
+                        {% else %}
+                            <img src="{% static 'images/default-product.png' %}" alt="Pas d'image" class="w-16 h-16 object-cover mb-2 sm:mb-0 sm:mr-4">
+                        {% endif %}
+                        <span>{{ item.product.name }}</span>
+                    </td>
+                    
                       <td class="px-4 py-2">
                         <form action="{% url 'update_cart_wina' cart_item_id=item.id quantity=item.quantity %}" method="POST">
                           {% csrf_token %}

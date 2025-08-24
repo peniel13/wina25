@@ -48,7 +48,7 @@ from .views import (
     StoreContactProductListAPIView,
     CreateTestimonialProductAPIView, 
     ProductTestimonialsListAPIView,
-    # CartDetailAPIView,
+    CartDetailAPIView,
     AddToCartAPIView,
     UpdateCartItemAPIView,
     RemoveFromCartAPIView,
@@ -92,8 +92,7 @@ from .views import (
     ProductByCityAPIView,
     ProductsGroupedByTypeByCityAPIView,
     SmartStoreListAPIView,
-    StoreByTypeBusinessListAPIView,
-    CartByCountryAPIView
+    StoreByTypeBusinessListAPIView
 )
 from rest_framework_simplejwt.views import (
     TokenRefreshView,
@@ -150,7 +149,7 @@ urlpatterns = [
     path('api/stores/<int:store_id>/contact-products/', StoreContactProductListAPIView.as_view(), name='store_contact_products'),
     path('api/products/<int:product_id>/testimonials/', ProductTestimonialsListAPIView.as_view(), name='product_testimonial_list'),
     path('api/products/testimonials/create/', CreateTestimonialProductAPIView.as_view(), name='product_testimonial_create'),
-    # path('api/cart/', CartDetailAPIView.as_view(), name='cart_detail'),
+    path('api/cart/', CartDetailAPIView.as_view(), name='cart_detail'),
     path('api/cart/add/<int:product_id>/', AddToCartAPIView.as_view(), name='cart_add'),
     path('api/cart/update/<int:cart_item_id>/', UpdateCartItemAPIView.as_view(), name='cart_update'),
     path('api/cart/remove/<int:cart_item_id>/', RemoveFromCartAPIView.as_view(), name='cart_remove'),
@@ -198,7 +197,7 @@ urlpatterns = [
     path('api/products/by-city/<int:city_id>/grouped-by-type/', ProductsGroupedByTypeByCityAPIView.as_view()),
     path('api/smart-stores/', SmartStoreListAPIView.as_view(), name='smart_store_list'),
     path('api/stores/', StoreByTypeBusinessListAPIView.as_view(), name='api-stores-by-typebusiness'),
-    path('api/cart-by-country/', CartByCountryAPIView.as_view(), name='cart_by_country_api'),
+    
     
     
 

@@ -82,10 +82,16 @@ class TypeBusinessSerializer(serializers.ModelSerializer):
         fields = ['id', 'nom']
 
 from rest_framework import serializers
-from .models import Country, DeviseCountry
+from .models import Country, DeviseCountry, Store, Product, Cart, CartItem
+
+class DeviseCountrySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DeviseCountry
+        fields = ["id", "devise", "symbole", "code_iso"]  # adapte selon ton modèle
+
 
 class CountrySerializer(serializers.ModelSerializer):
-    devise = serializers.SerializerMethodField()
+    devise = DeviseCountrySerializer(source="devise_info", read_only=True)
     flag_url = serializers.SerializerMethodField()
 
     class Meta:
@@ -97,13 +103,6 @@ class CountrySerializer(serializers.ModelSerializer):
         if obj.flag and request:
             return request.build_absolute_uri(obj.flag.url)
         return None
-
-    def get_devise(self, obj):
-        devise_country = getattr(obj, "devise_info", None)  # relation OneToOne ou FK (related_name="devise_info")
-        if devise_country and devise_country.devise:
-            return devise_country.devise
-        return "CDF"  # valeur par défaut
-
 
 
 class CitySerializer(serializers.ModelSerializer):
@@ -429,72 +428,38 @@ from rest_framework import serializers
 from .models import Cart, CartItem, Country, Product
 
 
-# class CartItemSerializer(serializers.ModelSerializer):
-#     product_name = serializers.CharField(source='product.name', read_only=True)
-#     product_price = serializers.DecimalField(
-#         source='product.price_with_commission',
-#         max_digits=10,
-#         decimal_places=2,
-#         read_only=True
-#     )
-#     product_image = serializers.ImageField(source='product.image', read_only=True)
-#     product_devise = serializers.SerializerMethodField()
-
-#     class Meta:
-#         model = CartItem
-#         fields = [
-#             "id",
-#             "product",
-#             "product_name",
-#             "product_price",
-#             "quantity",
-#             "product_image",
-#             "product_devise",
-#         ]
-
-#     def get_product_devise(self, obj):
-#         """
-#         Récupère la devise via la relation :
-#         Product → Store → Country → Devise
-#         """
-#         try:
-#             return obj.product.store.country.devise.code  # exemple : "USD", "CDF"
-#         except AttributeError:
-#             return ""
-from rest_framework import serializers
-from core.models import CartItem
-from rest_framework import serializers
-from core.models import CartItem
-
-# core/serializers.py
-from rest_framework import serializers
-from .models import CartItem, Cart, Country
-
 class CartItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
-    product_price = serializers.DecimalField(source='product.price_with_commission', max_digits=10, decimal_places=2, read_only=True)
+    product_price = serializers.DecimalField(
+        source='product.price_with_commission',
+        max_digits=10,
+        decimal_places=2,
+        read_only=True
+    )
     product_image = serializers.ImageField(source='product.image', read_only=True)
+    product_devise = serializers.SerializerMethodField()
 
     class Meta:
         model = CartItem
-        fields = ['id', 'product_name', 'product_price', 'product_image', 'quantity']
+        fields = [
+            "id",
+            "product",
+            "product_name",
+            "product_price",
+            "quantity",
+            "product_image",
+            "product_devise",
+        ]
 
-
-class CartByCountrySerializer(serializers.Serializer):
-    country_id = serializers.IntegerField(source='country.id')
-    country_name = serializers.CharField(source='country.name')
-    devise = serializers.CharField(source='country.devise_info.devise')
-    flag_url = serializers.SerializerMethodField()  # <-- nouveau champ
-    items = CartItemSerializer(many=True)
-    total_price = serializers.CharField()
-    item_count = serializers.IntegerField()
-
-    def get_flag_url(self, obj):
-        country = obj['country']
-        if hasattr(country, 'flag') and country.flag:
-            return country.flag.url
-        return None
-
+    def get_product_devise(self, obj):
+        """
+        Récupère la devise via la relation :
+        Product → Store → Country → Devise
+        """
+        try:
+            return obj.product.store.country.devise.code  # exemple : "USD", "CDF"
+        except AttributeError:
+            return ""
 
 
 class CartSerializer(serializers.ModelSerializer):

@@ -957,7 +957,7 @@ from django.shortcuts import get_object_or_404
 
 from .models import Cart, CartItem, Product
 from .serializers import CartSerializer
-
+from core.utils import build_carts_by_country
 
 def get_or_create_cart(user, country):
     """Créer ou récupérer le panier actif de l'utilisateur pour un pays donné"""
@@ -974,45 +974,52 @@ class CartDetailAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        carts = (
-            Cart.objects.filter(user=request.user, is_ordered=False, is_active=True)
-            .select_related("country")
-            .prefetch_related("items__product__store__country")
-        )
-
-        serializer = CartSerializer(carts, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        """
+        Récupère tous les paniers actifs de l'utilisateur,
+        regroupés par pays avec la devise incluse.
+        """
+        carts_by_country = build_carts_by_country(request.user, request)
+        return Response(carts_by_country, status=status.HTTP_200_OK)
 
 
 class AddToCartAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, product_id):
+        """
+        Ajoute un produit au panier correspondant au pays du store.
+        Si le produit existe déjà, augmente la quantité.
+        """
         product = get_object_or_404(Product, id=product_id)
-
-        # ⚠️ Important : on relie le panier au pays du store du produit
         store_country = product.store.country
-        cart = get_or_create_cart(request.user, store_country)
 
-        # Vérifier si le produit existe déjà dans le panier
+        # Récupère ou crée le panier actif pour ce pays
+        cart, _ = Cart.objects.get_or_create(
+            user=request.user,
+            country=store_country,
+            is_ordered=False,
+            is_active=True
+        )
+
         cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
-
         if not created:
             cart_item.quantity += 1
         else:
             cart_item.quantity = 1
         cart_item.save()
 
-        return Response(
-            {"message": f"{product.name} ajouté au panier", "quantity": cart_item.quantity},
-            status=status.HTTP_201_CREATED
-        )
+        carts_by_country = build_carts_by_country(request.user, request)
+        return Response(carts_by_country, status=status.HTTP_200_OK)
 
 
 class UpdateCartItemAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def patch(self, request, cart_item_id):
+        """
+        Met à jour la quantité d'un produit dans le panier.
+        Si la quantité <= 0, le produit est supprimé.
+        """
         cart_item = get_object_or_404(
             CartItem,
             id=cart_item_id,
@@ -1028,17 +1035,21 @@ class UpdateCartItemAPIView(APIView):
 
         if quantity <= 0:
             cart_item.delete()
-            return Response({"message": "Produit supprimé du panier"}, status=status.HTTP_204_NO_CONTENT)
+        else:
+            cart_item.quantity = quantity
+            cart_item.save()
 
-        cart_item.quantity = quantity
-        cart_item.save()
-        return Response({"message": "Quantité mise à jour", "quantity": cart_item.quantity}, status=status.HTTP_200_OK)
+        carts_by_country = build_carts_by_country(request.user, request)
+        return Response(carts_by_country, status=status.HTTP_200_OK)
 
 
 class RemoveFromCartAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def delete(self, request, cart_item_id):
+        """
+        Supprime un produit du panier.
+        """
         cart_item = get_object_or_404(
             CartItem,
             id=cart_item_id,
@@ -1047,7 +1058,9 @@ class RemoveFromCartAPIView(APIView):
             cart__is_active=True
         )
         cart_item.delete()
-        return Response({"message": "Produit supprimé du panier"}, status=status.HTTP_204_NO_CONTENT)
+
+        carts_by_country = build_carts_by_country(request.user, request)
+        return Response(carts_by_country, status=status.HTTP_200_OK)
 
 # views.py
 

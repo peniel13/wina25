@@ -79,3 +79,41 @@ from django.core.cache import cache
 def count_online_users():
     User = get_user_model()
     return sum(1 for user in User.objects.all() if cache.get(f'online-{user.id}'))
+
+
+from core.models import Cart
+from core.serializers import CartItemSerializer
+from core.serializers import CountrySerializer  # ou depuis l'app cart si tu as mis CountrySerializer là
+
+def build_carts_by_country(user, request):
+    """Regroupe les paniers actifs de l'utilisateur par pays et renvoie une structure prête pour JSON"""
+    carts = (
+        Cart.objects.filter(user=user, is_ordered=False, is_active=True)
+        .select_related("country")
+        .prefetch_related("items__product__store__country")
+    )
+
+    carts_by_country = {}
+    for c in carts:
+        country = c.country
+        if not country:
+            continue
+
+        country_id = country.id
+
+        if country_id not in carts_by_country:
+            carts_by_country[country_id] = {
+                "country": CountrySerializer(country, context={"request": request}).data,
+                "items": [],
+                "total_price": 0,
+                "item_count": 0,
+            }
+
+        items_serializer = CartItemSerializer(
+            c.items.all(), many=True, context={"request": request}
+        )
+        carts_by_country[country_id]["items"].extend(items_serializer.data)
+        carts_by_country[country_id]["total_price"] += c.get_total()
+        carts_by_country[country_id]["item_count"] += c.get_item_count()
+
+    return carts_by_country

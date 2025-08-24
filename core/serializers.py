@@ -82,10 +82,10 @@ class TypeBusinessSerializer(serializers.ModelSerializer):
         fields = ['id', 'nom']
 
 from rest_framework import serializers
-from .models import Country, DeviseCountry, Store, Product, Cart, CartItem
+from .models import Country, DeviseCountry
 
 class CountrySerializer(serializers.ModelSerializer):
-    devise = serializers.CharField(source="devise_info.devise", read_only=True)
+    devise = serializers.SerializerMethodField()
     flag_url = serializers.SerializerMethodField()
 
     class Meta:
@@ -97,6 +97,14 @@ class CountrySerializer(serializers.ModelSerializer):
         if obj.flag and request:
             return request.build_absolute_uri(obj.flag.url)
         return None
+
+    def get_devise(self, obj):
+        devise_country = getattr(obj, "devise_info", None)  # relation OneToOne ou FK (related_name="devise_info")
+        if devise_country and devise_country.devise:
+            return devise_country.devise
+        return "CDF"  # valeur par défaut
+
+
 
 class CitySerializer(serializers.ModelSerializer):
     class Meta:

@@ -943,20 +943,45 @@ from rest_framework.response import Response
 from rest_framework import permissions
 from .models import Cart
 from .serializers import CartSerializer
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import permissions, status
+from django.shortcuts import get_object_or_404
+from .models import Cart, CartItem, Product
+from .serializers import CartSerializer
+from .utils import get_or_create_cart  # tu l’as déjà
+from rest_framework import status, permissions
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+
+from .models import Cart, CartItem, Product
+from .serializers import CartSerializer
+
+
+def get_or_create_cart(user, country):
+    """Créer ou récupérer le panier actif de l'utilisateur pour un pays donné"""
+    cart, created = Cart.objects.get_or_create(
+        user=user,
+        country=country,
+        is_ordered=False,
+        is_active=True
+    )
+    return cart
+
 
 class CartDetailAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        carts = Cart.objects.filter(
-            user=request.user,
-            is_ordered=False,
-            is_active=True
-        ).select_related('country').prefetch_related('items__product')
-        
-        serializer = CartSerializer(carts, many=True)
-        return Response(serializer.data)
+        carts = (
+            Cart.objects.filter(user=request.user, is_ordered=False, is_active=True)
+            .select_related("country")
+            .prefetch_related("items__product__store__country")
+        )
 
+        serializer = CartSerializer(carts, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class AddToCartAPIView(APIView):
@@ -964,42 +989,65 @@ class AddToCartAPIView(APIView):
 
     def post(self, request, product_id):
         product = get_object_or_404(Product, id=product_id)
-        store_country = product.store.country
 
+        # ⚠️ Important : on relie le panier au pays du store du produit
+        store_country = product.store.country
         cart = get_or_create_cart(request.user, store_country)
 
+        # Vérifier si le produit existe déjà dans le panier
         cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
+
         if not created:
             cart_item.quantity += 1
         else:
             cart_item.quantity = 1
         cart_item.save()
 
-        return Response({'message': 'Produit ajouté au panier'}, status=status.HTTP_201_CREATED)
+        return Response(
+            {"message": f"{product.name} ajouté au panier", "quantity": cart_item.quantity},
+            status=status.HTTP_201_CREATED
+        )
+
 
 class UpdateCartItemAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def patch(self, request, cart_item_id):
-        cart_item = get_object_or_404(CartItem, id=cart_item_id, cart__user=request.user)
-        quantity = request.data.get('quantity')
+        cart_item = get_object_or_404(
+            CartItem,
+            id=cart_item_id,
+            cart__user=request.user,
+            cart__is_ordered=False,
+            cart__is_active=True
+        )
 
-        if not quantity or int(quantity) <= 0:
+        try:
+            quantity = int(request.data.get("quantity", 0))
+        except (TypeError, ValueError):
+            return Response({"error": "Quantité invalide"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if quantity <= 0:
             cart_item.delete()
-            return Response({'message': 'Produit supprimé du panier'}, status=status.HTTP_204_NO_CONTENT)
+            return Response({"message": "Produit supprimé du panier"}, status=status.HTTP_204_NO_CONTENT)
 
-        cart_item.quantity = int(quantity)
+        cart_item.quantity = quantity
         cart_item.save()
-        return Response({'message': 'Quantité mise à jour'}, status=status.HTTP_200_OK)
+        return Response({"message": "Quantité mise à jour", "quantity": cart_item.quantity}, status=status.HTTP_200_OK)
+
 
 class RemoveFromCartAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def delete(self, request, cart_item_id):
-        cart_item = get_object_or_404(CartItem, id=cart_item_id, cart__user=request.user)
+        cart_item = get_object_or_404(
+            CartItem,
+            id=cart_item_id,
+            cart__user=request.user,
+            cart__is_ordered=False,
+            cart__is_active=True
+        )
         cart_item.delete()
-        return Response({'message': 'Produit supprimé du panier'}, status=status.HTTP_204_NO_CONTENT)
-
+        return Response({"message": "Produit supprimé du panier"}, status=status.HTTP_204_NO_CONTENT)
 
 # views.py
 

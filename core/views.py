@@ -954,6 +954,69 @@ from rest_framework import status, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
+# core/views.py
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from collections import defaultdict
+from .models import CartItem
+from .serializers import CartItemSerializer, CartByCountrySerializer
+
+class CartByCountryAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        # Récupérer tous les CartItems actifs pour l'utilisateur
+        carts_items = CartItem.objects.filter(
+            cart__user=user,
+            cart__is_active=True,
+            cart__is_ordered=False
+        ).select_related(
+            'product',
+            'product__store',
+            'product__store__country',
+            'cart'
+        )
+
+        # Groupement par pays
+        carts_by_country = defaultdict(lambda: {
+            'country_id': None,
+            'country_name': None,
+            'devise': 'USD',
+            'items': [],
+            'total_price': 0,
+            'item_count': 0
+        })
+
+        for item in carts_items:
+            country = getattr(item.product.store, 'country', None)
+            if not country:
+                continue  # ignorer si pas de pays
+            country_id = country.id
+            data = carts_by_country[country_id]
+            data['country_id'] = country.id
+            data['country_name'] = country.name
+            data['devise'] = getattr(getattr(country, 'devise_info', None), 'devise', 'USD')
+            data['items'].append(item)
+            data['total_price'] += item.product.price_with_commission * item.quantity
+            data['item_count'] += item.quantity
+
+        # Sérialisation finale
+        result = [
+            CartByCountrySerializer({
+                'country_id': v['country_id'],
+                'country_name': v['country_name'],
+                'devise': v['devise'],
+                'items': v['items'],
+                'total_price': v['total_price'],
+                'item_count': v['item_count']
+            }).data
+            for v in carts_by_country.values()
+        ]
+
+        return Response(result)
 
 from .models import Cart, CartItem, Product
 from .serializers import CartSerializer
@@ -968,6 +1031,56 @@ def get_or_create_cart(user, country):
         is_active=True
     )
     return cart
+
+
+from core.models import Cart
+from core.serializers import CartItemSerializer
+
+def build_carts_by_country(user, request):
+    """
+    Regroupe les paniers actifs par pays et renvoie une structure adaptée à Flutter.
+    """
+    # ⚡ Récupère les paniers actifs
+    carts = (
+        Cart.objects.filter(user=user, is_ordered=False, is_active=True)
+        .select_related("country__devise")
+        .select_related("items__product__store__country")
+        .prefetch_related("items__product")
+    )
+
+    carts_by_country = {}
+    for c in carts:
+        country = c.country
+        if not country:
+            continue
+
+        country_id = country.id
+        country_name = country.name
+        currency = country.devise.code if hasattr(country, "devise") else "USD"
+
+        if country_id not in carts_by_country:
+            carts_by_country[country_id] = {
+                "countryId": country_id,
+                "countryName": country_name,
+                "currency": currency,
+                "items": [],
+                "totalPrice": 0.0,
+                "itemCount": 0,
+            }
+
+        # Sérialise les items du panier
+        items_serializer = CartItemSerializer(
+            c.items.all(), many=True, context={"request": request}
+        )
+        carts_by_country[country_id]["items"].extend(items_serializer.data)
+
+        # Calcule le total et le nombre d'items
+        total_price = sum(float(item.price) * item.quantity for item in c.items.all())
+        total_count = sum(item.quantity for item in c.items.all())
+        carts_by_country[country_id]["totalPrice"] += total_price
+        carts_by_country[country_id]["itemCount"] += total_count
+
+    return carts_by_country
 
 
 class CartDetailAPIView(APIView):

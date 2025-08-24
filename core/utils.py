@@ -82,15 +82,21 @@ def count_online_users():
 
 
 from core.models import Cart
+from core.models import Cart
 from core.serializers import CartItemSerializer
-from core.serializers import CountrySerializer  # ou depuis l'app cart si tu as mis CountrySerializer là
+from core.models import Cart
+from core.serializers import CartItemSerializer
 
 def build_carts_by_country(user, request):
-    """Regroupe les paniers actifs de l'utilisateur par pays et renvoie une structure prête pour JSON"""
+    """
+    Regroupe les paniers actifs par pays et renvoie une structure adaptée à Flutter.
+    """
+    # ⚡ Récupère les paniers actifs
     carts = (
         Cart.objects.filter(user=user, is_ordered=False, is_active=True)
-        .select_related("country")
-        .prefetch_related("items__product__store__country")
+        .select_related("country__devise")
+        .select_related("items__product__store__country")
+        .prefetch_related("items__product")
     )
 
     carts_by_country = {}
@@ -100,20 +106,29 @@ def build_carts_by_country(user, request):
             continue
 
         country_id = country.id
+        country_name = country.name
+        currency = country.devise.code if hasattr(country, "devise") else "USD"
 
         if country_id not in carts_by_country:
             carts_by_country[country_id] = {
-                "country": CountrySerializer(country, context={"request": request}).data,
+                "countryId": country_id,
+                "countryName": country_name,
+                "currency": currency,
                 "items": [],
-                "total_price": 0,
-                "item_count": 0,
+                "totalPrice": 0.0,
+                "itemCount": 0,
             }
 
+        # Sérialise les items du panier
         items_serializer = CartItemSerializer(
             c.items.all(), many=True, context={"request": request}
         )
         carts_by_country[country_id]["items"].extend(items_serializer.data)
-        carts_by_country[country_id]["total_price"] += c.get_total()
-        carts_by_country[country_id]["item_count"] += c.get_item_count()
+
+        # Calcule le total et le nombre d'items
+        total_price = sum(float(item.price) * item.quantity for item in c.items.all())
+        total_count = sum(item.quantity for item in c.items.all())
+        carts_by_country[country_id]["totalPrice"] += total_price
+        carts_by_country[country_id]["itemCount"] += total_count
 
     return carts_by_country

@@ -81,29 +81,19 @@ class TypeBusinessSerializer(serializers.ModelSerializer):
         model = TypeBusiness
         fields = ['id', 'nom']
 
-from rest_framework import serializers
-from .models import Country, DeviseCountry, Store, Product, Cart, CartItem
-
-class DeviseCountrySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DeviseCountry
-        fields = ["id", "devise", "symbole", "code_iso"]  # adapte selon ton modèle
-
 
 class CountrySerializer(serializers.ModelSerializer):
-    devise = DeviseCountrySerializer(source="devise_info", read_only=True)
-    flag_url = serializers.SerializerMethodField()
+    currency = serializers.SerializerMethodField()
 
     class Meta:
         model = Country
-        fields = ["id", "name", "flag_url", "devise"]
+        fields = ['id', 'name', 'currency', 'flag']  # ajoute "currency"
 
-    def get_flag_url(self, obj):
-        request = self.context.get("request")
-        if obj.flag and request:
-            return request.build_absolute_uri(obj.flag.url)
-        return None
-
+    def get_currency(self, obj):
+        try:
+            return obj.devise_info.devise  # via ton modèle DeviseCountry
+        except AttributeError:
+            return ''
 
 class CitySerializer(serializers.ModelSerializer):
     class Meta:
@@ -259,33 +249,25 @@ from decimal import Decimal
 from rest_framework import serializers
 from core.models import Product, TypeProduct
 from core.serializers import PhotoSerializer
-from decimal import Decimal
-from rest_framework import serializers
-from .models import Product, TypeProduct, DeviseCountry
-from .serializers import PhotoSerializer  # j'imagine que tu l'as déjà
 
 class ProductSerializer(serializers.ModelSerializer):
     type_product = serializers.PrimaryKeyRelatedField(queryset=TypeProduct.objects.all(), required=False)
     photos = PhotoSerializer(many=True, read_only=True)
     store = serializers.PrimaryKeyRelatedField(read_only=True)
     category = serializers.PrimaryKeyRelatedField(read_only=True)
-    devise = serializers.SerializerMethodField()  # ✅ remplacé "currency"
-    average_rating = serializers.SerializerMethodField()
+    currency = serializers.SerializerMethodField()
+    average_rating = serializers.SerializerMethodField()  # ✅ ajouté
 
     class Meta:
         model = Product
         fields = [
             'id', 'name', 'description', 'price', 'price_with_commission',
             'stock', 'image', 'image_galerie', 'type_product', 'store',
-            'category', 'photos', 'created_at', 'devise', 'average_rating',
+            'category', 'photos', 'created_at', 'currency', 'average_rating',  # ✅ ici
         ]
         read_only_fields = ['price_with_commission', 'created_at']
 
-    def get_devise(self, obj):
-        """
-        Récupère la devise via :
-        Product → Store → Country → DeviseCountry
-        """
+    def get_currency(self, obj):
         try:
             return obj.store.country.devise_info.devise
         except AttributeError:
@@ -409,118 +391,48 @@ from rest_framework import serializers
 from .models import Cart, CartItem
  # Assurez-vous que le modèle Product est bien importé
 
-# class CartItemSerializer(serializers.ModelSerializer):
-#     product_name = serializers.CharField(source='product.name', read_only=True)
-#     product_price = serializers.DecimalField(source='product.price_with_commission', read_only=True, max_digits=10, decimal_places=2)
-#     product_image = serializers.ImageField(source='product.image', read_only=True)  # ✅ Nouveau champ
-#     product_currency = serializers.SerializerMethodField()
-
-#     class Meta:
-#         model = CartItem
-#         fields = ['id', 'product', 'product_name', 'product_price', 'quantity', 'product_image', 'product_currency']
-    
-#     def get_product_currency(self, obj):
-#         try:
-#             return getattr(obj.product.store.country.devise_info, 'devise', '')
-#         except AttributeError:
-#             return ''
-from rest_framework import serializers
-from .models import Cart, CartItem, Country, Product
-
-
 class CartItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
-    product_price = serializers.DecimalField(
-        source='product.price_with_commission',
-        max_digits=10,
-        decimal_places=2,
-        read_only=True
-    )
-    product_image = serializers.ImageField(source='product.image', read_only=True)
-    product_devise = serializers.SerializerMethodField()
+    product_price = serializers.DecimalField(source='product.price_with_commission', read_only=True, max_digits=10, decimal_places=2)
+    product_image = serializers.ImageField(source='product.image', read_only=True)  # ✅ Nouveau champ
+    product_currency = serializers.SerializerMethodField()
 
     class Meta:
         model = CartItem
-        fields = [
-            "id",
-            "product",
-            "product_name",
-            "product_price",
-            "quantity",
-            "product_image",
-            "product_devise",
-        ]
-
-    def get_product_devise(self, obj):
-        """
-        Récupère la devise via la relation :
-        Product → Store → Country → Devise
-        """
+        fields = ['id', 'product', 'product_name', 'product_price', 'quantity', 'product_image', 'product_currency']
+    
+    def get_product_currency(self, obj):
         try:
-            return obj.product.store.country.devise.code  # exemple : "USD", "CDF"
+            return getattr(obj.product.store.country.devise_info, 'devise', '')
         except AttributeError:
-            return ""
-
+            return ''
 
 class CartSerializer(serializers.ModelSerializer):
     items = CartItemSerializer(many=True, read_only=True)
     total_price = serializers.SerializerMethodField()
     item_count = serializers.SerializerMethodField()
-    country = CountrySerializer(read_only=True)
-    devise = serializers.SerializerMethodField()
+    country = CountrySerializer(read_only=True)  # Donne id + name
 
     class Meta:
         model = Cart
         fields = [
-            "id",
-            "country",
-            "devise",
-            "items",
-            "total_price",
-            "item_count",
-            "created_at",
-            "is_ordered",
-            "is_active",
+            'id',
+            'user',
+            'country',
+            'created_at',
+            'is_ordered',
+            'is_active',
+            'items',
+            'total_price',
+            'item_count'
         ]
+        read_only_fields = ['user']
 
     def get_total_price(self, obj):
         return obj.get_total()
 
     def get_item_count(self, obj):
         return obj.get_item_count()
-
-    def get_devise(self, obj):
-        try:
-            return obj.country.devise.code
-        except AttributeError:
-            return ""
-
-# class CartSerializer(serializers.ModelSerializer):
-#     items = CartItemSerializer(many=True, read_only=True)
-#     total_price = serializers.SerializerMethodField()
-#     item_count = serializers.SerializerMethodField()
-#     country = CountrySerializer(read_only=True)  # Donne id + name
-
-#     class Meta:
-#         model = Cart
-#         fields = [
-#             'id',
-#             'user',
-#             'country',
-#             'created_at',
-#             'is_ordered',
-#             'is_active',
-#             'items',
-#             'total_price',
-#             'item_count'
-#         ]
-#         read_only_fields = ['user']
-
-#     def get_total_price(self, obj):
-#         return obj.get_total()
-
-#     def get_item_count(self, obj):
-#         return obj.get_item_count()
     
 # serializers.py
 

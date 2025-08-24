@@ -943,13 +943,6 @@ from rest_framework.response import Response
 from rest_framework import permissions
 from .models import Cart
 from .serializers import CartSerializer
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import permissions, status
-from django.shortcuts import get_object_or_404
-from .models import Cart, CartItem, Product
-from .serializers import CartSerializer
-from .utils import get_or_create_cart  # tu l’as déjà
 
 class CartDetailAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -959,10 +952,11 @@ class CartDetailAPIView(APIView):
             user=request.user,
             is_ordered=False,
             is_active=True
-        ).select_related("country").prefetch_related("items__product__store__country")
-
+        ).select_related('country').prefetch_related('items__product')
+        
         serializer = CartSerializer(carts, many=True)
         return Response(serializer.data)
+
 
 
 class AddToCartAPIView(APIView):
@@ -970,7 +964,7 @@ class AddToCartAPIView(APIView):
 
     def post(self, request, product_id):
         product = get_object_or_404(Product, id=product_id)
-        store_country = product.store.country  # ⚠️ IMPORTANT : on relie bien le panier au pays du produit
+        store_country = product.store.country
 
         cart = get_or_create_cart(request.user, store_country)
 
@@ -981,40 +975,7 @@ class AddToCartAPIView(APIView):
             cart_item.quantity = 1
         cart_item.save()
 
-        return Response({"message": f"{product.name} ajouté au panier"}, status=status.HTTP_201_CREATED)
-
-# class CartDetailAPIView(APIView):
-#     permission_classes = [permissions.IsAuthenticated]
-
-#     def get(self, request):
-#         carts = Cart.objects.filter(
-#             user=request.user,
-#             is_ordered=False,
-#             is_active=True
-#         ).select_related('country').prefetch_related('items__product')
-        
-#         serializer = CartSerializer(carts, many=True)
-#         return Response(serializer.data)
-
-
-
-# class AddToCartAPIView(APIView):
-#     permission_classes = [permissions.IsAuthenticated]
-
-#     def post(self, request, product_id):
-#         product = get_object_or_404(Product, id=product_id)
-#         store_country = product.store.country
-
-#         cart = get_or_create_cart(request.user, store_country)
-
-#         cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
-#         if not created:
-#             cart_item.quantity += 1
-#         else:
-#             cart_item.quantity = 1
-#         cart_item.save()
-
-#         return Response({'message': 'Produit ajouté au panier'}, status=status.HTTP_201_CREATED)
+        return Response({'message': 'Produit ajouté au panier'}, status=status.HTTP_201_CREATED)
 
 class UpdateCartItemAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]

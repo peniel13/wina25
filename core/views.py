@@ -929,14 +929,17 @@ from django.shortcuts import get_object_or_404
 # def get_or_create_cart(user):
 #     cart, created = Cart.objects.get_or_create(user=user, is_active=True, is_ordered=False)
 #     return cart
-def get_or_create_cart(user, country):
-    cart, created = Cart.objects.get_or_create(
-        user=user,
-        country=country,
-        is_active=True,
-        is_ordered=False
-    )
+def get_or_create_cart(user):
+    cart, created = Cart.objects.get_or_create(user=user, is_ordered=False)
     return cart
+# def get_or_create_cart(user, country):
+#     cart, created = Cart.objects.get_or_create(
+#         user=user,
+#         country=country,
+#         is_active=True,
+#         is_ordered=False
+#     )
+#     return cart
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -997,26 +1000,56 @@ class CartDetailAPIView(APIView):
         
 #         serializer = CartSerializer(carts, many=True)
 #         return Response(serializer.data)
+from rest_framework.views import APIView
+from rest_framework import permissions, status
+from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+from core.models import Product, CartItem, Cart
 
-
+# On réutilise exactement la fonction web
+def get_or_create_cart(user):
+    cart, created = Cart.objects.get_or_create(user=user, is_ordered=False)
+    return cart
 
 class AddToCartAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, product_id):
         product = get_object_or_404(Product, id=product_id)
-        store_country = product.store.country
+        cart = get_or_create_cart(request.user)
 
-        cart = get_or_create_cart(request.user, store_country)
-
-        cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
+        cart_item, created = CartItem.objects.get_or_create(
+            cart=cart,
+            product=product
+        )
         if not created:
             cart_item.quantity += 1
         else:
             cart_item.quantity = 1
         cart_item.save()
 
-        return Response({'message': 'Produit ajouté au panier'}, status=status.HTTP_201_CREATED)
+        return Response({
+            'message': f"{product.name} ajouté au panier",
+            'total_items': cart.get_item_count(),
+        }, status=status.HTTP_201_CREATED)
+
+# class AddToCartAPIView(APIView):
+#     permission_classes = [permissions.IsAuthenticated]
+
+#     def post(self, request, product_id):
+#         product = get_object_or_404(Product, id=product_id)
+#         store_country = product.store.country
+
+#         cart = get_or_create_cart(request.user, store_country)
+
+#         cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
+#         if not created:
+#             cart_item.quantity += 1
+#         else:
+#             cart_item.quantity = 1
+#         cart_item.save()
+
+#         return Response({'message': 'Produit ajouté au panier'}, status=status.HTTP_201_CREATED)
 
 class UpdateCartItemAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]

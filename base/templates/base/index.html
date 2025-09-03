@@ -509,128 +509,151 @@
 {% endif %}
 
 <div class="container mx-auto p-4" id="publicites">
-  <h1 class="text-3xl font-bold mb-6">Recentes Publicités 💵</h1>
-<p class="text-lg text-gray-700 mb-6">
-    Aimez, commentez, partagez et visitez une publicité pour gagner jusqu’à <strong>7 points</strong> par publicité !
-</p>
-
-<!-- 🔽 Bouton Voir plus -->
-<div class="flex justify-center mt-6">
-    <a href="{% url 'advertisement_list_wina' %}" class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
-        Voir plus de publicités
+  <h1 class="text-3xl font-bold mb-6">Découvertes 🔥</h1>
+  <p class="text-lg text-gray-700 mb-6">
+      Publicités et invites de visibilité — tout en un seul fil.
+  </p>
+  <div class="mb-6 flex justify-center">
+    <a href="{% url 'ads_and_invites_feed' %}" 
+       class="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+       Voir plus de pub et invites
     </a>
 </div>
 
-
   {% if user_points %}
-    <p>Points disponibles : {{ user_points.points }} points</p>
+    <p class="mb-4">Points disponibles : <strong>{{ user_points.points }}</strong> points</p>
   {% else %}
-    <p>Vous devez vous connecter pour accumuler des points.</p>
-    <a href="{% url 'login' %}" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-700 mt-2 mb-4 inline-block">
-      Se connecter
-    </a>
+    <div class="mb-4">
+      <p>Connectez-vous pour gagner des points.</p>
+      <a href="{% url 'login' %}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 inline-block mt-2">
+        Se connecter
+      </a>
+    </div>
   {% endif %}
 
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-    {% for ad in ads %}
-      <div class="bg-white rounded-lg shadow-lg p-4 transform transition-transform hover:scale-105 hover:shadow-lg duration-300 mb-6">
-        <h2 class="text-xl font-semibold">{{ ad.title }}</h2>
-        <p class="text-gray-600 break-words whitespace-normal overflow-hidden max-w-full">{{ ad.description|truncatewords:20 }}</p>
+    {% for entry in entries %}
+      {% if entry.entry_type == "ad" %}
+        <!-- ✅ Carte Pub -->
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden transform transition-transform hover:scale-105 hover:shadow-xl duration-300 p-4">
+          <h2 class="text-xl font-semibold">{{ entry.title }}</h2>
+          <p class="text-gray-600 break-words whitespace-normal overflow-hidden max-w-full">
+            {{ entry.description|truncatewords:20 }}
+          </p>
 
-        
-
-        {% if ad.media_type == 'image' %}
-    <img src="{{ ad.media_file.url }}" alt="{{ ad.title }}" class="w-full mt-4 rounded">
-{% elif ad.media_type == 'video' %}
-    <video class="w-full mt-4 rounded" autoplay muted playsinline controls>
-        <source src="{{ ad.media_file.url }}" type="video/mp4">
-        Votre navigateur ne supporte pas la lecture vidéo.
-    </video>
-{% endif %}
-
-
-        {% if ad.url %}
-          <a href="{% url 'visit_ad_url' ad.slug %}" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-800 mt-4 inline-block">
-            🌐 Visiter le lien de la pub 👁 Visites : {{ ad.visits_count }}
-          </a>
-          {% if not user.is_authenticated %}
-            <p class="text-sm text-red-500 mt-2">Connecte-toi pour gagner des points en visitant les pubs.</p>
+          {% if entry.media_type == 'image' %}
+            <img src="{{ entry.media_file.url }}" alt="{{ entry.title }}" class="w-full mt-4 rounded">
+          {% elif entry.media_type == 'video' %}
+            <video class="w-full mt-4 rounded" autoplay muted playsinline controls>
+              <source src="{{ entry.media_file.url }}" type="video/mp4">
+              Votre navigateur ne supporte pas la lecture vidéo.
+            </video>
           {% endif %}
-        {% elif ad.store %}
-          <a href="{% url 'visit_ad_url' ad.slug %}?next={% url 'store_detail' ad.store.slug %}"
-             class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-800 mt-4 inline-block">
-            🏪 Visiter le store associé
-          </a>
-          {% if not user.is_authenticated %}
-            <p class="text-sm text-red-500 mt-2">Connecte-toi pour gagner des points en visitant le store.</p>
-          {% endif %}
-        {% endif %}
 
-        <div class="flex items-center justify-between mt-4">
-          {% if user.is_authenticated %}
-            <form action="{% url 'handle_like' ad.id %}" method="POST">
-              {% csrf_token %}
-              <button type="submit" {% if ad.user_has_liked %}disabled class="cursor-not-allowed opacity-50"{% endif %}>
-                {% if ad.user_has_liked %}
-                  <span class="text-red-500 text-2xl">❤️</span>
-                {% else %}
-                  <span class="text-gray-500 text-2xl">🤍</span>
-                {% endif %}
-              </button>
-            </form>
-
-            <a href="{% url 'ad_comments' ad.slug %}" class="mr-4 text-2xl text-blue-500">
-              💬
+          {% if entry.url %}
+            <a href="{% url 'visit_ad_url' entry.slug %}" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-800 mt-4 inline-block">
+              🌐 Visiter la pub 👁 Visites : {{ entry.visits_count }}
             </a>
+          {% elif entry.store %}
+            <a href="{% url 'visit_ad_url' entry.slug %}?next={% url 'store_detail' entry.store.slug %}" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-800 mt-4 inline-block">
+              🏪 Voir le store
+            </a>
+          {% endif %}
 
-            {% if ad.id not in user_shares %}
-              <button onclick="openSharePopup({{ ad.id }})" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-700 mt-2">
-                <i class="fa fa-share-alt"></i> Partager
-              </button>
+          <div class="flex items-center justify-between mt-4">
+            {% if user.is_authenticated %}
+              <form action="{% url 'handle_like' entry.id %}" method="POST">
+                {% csrf_token %}
+                <button type="submit" {% if entry.user_has_liked %}disabled class="cursor-not-allowed opacity-50"{% endif %}>
+                  {% if entry.user_has_liked %}
+                    <span class="text-red-500 text-2xl">❤️</span>
+                  {% else %}
+                    <span class="text-gray-500 text-2xl">🤍</span>
+                  {% endif %}
+                </button>
+              </form>
+              <a href="{% url 'ad_comments' entry.slug %}" class="mr-4 text-2xl text-blue-500">💬</a>
+
+              {% if entry.id not in user_shares %}
+                <button onclick="openSharePopup({{ entry.id }})" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-700 mt-2">
+                  <i class="fa fa-share-alt"></i> Partager
+                </button>
+              {% else %}
+                <button class="px-4 py-2 bg-gray-400 text-white rounded-lg mt-2" disabled>
+                  <i class="fa fa-share-alt"></i> Déjà partagé
+                </button>
+              {% endif %}
             {% else %}
-              <button class="px-4 py-2 bg-gray-400 text-white rounded-lg mt-2" disabled>
-                <i class="fa fa-share-alt"></i> Déjà partagé
-              </button>
+              <p class="text-red-500 mt-2">🔒 Connectez-vous pour interagir avec cette pub.</p>
             {% endif %}
-          {% else %}
-            <p class="text-red-500 mt-2">🔒 Connectez-vous pour interagir avec cette publicité.</p>
-            <a href="{% url 'login' %}" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-700 mt-2 inline-block">
-              Se connecter
+          </div>
+
+          <div class="mt-4 flex justify-between items-center text-gray-500">
+            <div>
+              <p>{{ entry.likes_count }} Like(s)</p>
+              <p>{{ entry.comments_count }} Commentaire(s)</p>
+              <p>{{ entry.shares_count }} Partage(s)</p>
+            </div>
+            <a href="{% url 'advertisement_detail' entry.slug %}" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+              Voir Détails
             </a>
-          {% endif %}
+          </div>
+
+          <!-- POPUP DE PARTAGE -->
+          <div id="share-popup-{{ entry.id }}" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden z-50">
+            <div class="bg-white p-6 rounded-xl relative w-96">
+              <button onclick="closeSharePopup({{ entry.id }})" class="absolute top-2 right-3 text-gray-600 text-2xl hover:text-gray-900">&times;</button>
+              <h3 class="text-xl font-semibold text-center">Partager cette publicité</h3>
+              <form method="POST" action="{% url 'record_share' entry.slug %}" id="share-form-{{ entry.id }}">
+                {% csrf_token %}
+                <input type="hidden" name="social_network" id="social-network-input-{{ entry.id }}">
+                <div class="flex justify-center mt-6 space-x-4">
+                  <a href="#" onclick="recordShare(event, {{ entry.id }}, 'whatsapp')" data-url="{{ ad_absolute_urls|get_item:entry.id }}">
+                    <img src="{% static 'img/whatsap2.jpg' %}" class="w-10 h-10">
+                  </a>
+                  <a href="#" onclick="recordShare(event, {{ entry.id }}, 'facebook')" data-url="{{ ad_absolute_urls|get_item:entry.id }}">
+                    <img src="{% static 'img/fb2.png' %}" class="w-10 h-10">
+                  </a>
+                </div>
+              </form>
+            </div>
+          </div>
+
         </div>
 
-        <!-- POPUP DE PARTAGE -->
-        <div id="share-popup-{{ ad.id }}" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden z-50">
-          <div class="bg-white p-6 rounded-xl relative w-96">
-            <button onclick="closeSharePopup({{ ad.id }})" class="absolute top-2 right-3 text-gray-600 text-2xl hover:text-gray-900">&times;</button>
-            <h3 class="text-xl font-semibold text-center">Partager cette publicité</h3>
-            <form method="POST" action="{% url 'record_share' ad.slug %}" id="share-form-{{ ad.id }}">
-              {% csrf_token %}
-              <input type="hidden" name="social_network" id="social-network-input-{{ ad.id }}">
-              <div class="flex justify-center mt-6 space-x-4">
-                <a href="#" onclick="recordShare(event, {{ ad.id }}, 'whatsapp')" data-url="{{ ad_absolute_urls|get_item:ad.id }}">
-                  <img src="{% static 'img/whatsap2.jpg' %}" class="w-10 h-10">
-                </a>
-                <a href="#" onclick="recordShare(event, {{ ad.id }}, 'facebook')" data-url="{{ ad_absolute_urls|get_item:ad.id }}">
-                  <img src="{% static 'img/fb2.png' %}" class="w-10 h-10">
-                </a>
-              </div>
-            </form>
-          </div>
-        </div>
-
-        <div class="mt-4 flex justify-between items-center text-gray-500">
-          <div>
-            <p>{{ ad.likes_count }} Like(s)</p>
-            <p>{{ ad.comments_count }} Commentaire(s)</p>
-            <p>{{ ad.shares_count }} Partage(s)</p>
-          </div>
-          <a href="{% url 'advertisement_detail' ad.slug %}" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
-            Voir Détails
+      {% elif entry.entry_type == "invite" %}
+        <!-- ✅ Carte Invite -->
+        {% if entry.type_invite == 'store' and entry.store %}
+          <a href="{% url 'store_detail' slug=entry.store.slug %}?invite_id={{ entry.id }}" target="_blank" class="block">
+            <div class="h-40 bg-cover bg-center relative rounded-lg shadow-lg overflow-hidden"
+                 style="background-image: url('{% if entry.store.thumbnail %}{{ entry.store.thumbnail.url }}{% else %}{% static 'img/default-thumbnail.jpg' %}{% endif %}')">
+              {% if entry.store.country.flag %}
+                <div class="absolute top-2 right-2">
+                  <img src="{{ entry.store.country.flag.url }}" class="w-5 h-5 rounded-full border border-white shadow">
+                </div>
+              {% endif %}
+            </div>
+            <div class="p-3 text-sm bg-white rounded-b-lg shadow-inner">
+              <h3 class="font-semibold truncate">{{ entry.store.name }}</h3>
+              <p class="text-xs text-blue-500 italic">{{ entry.store.typestore.nom }}</p>
+              <p class="truncate mt-1">{{ entry.store.adresse }}</p>
+              <p class="text-xs">{{ entry.store.city.name }}, {{ entry.store.country.name }}</p>
+              <p class="mt-1 text-xs">Visites restantes : {{ entry.visites_restantes }}</p>
+            </div>
           </a>
-        </div>
-      </div>
+        {% elif entry.type_invite == 'lien' %}
+          <a href="{% url 'invite_redirect' entry.id %}" target="_blank" class="block">
+            <div class="h-40 bg-cover bg-center rounded-lg shadow-lg overflow-hidden"
+                 style="background-image: url('{% if entry.image %}{{ entry.image.url }}{% else %}{% static 'img/default-thumbnail.jpg' %}{% endif %}')">
+            </div>
+            <div class="p-3 text-sm bg-white rounded-b-lg shadow-inner">
+              <h3 class="font-semibold truncate">Lien externe</h3>
+              <p class="truncate mt-1 text-blue-500 underline">{{ entry.url_redirection }}</p>
+              <p class="mt-1 text-xs">Visites restantes : {{ entry.visites_restantes }}</p>
+            </div>
+          </a>
+        {% endif %}
+      {% endif %}
     {% endfor %}
   </div>
 </div>

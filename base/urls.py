@@ -142,6 +142,6 @@ urlpatterns = [
         name='transfer_visite_money_history'
     ),
     path('transfer_visite_money_insufficient/', views.transfer_visite_money_insufficient, name='transfer_visite_money_insufficient'),
-    
+    path('discover/', views.ads_and_invites_feed, name='ads_and_invites_feed'),
     
 ]

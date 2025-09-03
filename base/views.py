@@ -16,6 +16,12 @@ from django.db.models import Q
 from django.core.paginator import Paginator
 from django.db.models import Avg
 from collections import defaultdict
+from collections import defaultdict
+from itertools import chain
+from operator import attrgetter
+from django.db.models import Q, Avg
+from django.core.paginator import Paginator
+from django.shortcuts import render
 
 from collections import defaultdict
 from django.db.models import Q, Avg
@@ -25,7 +31,7 @@ from collections import defaultdict
 from django.db.models import Q
 from django.core.paginator import Paginator
 from django.shortcuts import render
-from core.models import Store, Product, FeaturedStore, Typestore, TypeBusiness, Country, City
+from core.models import Store, Product, FeaturedStore, Typestore, TypeBusiness, Country, City, InviteVisibilite
 
 # ✅ Fonction utilitaire de filtrage intelligent
 def filter_by_user_location(queryset, user, city_field='city', country_field='country'):
@@ -97,12 +103,10 @@ def home_view(request):
 
     # ✅ Devise
     currency = 'FC'  # Devise par défaut
-
     for product in recent_products:
         if product.store and product.store.country and hasattr(product.store.country, 'devise_info'):
-           currency = product.store.country.devise_info.devise
-           break  # On prend la première devise trouvée valide
-
+            currency = product.store.country.devise_info.devise
+            break  # On prend la première devise trouvée valide
 
     # ✅ Requêtes
     requetes = Requete.objects.all()
@@ -114,7 +118,7 @@ def home_view(request):
     requetes = requetes.order_by('-created_at')[:3]
     print("📨 REQUÊTES =", requetes.count())
 
-    # ✅ Publicités (limitées à 3 après filtrage)
+    # ===================== Publicités (limitées à 3 avant filtrage) =====================
     ads = Advertisement.objects.filter(is_active=True).order_by('-created_at')[:3]
 
     if request.user.is_authenticated:
@@ -142,21 +146,58 @@ def home_view(request):
                     ad=ad,
                     interaction_type='like'
                 ).exists()
+                ad.entry_type = "ad"
                 filtered_ads.append(ad)
 
         ads = filtered_ads
     else:
         for ad in ads:
             ad.user_has_liked = False
+            ad.entry_type = "ad"
         ads = [ad for ad in ads if ad.target_all_users]
         user_points = None
 
-    ads = ads[:3]  # On limite à 3 publicités après filtrage
+    # ===================== Invites visibilité (limitées à 3) =====================
+    if request.user.is_authenticated:
+        # Exclure les invites déjà visitées par l'utilisateur
+        visited_invite_ids = InviteVisite.objects.filter(user=request.user).values_list('invite_id', flat=True)
 
-    # ✅ Lien de partage
+        invites = InviteVisibilite.objects.filter(
+            is_active=True,
+            visites_restantes__gt=0
+        ).exclude(id__in=visited_invite_ids)
+
+        # Filtrage ciblage
+        q_filter = Q(cibler_tout_user=True)
+        if getattr(request.user, 'country_id', None):
+            q_filter |= Q(country_id=request.user.country_id)
+        if getattr(request.user, 'city_id', None):
+            q_filter |= Q(city_id=request.user.city_id)
+
+        invites = invites.filter(q_filter).select_related('store', 'store__country', 'store__city').order_by('-created_at')[:3]
+
+    else:
+        # Non connectés : seulement les invites ouvertes à tous
+        invites = InviteVisibilite.objects.filter(
+            is_active=True,
+            visites_restantes__gt=0,
+            cibler_tout_user=True
+        ).select_related('store', 'store__country', 'store__city').order_by('-created_at')[:3]
+
+    # Attribution du type pour le template
+    for invite in invites:
+        invite.entry_type = "invite"
+
+    # ===================== Fusion et tri =====================
+    entries = sorted(
+        chain(ads, invites),
+        key=attrgetter("created_at"),
+        reverse=True
+    )
+
+    # ✅ Partages pubs
     user_shares = []
     ad_absolute_urls = {}
-
     if request.user.is_authenticated:
         shared_ads = Share.objects.filter(user=request.user, ad__in=ads).values_list('ad_id', flat=True)
         user_shares = list(shared_ads)
@@ -171,9 +212,8 @@ def home_view(request):
             no_ads_message = "Aucune publicité ne correspond à votre profil pour le moment."
         else:
             no_ads_message = "Aucune publicité disponible actuellement pour tous les utilisateurs."
-    
+
     lotteries = Lottery.objects.filter(is_active=True)
-    
 
     # ✅ Ciblage intelligent :
     # - Si target_country et target_city sont null → visible pour tous
@@ -211,7 +251,7 @@ def home_view(request):
         lotteries_page = paginator.page(1)
     except EmptyPage:
         lotteries_page = paginator.page(paginator.num_pages)
-        
+
     return render(request, 'base/index.html', {
         'featured_stores': featured_stores,
         'typestores': typestores,
@@ -232,7 +272,242 @@ def home_view(request):
         'no_ads_message': no_ads_message,
         'user_points': user_points,
         'lotteries': lotteries_page,
+        "entries": entries,
     })
+
+# def home_view(request):
+#     user = request.user
+
+#     print("✅ USER =", user if user.is_authenticated else "Anonymous")
+
+#     # ✅ Featured Stores
+#     featured_stores = FeaturedStore.objects.filter(
+#         Q(show_in_all=True) |
+#         Q(show_in_all=False, country=user.country if user.is_authenticated else None) |
+#         Q(show_in_all=False, city=user.city if user.is_authenticated else None)
+#     ).select_related('store', 'store__country', 'store__city').order_by('-created_at')
+
+#     print("✅ FEATURED STORES =", featured_stores.count())
+
+#     ad_popup = get_targeted_popup(user)
+
+#     # ✅ Données de base
+#     typestores = Typestore.objects.all()
+#     countries = Country.objects.all()
+#     cities = City.objects.all()
+#     typebusinesses = TypeBusiness.objects.all()
+
+#     # ✅ Stores groupés
+#     stores_by_type = {}
+#     for tb in typebusinesses:
+#         stores_qs = Store.objects.filter(typebusiness=tb, is_active=True).select_related('country', 'city')
+#         filtered = filter_by_user_location(stores_qs, user, 'city', 'country')[:10]
+#         stores_by_type[tb.id] = filtered
+#         print(f"📦 STORES POUR TypeBusiness {tb.nom} =", filtered.count())
+
+#     # ✅ Stores récents avec pagination
+#     recent_stores_qs = Store.objects.select_related('country', 'city').filter(is_active=True).order_by('-created_at')
+#     filtered_recent_stores = filter_by_user_location(recent_stores_qs, user, 'city', 'country')
+#     print("🕐 STORES RECENTS FILTRÉS =", filtered_recent_stores.count())
+
+#     paginator = Paginator(filtered_recent_stores, 20)
+#     page_number = request.GET.get('page')
+#     page_obj = paginator.get_page(page_number)
+
+#     # ✅ Produits filtrés
+#     products_qs = Product.objects.select_related(
+#         'type_product', 'store', 'store__city', 'store__country'
+#     ).filter(store__is_active=True)
+
+#     products_filtered = filter_by_user_location(products_qs, user, 'store__city', 'store__country')
+#     print("🛒 PRODUITS FILTRÉS =", products_filtered.count())
+
+#     # ✅ Groupement
+#     grouped_products = defaultdict(list)
+#     for product in products_filtered:
+#         key = product.type_product.nom if product.type_product else "Autres"
+#         grouped_products[key].append(product)
+
+#     # ✅ Produits récents
+#     recent_products = products_filtered.order_by('-created_at')[:4]
+#     print("🆕 PRODUITS RÉCENTS =", [p.name for p in recent_products])
+
+#     # ✅ Devise
+#     currency = 'FC'  # Devise par défaut
+
+#     for product in recent_products:
+#         if product.store and product.store.country and hasattr(product.store.country, 'devise_info'):
+#            currency = product.store.country.devise_info.devise
+#            break  # On prend la première devise trouvée valide
+
+
+#     # ✅ Requêtes
+#     requetes = Requete.objects.all()
+#     if user.is_authenticated:
+#         if user.country:
+#             requetes = requetes.filter(country=user.country)
+#         if user.city:
+#             requetes = requetes.filter(city=user.city)
+#     requetes = requetes.order_by('-created_at')[:3]
+#     print("📨 REQUÊTES =", requetes.count())
+
+#     # ✅ Publicités (limitées à 3 avant filtrage)
+#     ads = Advertisement.objects.filter(is_active=True).order_by('-created_at')[:3]
+
+#     if request.user.is_authenticated:
+#         user_points, _ = UserPoints.objects.get_or_create(user=user)
+
+#         filtered_ads = []
+#         for ad in ads:
+#             show_to_user = False
+
+#             if ad.target_all_users:
+#                 show_to_user = True
+#             elif ad.target_country and ad.target_country == user.country:
+#                 show_to_user = True
+#             elif ad.target_city and ad.target_city == user.city:
+#                 show_to_user = True
+
+#             if ad.max_likes and ad.likes_count >= ad.max_likes:
+#                 show_to_user = False
+#             if ad.max_shares and ad.shares_count >= ad.max_shares:
+#                 show_to_user = False
+
+#             if show_to_user:
+#                 ad.user_has_liked = AdInteraction.objects.filter(
+#                     user=user,
+#                     ad=ad,
+#                     interaction_type='like'
+#                 ).exists()
+#                 ad.entry_type = "ad"
+#                 filtered_ads.append(ad)
+
+#         ads = filtered_ads
+#     else:
+#         for ad in ads:
+#             ad.user_has_liked = False
+#             ad.entry_type = "ad"
+#         ads = [ad for ad in ads if ad.target_all_users]
+#         user_points = None
+
+#  # ===================== Invites visibilité (limitées à 3) =====================
+#     if request.user.is_authenticated:
+#     # Exclure les invites déjà visitées par l'utilisateur
+#         visited_invite_ids = InviteVisite.objects.filter(user=request.user).values_list('invite_id', flat=True)
+    
+#         invites = InviteVisibilite.objects.filter(
+#         is_active=True,
+#         visites_restantes__gt=0
+#                 ).exclude(id__in=visited_invite_ids)
+
+#     # Filtrage ciblage
+#     q_filter = Q(cibler_tout_user=True)
+#     if getattr(request.user, 'country_id', None):
+#         q_filter |= Q(country_id=request.user.country_id)
+#     if getattr(request.user, 'city_id', None):
+#         q_filter |= Q(city_id=request.user.city_id)
+
+#     invites = invites.filter(q_filter).select_related('store', 'store__country', 'store__city').order_by('-created_at')[:3]
+
+#         else:
+#     # Non connectés : seulement les invites ouvertes à tous
+#         invites = InviteVisibilite.objects.filter(
+#             is_active=True,
+#             visites_restantes__gt=0,
+#             cibler_tout_user=True
+#         ).select_related('store', 'store__country', 'store__city').order_by('-created_at')[:3]
+
+# # Attribution du type pour le template
+#     for invite in invites:
+#         invite.entry_type = "invite"
+
+# # ===================== Fusion et tri =====================
+#     entries = sorted(
+#         chain(ads, invites),
+#         key=attrgetter("created_at"),
+#         reverse=True
+#     )
+
+#     # ✅ Partages pubs
+#     user_shares = []
+#     ad_absolute_urls = {}
+#     if request.user.is_authenticated:
+#         shared_ads = Share.objects.filter(user=request.user, ad__in=ads).values_list('ad_id', flat=True)
+#         user_shares = list(shared_ads)
+
+#     ad_absolute_urls = {
+#         ad.id: request.build_absolute_uri(ad.get_absolute_url()) for ad in ads
+#     }
+
+#     no_ads_message = ""
+#     if not ads:
+#         if request.user.is_authenticated:
+#             no_ads_message = "Aucune publicité ne correspond à votre profil pour le moment."
+#         else:
+#             no_ads_message = "Aucune publicité disponible actuellement pour tous les utilisateurs."
+    
+#     lotteries = Lottery.objects.filter(is_active=True)
+    
+
+#     # ✅ Ciblage intelligent :
+#     # - Si target_country et target_city sont null → visible pour tous
+#     # - Sinon, visible uniquement pour les utilisateurs correspondant
+#     if user.is_authenticated:
+#         lotteries = lotteries.filter(
+#             (Q(target_country__isnull=True) & Q(target_city__isnull=True)) |
+#             Q(target_country=user.country) |
+#             Q(target_city=user.city)
+#         )
+#     else:
+#         # Pour les non connectés, on n'affiche que les tirages globaux
+#         lotteries = lotteries.filter(
+#             target_country__isnull=True,
+#             target_city__isnull=True
+#         )
+
+#     lotteries = lotteries.order_by('-created_at')
+
+#     for lottery in lotteries:
+#         lottery.current_count = lottery.current_participant_count()
+#         lottery.top_winner = (
+#             lottery.participations
+#             .filter(winner_rank=1)
+#             .select_related('user')
+#             .first()
+#         )
+
+#     paginator = Paginator(lotteries, 3)
+#     page = request.GET.get('page')
+
+#     try:
+#         lotteries_page = paginator.page(page)
+#     except PageNotAnInteger:
+#         lotteries_page = paginator.page(1)
+#     except EmptyPage:
+#         lotteries_page = paginator.page(paginator.num_pages)
+        
+#     return render(request, 'base/index.html', {
+#         'featured_stores': featured_stores,
+#         'typestores': typestores,
+#         'countries': countries,
+#         'cities': cities,
+#         'typebusinesses': typebusinesses,
+#         'stores_by_type': stores_by_type,
+#         'all_stores': page_obj,
+#         'grouped_products': dict(grouped_products),
+#         'user_city': getattr(user, 'city', None),
+#         'product_list': recent_products,
+#         'currency': currency,
+#         'requetes': requetes,
+#         'ad_popup': ad_popup,
+#         'ads': ads,
+#         'user_shares': user_shares,
+#         'ad_absolute_urls': ad_absolute_urls,
+#         'no_ads_message': no_ads_message,
+#         'user_points': user_points,
+#         'lotteries': lotteries_page,
+#         "entries": entries,
+#     })
 
 # def home_view(request):
 #     user = request.user
@@ -4269,6 +4544,21 @@ from django.http import Http404
 def get_or_create_cart(user):
     cart, created = Cart.objects.get_or_create(user=user, is_ordered=False)
     return cart
+# def get_or_create_cart(user, country=None):
+#     """
+#     Retourne le panier actif/non commandé d'un utilisateur
+#     (unique par pays). S'il n'existe pas, on le crée.
+#     """
+#     filters = {
+#         "user": user,
+#         "is_active": True,
+#         "is_ordered": False,
+#     }
+#     if country:
+#         filters["country"] = country
+
+#     cart, created = Cart.objects.get_or_create(**filters)
+#     return cart
 
 
 from django.http import JsonResponse
@@ -4306,24 +4596,6 @@ def add_to_cart_ajax(request, product_id):
         'total_items': total_items,
     })
 
-# @login_required
-# def add_to_cart_ajax(request, product_id):
-#     product = get_object_or_404(Product, id=product_id)
-#     cart = get_or_create_cart(request.user)
-
-#     cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
-#     if not created:
-#         cart_item.quantity += 1
-#     else:
-#         cart_item.quantity = 1
-#     cart_item.save()
-
-#     total_items = cart.get_item_count()
-
-#     return JsonResponse({
-#         'message': f"{product.name} ajouté au panier avec succès.",
-#         'total_items': total_items,
-#     })
 
 
 
@@ -4650,7 +4922,7 @@ def advertisement_detail(request, slug):
     range_10 = range(1, 11)
     # Si l'annonce n'existe pas, rediriger vers la liste des publicités
     if not ad:
-        return redirect('advertisement_list_wina')
+        return redirect('ads_and_invites_feed')
 
     ad_absolute_url = request.build_absolute_uri(ad.get_absolute_url())
 
@@ -5021,13 +5293,13 @@ def handle_like(request, ad_id):
 
     if not ad.is_active:
         messages.error(request, "Publicité désactivée.")
-        return redirect('advertisement_list_wina')
+        return redirect('ads_and_invites_feed')
 
     # Vérifier le seuil
     max_val = ad.get_max_value('max_likes')
     if max_val is not None and ad.likes_count >= max_val:
         messages.warning(request, "Limite de likes atteinte pour cette publicité.")
-        return redirect('advertisement_list_wina')
+        return redirect('ads_and_invites_feed')
 
     # Vérifie s’il a déjà liké
     if AdInteraction.objects.filter(user=request.user, ad=ad, interaction_type='like').exists():
@@ -5049,7 +5321,7 @@ def handle_like(request, ad_id):
 
         messages.success(request, "Vous avez gagné 1 point pour le like !")
 
-    return redirect('advertisement_list_wina')
+    return redirect('ads_and_invites_feed')
 
 
 
@@ -5208,7 +5480,7 @@ def share_ad(request, ad_slug):
             'new_points': user_points.points
         })
 
-    return redirect('advertisement_list_wina')
+    return redirect('ads_and_invites_feed')
 
 
 
@@ -6183,4 +6455,175 @@ def contact_product_detail(request, contact_id):
 
     return render(request, 'base/contact_product_detail.html', {
         'contact': contact,
+    })
+
+
+# views.py
+from django.shortcuts import render, redirect
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.db.models import Q
+from django.contrib.auth.decorators import login_required
+from datetime import datetime
+
+from core.models import (
+    Advertisement, AdInteraction, Share, UserPoints,
+    InviteVisibilite, InviteVisite,
+    Store, FeaturedStore
+)
+# Si get_targeted_popup est dans un module utils, importe-le
+# from core.utils import get_targeted_popup  # adapte l'import si besoin
+
+
+def ads_and_invites_feed(request):
+    """
+    Flux fusionné : Publicités + Invites de visibilité
+    Renvoie une seule liste 'entries' avec des éléments {type: 'ad'|'invite', created_at, obj}
+    triés par date décroissante, paginés.
+    """
+    user = request.user
+    is_auth = user.is_authenticated
+
+    # Popup ciblée (si tu en as)
+    ad_popup = get_targeted_popup(user) if is_auth else None
+
+    # Stores favoris + featured
+    favorite_stores = Store.objects.filter(favoritestore=True).order_by('-created_at')[:12]
+    range_10 = range(1, 11)
+
+    # ========= 1) Publicités =========
+    ads_qs = (Advertisement.objects
+              .filter(is_active=True)
+              .select_related('store', 'store__country', 'store__city')
+              .order_by('-created_at'))
+
+    if is_auth:
+        user_points, _ = UserPoints.objects.get_or_create(user=user)
+
+        filtered_ads = []
+        for ad in ads_qs:
+            show = False
+            # Ciblage
+            if getattr(ad, 'target_all_users', False):
+                show = True
+            elif getattr(ad, 'target_country_id', None) and ad.target_country_id == getattr(user, 'country_id', None):
+                show = True
+            elif getattr(ad, 'target_city_id', None) and ad.target_city_id == getattr(user, 'city_id', None):
+                show = True
+
+            # Limites
+            if getattr(ad, 'max_likes', None) and ad.likes_count >= ad.max_likes:
+                show = False
+            if getattr(ad, 'max_shares', None) and ad.shares_count >= ad.max_shares:
+                show = False
+
+            if show:
+                ad.user_has_liked = AdInteraction.objects.filter(
+                    user=user, ad=ad, interaction_type='like'
+                ).exists()
+                filtered_ads.append(ad)
+        ads = filtered_ads
+    else:
+        # Visiteurs : seulement les pubs ouvertes à tous
+        for ad in ads_qs:
+            ad.user_has_liked = False
+        ads = [ad for ad in ads_qs if getattr(ad, 'target_all_users', False)]
+        user_points = None
+
+    # ========= 2) Invites =========
+    if is_auth:
+        invites_visitees_ids = InviteVisite.objects.filter(user=user).values_list('invite_id', flat=True)
+        invites_qs = InviteVisibilite.objects.filter(
+            is_active=True,
+            visites_restantes__gt=0
+        ).exclude(id__in=invites_visitees_ids)
+
+        q_filter = Q(cibler_tout_user=True)
+        if getattr(user, 'country_id', None):
+            q_filter |= Q(country_id=user.country_id)
+        if getattr(user, 'city_id', None):
+            q_filter |= Q(city_id=user.city_id)
+
+        invites_qs = invites_qs.filter(q_filter)
+    else:
+        invites_qs = InviteVisibilite.objects.filter(
+            is_active=True,
+            visites_restantes__gt=0,
+            cibler_tout_user=True
+        )
+
+    invites_qs = invites_qs.select_related('store', 'store__country', 'store__city').order_by('-created_at')
+
+    # ========= 3) Fusion en une seule liste =========
+    entries = []
+
+    for ad in ads:
+        entries.append({
+            "type": "ad",
+            "created_at": getattr(ad, 'created_at', None) or datetime.min,
+            "obj": ad,
+        })
+
+    for inv in invites_qs:
+        entries.append({
+            "type": "invite",
+            "created_at": getattr(inv, 'created_at', None) or datetime.min,
+            "obj": inv,
+        })
+
+    # Tri décroissant par date
+    entries.sort(key=lambda e: e["created_at"], reverse=True)
+
+    # Partages (pour les pubs uniquement)
+    if is_auth:
+        ad_objs = [e["obj"] for e in entries if e["type"] == "ad"]
+        shared_ads = Share.objects.filter(user=user, ad__in=ad_objs).values_list('ad_id', flat=True)
+        user_shares = list(shared_ads)
+    else:
+        user_shares = []
+
+    # URLs absolues des pubs pour le partage
+    ad_absolute_urls = {
+        ad.id: request.build_absolute_uri(ad.get_absolute_url())
+        for ad in [e["obj"] for e in entries if e["type"] == "ad"]
+    }
+
+    # Pagination sur la liste fusionnée
+    paginator = Paginator(entries, 9)
+    page = request.GET.get('page')
+    try:
+        entries_page = paginator.page(page)
+    except PageNotAnInteger:
+        entries_page = paginator.page(1)
+    except EmptyPage:
+        entries_page = paginator.page(paginator.num_pages)
+
+    # Featured stores
+    if is_auth:
+        featured_stores = FeaturedStore.objects.filter(
+            Q(show_in_all=True) |
+            Q(show_in_all=False, store__country=user.country) |
+            Q(show_in_all=False, store__city=user.city)
+        ).select_related('store', 'store__country', 'store__city').order_by('-created_at')
+    else:
+        featured_stores = FeaturedStore.objects.filter(
+            show_in_all=True
+        ).select_related('store', 'store__country', 'store__city').order_by('-created_at')
+
+    # Message vide
+    no_items_message = ""
+    if len(entries) == 0:
+        no_items_message = "Aucun contenu disponible pour le moment."
+
+    return render(request, 'base/ads_and_invites.html', {
+        "entries": entries_page,
+        "ads_count": sum(1 for e in entries if e["type"] == "ad"),
+        "invites_count": sum(1 for e in entries if e["type"] == "invite"),
+        "user_points": user_points,
+        "user_shares": user_shares,
+        "ad_absolute_urls": ad_absolute_urls,
+        "ad_popup": ad_popup,
+        "favorite_stores": favorite_stores,
+        "range_10": range_10,
+        "featured_stores": featured_stores,
+        "no_items_message": no_items_message,
     })

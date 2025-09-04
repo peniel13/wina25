@@ -1342,7 +1342,7 @@ def invite_visibilite_payment_view(request, invite_id):
     invite = get_object_or_404(InviteVisibilite, id=invite_id, owner=request.user)
 
     unite_visite_obj = UniteVisite.objects.first()
-    unite_visite = unite_visite_obj.montant if unite_visite_obj else Decimal('0.002')
+    unite_visite = unite_visite_obj.montant if unite_visite_obj else Decimal('0.01')
     montant_total = Decimal(invite.nombre_invites) * unite_visite
 
     if request.method == 'POST':
@@ -1508,6 +1508,39 @@ def visite_money_solde(request):
     solde = visite_money.total_gain_usd if visite_money else 0
 
     return render(request, 'base/solde.html', {'solde': solde})
+
+
+# views.py
+from django.contrib import messages
+from django.shortcuts import redirect, render
+from django.contrib.auth.decorators import login_required
+from decimal import Decimal
+from core.models import VisiteMoney, UserPoints, PointConversion
+
+@login_required(login_url="signin")
+def convert_usd_to_points_view(request):
+    if request.method == "POST":
+        usd_amount = request.POST.get("usd_amount")
+        try:
+            usd_amount = Decimal(usd_amount)
+        except:
+            messages.error(request, "Montant invalide.")
+            return redirect("visite_money_solde")
+
+        visite_money = getattr(request.user, "visite_money", None)
+        if not visite_money:
+            messages.error(request, "Aucun compte VisiteMoney trouvé.")
+            return redirect("visite_money_solde")
+
+        success, msg = visite_money.convert_usd_to_points(usd_amount)
+        if success:
+            messages.success(request, msg)
+        else:
+            messages.error(request, msg)
+
+        return redirect("visite_money_solde")
+
+    return redirect("visite_money_solde")
 
 
 from decimal import Decimal
@@ -5756,33 +5789,101 @@ from core.models import Lottery,LotteryParticipation,UserNotificationHide
 from core.forms import LotteryParticipationForm
 from core.models import NumeroPaye
 
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from core.models import Lottery, LotteryParticipation, NumeroPaye
+from core.forms import LotteryParticipationForm
+
 @login_required
 def participate_in_lottery(request, lottery_id):
+    # Récupérer le tirage
     lottery = get_object_or_404(Lottery, id=lottery_id, is_active=True)
 
+    # Vérifier si le nombre maximum de participants est atteint
     if lottery.current_participant_count() >= lottery.max_participants:
         messages.warning(request, "Le nombre maximum de participants a été atteint.")
         return redirect('lottery_list')
 
+    # Récupérer le numéro de paiement Mobile Money du pays de l'utilisateur
     user_country = getattr(request.user, 'country', None)
-    numero_paye = None
-    if user_country:
-        numero_paye = NumeroPaye.objects.filter(country=user_country).first()
+    numero_paye = NumeroPaye.objects.filter(country=user_country).first() if user_country else None
 
     if request.method == 'POST':
         form = LotteryParticipationForm(request.POST, user=request.user, lottery=lottery)
+
         if form.is_valid():
-            form.save()
-            messages.success(request, "Votre participation a été enregistrée. Elle sera activée par un administrateur.")
-            return redirect('lottery_list')
+            # Sauvegarder l'instance sans commit pour ajuster les champs
+            instance = form.save(commit=False)
+            payment_method = form.cleaned_data.get('payment_method')
+
+            if payment_method == 'visitemoney':
+                # Vérifier solde VisiteMoney
+                visite_money = getattr(request.user, 'visite_money', None)
+                if visite_money and visite_money.total_gain_usd >= lottery.participation_fee:
+                    visite_money.total_gain_usd -= lottery.participation_fee
+                    visite_money.save()
+
+                    instance.is_active = True
+                    instance.id_transaction = f"VM-{request.user.id}-{lottery.id}"
+                    instance.save()
+
+                    messages.success(
+                        request,
+                        f"Participation activée ! {lottery.participation_fee} USD ont été déduits de votre VisiteMoney."
+                    )
+                    return redirect('lottery_list')
+                else:
+                    messages.error(request, "Solde VisiteMoney insuffisant pour participer.")
+            else:
+                # Mobile Money → participation en attente de validation admin
+                if not instance.id_transaction:
+                    messages.error(request, "Veuillez fournir l'ID de transaction Mobile Money.")
+                else:
+                    instance.is_active = False
+                    instance.save()
+                    messages.success(
+                        request,
+                        "Participation enregistrée. Elle sera activée par un administrateur après validation du paiement Mobile Money."
+                    )
+                    return redirect('lottery_list')
     else:
         form = LotteryParticipationForm(user=request.user, lottery=lottery)
 
     return render(request, 'base/participate.html', {
         'form': form,
         'lottery': lottery,
-        'numero_paye': numero_paye,  # ← ajout
+        'numero_paye': numero_paye,
     })
+
+
+# @login_required
+# def participate_in_lottery(request, lottery_id):
+#     lottery = get_object_or_404(Lottery, id=lottery_id, is_active=True)
+
+#     if lottery.current_participant_count() >= lottery.max_participants:
+#         messages.warning(request, "Le nombre maximum de participants a été atteint.")
+#         return redirect('lottery_list')
+
+#     user_country = getattr(request.user, 'country', None)
+#     numero_paye = None
+#     if user_country:
+#         numero_paye = NumeroPaye.objects.filter(country=user_country).first()
+
+#     if request.method == 'POST':
+#         form = LotteryParticipationForm(request.POST, user=request.user, lottery=lottery)
+#         if form.is_valid():
+#             form.save()
+#             messages.success(request, "Votre participation a été enregistrée. Elle sera activée par un administrateur.")
+#             return redirect('lottery_list')
+#     else:
+#         form = LotteryParticipationForm(user=request.user, lottery=lottery)
+
+#     return render(request, 'base/participate.html', {
+#         'form': form,
+#         'lottery': lottery,
+#         'numero_paye': numero_paye,  # ← ajout
+#     })
 
 
 
@@ -6627,3 +6728,49 @@ def ads_and_invites_feed(request):
         "featured_stores": featured_stores,
         "no_items_message": no_items_message,
     })
+
+
+
+from django.contrib import messages
+from django.shortcuts import redirect
+from django.db import transaction
+@login_required(login_url="signin")
+def convert_points_to_money(request):
+    if request.method == "POST":
+        try:
+            user_points = UserPoints.objects.get(user=request.user)
+        except UserPoints.DoesNotExist:
+            messages.error(request, "Vous n’avez pas encore de points.")
+            return redirect("user_dashboard")
+
+        if user_points.points <= 0:
+            messages.error(request, "Vous n’avez pas assez de points pour convertir.")
+            return redirect("user_dashboard")
+
+        # Récupérer le taux de conversion
+        try:
+            conversion = PointConversion.objects.latest('id')
+            conversion_rate = conversion.conversion_rate
+        except PointConversion.DoesNotExist:
+            conversion_rate = 0.5  # valeur par défaut
+
+        usd_value = user_points.points * conversion_rate
+
+        with transaction.atomic():
+            points_converted = user_points.points
+            user_points.points = 0
+            user_points.save()
+
+            # Mise à jour du solde visite_money
+            visite_money, created = VisiteMoney.objects.get_or_create(user=request.user)
+            visite_money.total_gain_usd += usd_value
+            visite_money.save()
+
+        messages.success(
+            request,
+            f"✅ Conversion réussie ! {points_converted} points = ${usd_value:.4f} crédités sur votre compte VisiteMoney."
+        )
+        return redirect("user_dashboard")
+
+    return redirect("user_dashboard")
+

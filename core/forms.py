@@ -524,43 +524,118 @@ class MobileMoneyPaymentForm(forms.ModelForm):
 from .models import LotteryParticipation
 from django import forms
 from .models import LotteryParticipation
+
+
+# class LotteryParticipationForm(forms.ModelForm):
+#     class Meta:
+#         model = LotteryParticipation
+#         fields = ['full_name', 'phone_number', 'id_transaction']
+
+#     def __init__(self, *args, **kwargs):
+#         self.user = kwargs.pop('user', None)
+#         self.lottery = kwargs.pop('lottery', None)
+#         super().__init__(*args, **kwargs)
+
+#         # Style unifié pour les champs
+#         self.fields['full_name'].widget.attrs.update({
+#             'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500',
+#             'placeholder': 'Votre nom complet'
+#         })
+#         self.fields['phone_number'].widget.attrs.update({
+#             'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500',
+#             'placeholder': 'Votre numéro de téléphone'
+#         })
+#         self.fields['id_transaction'].widget.attrs.update({
+#             'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500',
+#             'placeholder': 'ID de transaction'
+#         })
+
+#     def clean(self):
+#         cleaned_data = super().clean()
+#         if self.lottery.current_participant_count() >= self.lottery.max_participants:
+#             raise forms.ValidationError("Le nombre maximum de participants a été atteint.")
+#         return cleaned_data
+
+#     def save(self, commit=True):
+#         instance = super().save(commit=False)
+#         instance.user = self.user
+#         instance.lottery = self.lottery
+#         if commit:
+#             instance.save()
+#         return instance
 class LotteryParticipationForm(forms.ModelForm):
+    PAYMENT_CHOICES = [
+        ('visitemoney', 'Payer avec VisiteMoney'),
+        ('mobilemoney', 'Payer avec Mobile Money'),
+    ]
+
+    payment_method = forms.ChoiceField(
+        choices=PAYMENT_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
+        })
+    )
+
     class Meta:
         model = LotteryParticipation
-        fields = ['full_name', 'phone_number', 'id_transaction']
+        fields = ['full_name', 'phone_number', 'id_transaction', 'payment_method']
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         self.lottery = kwargs.pop('lottery', None)
         super().__init__(*args, **kwargs)
 
-        # Style unifié pour les champs
-        self.fields['full_name'].widget.attrs.update({
-            'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500',
-            'placeholder': 'Votre nom complet'
-        })
-        self.fields['phone_number'].widget.attrs.update({
-            'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500',
-            'placeholder': 'Votre numéro de téléphone'
-        })
-        self.fields['id_transaction'].widget.attrs.update({
-            'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500',
-            'placeholder': 'ID de transaction'
-        })
+        # Champ ID Transaction facultatif si paiement VisiteMoney
+        self.fields['id_transaction'].required = False
+
+        # Styles
+        for field in ['full_name', 'phone_number', 'id_transaction']:
+            self.fields[field].widget.attrs.update({
+                'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500',
+            })
+
+        self.fields['full_name'].widget.attrs['placeholder'] = 'Votre nom complet'
+        self.fields['phone_number'].widget.attrs['placeholder'] = 'Votre numéro de téléphone'
+        self.fields['id_transaction'].widget.attrs['placeholder'] = 'ID de transaction'
 
     def clean(self):
         cleaned_data = super().clean()
+
         if self.lottery.current_participant_count() >= self.lottery.max_participants:
             raise forms.ValidationError("Le nombre maximum de participants a été atteint.")
+
+        payment_method = cleaned_data.get('payment_method')
+
+        if payment_method == 'visitemoney':
+            visite_money = getattr(self.user, 'visite_money', None)
+            if not visite_money or visite_money.total_gain_usd < self.lottery.participation_fee:
+                raise forms.ValidationError("Solde VisiteMoney insuffisant pour participer.")
+            # Auto-remplir id_transaction pour VisiteMoney
+            cleaned_data['id_transaction'] = f"VM-{self.user.id}-{self.lottery.id}"
+        else:
+            # Mobile Money : id_transaction doit être fourni
+            if not cleaned_data.get('id_transaction'):
+                raise forms.ValidationError("Veuillez renseigner l'ID de transaction Mobile Money.")
+
         return cleaned_data
 
     def save(self, commit=True):
         instance = super().save(commit=False)
         instance.user = self.user
         instance.lottery = self.lottery
+
+        if self.cleaned_data.get('payment_method') == 'visitemoney':
+            visite_money = self.user.visite_money
+            visite_money.total_gain_usd -= self.lottery.participation_fee
+            visite_money.save()
+            instance.is_active = True
+        else:
+            instance.is_active = False
+
         if commit:
             instance.save()
         return instance
+
 
 
 from .models import ProductPoints

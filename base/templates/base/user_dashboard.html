@@ -20,6 +20,34 @@
     <p class="text-red-500">🔥 Points dépensés : {{ total_spent_points }}</p>
 </div>
 
+<!-- Bouton Convertir -->
+<div class="text-center mb-8">
+    <button 
+        onclick="document.getElementById('confirmModal').classList.remove('hidden')"
+        class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">
+        Convertir mes points en argent
+    </button>
+</div>
+
+<!-- Popup de confirmation -->
+<div id="confirmModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg shadow-lg max-w-md text-center">
+        <h2 class="text-xl font-bold mb-4">Confirmation</h2>
+        <p class="mb-4">Voulez-vous vraiment convertir vos {{ total_points }} points en argent ?</p>
+        <form method="post" action="{% url 'convert_points_to_money' %}">
+            {% csrf_token %}
+            <div class="flex justify-center space-x-4">
+                <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                    Oui, convertir
+                </button>
+                <button type="button" onclick="document.getElementById('confirmModal').classList.add('hidden')" 
+                        class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">
+                    Annuler
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 
 
 

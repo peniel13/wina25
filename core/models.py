@@ -648,6 +648,51 @@ class OrderItem(models.Model):
 
 
 
+# class UserPoints(models.Model):
+#     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+#     points = models.PositiveIntegerField(default=0)  # Points actuels utilisables
+#     total_purchases = models.PositiveIntegerField(default=0)  # Nombre total d'achats effectués
+#     ad_points = models.PositiveIntegerField(default=0)  # Points gagnés via les publicités
+#     spent_points = models.PositiveIntegerField(default=0)  # ✅ Suivi des points dépensés
+
+#     def __str__(self):
+#         return f"{self.user.username} - {self.points} points"
+
+#     def get_earned_points(self):
+#         """Calcule le total des points gagnés (likes, commentaires, partages, achats)."""
+#         likes = AdInteraction.objects.filter(user=self.user, interaction_type='like').count()
+#         comments = AdInteraction.objects.filter(user=self.user, interaction_type='comment').count()
+#         shares = AdInteraction.objects.filter(user=self.user, interaction_type='share').count()
+
+#         earned_points = likes + (comments * 2) + (shares * 5)  # Points gagnés via interactions
+#         earned_points += self.total_purchases // 5  # Ajout des points de fidélité (1 point tous les 5 achats)
+        
+#         return earned_points
+
+#     def spend_points(self, amount):
+#         """Déduit des points lors d'un achat et enregistre la dépense."""
+#         if self.points >= amount:
+#            self.points -= amount
+#            self.spent_points += amount  # ✅ Mise à jour correcte
+#            self.save()
+        
+#         # 🔥 Debugging pour voir les valeurs après sauvegarde
+#         obj = UserPoints.objects.get(user=self.user)  # Recharge depuis la BD
+#         print(f"✅ Points actuels : {obj.points} | Spent points : {obj.spent_points}")
+
+#         return True
+#         print("❌ Pas assez de points !")  # 🔥 Debugging
+#         return False
+
+
+
+#     def add_ad_points(self, points):
+#         """Ajoute des points en fonction des interactions publicitaires."""
+#         self.ad_points += points
+#         self.points += points  # Ajouter aux points globaux
+#         self.save()
+from decimal import Decimal
+
 class UserPoints(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     points = models.PositiveIntegerField(default=0)  # Points actuels utilisables
@@ -672,25 +717,55 @@ class UserPoints(models.Model):
     def spend_points(self, amount):
         """Déduit des points lors d'un achat et enregistre la dépense."""
         if self.points >= amount:
-           self.points -= amount
-           self.spent_points += amount  # ✅ Mise à jour correcte
-           self.save()
-        
-        # 🔥 Debugging pour voir les valeurs après sauvegarde
-        obj = UserPoints.objects.get(user=self.user)  # Recharge depuis la BD
-        print(f"✅ Points actuels : {obj.points} | Spent points : {obj.spent_points}")
+            self.points -= amount
+            self.spent_points += amount  # ✅ Mise à jour correcte
+            self.save()
 
-        return True
+            # 🔥 Debugging pour voir les valeurs après sauvegarde
+            obj = UserPoints.objects.get(user=self.user)  # Recharge depuis la BD
+            print(f"✅ Points actuels : {obj.points} | Spent points : {obj.spent_points}")
+            return True
+
         print("❌ Pas assez de points !")  # 🔥 Debugging
         return False
-
-
 
     def add_ad_points(self, points):
         """Ajoute des points en fonction des interactions publicitaires."""
         self.ad_points += points
         self.points += points  # Ajouter aux points globaux
         self.save()
+
+    def convert_points_to_visitemoney(self, points_to_convert):
+        """
+        Convertit des points en USD et les ajoute dans VisiteMoney de l'utilisateur.
+        """
+        if points_to_convert <= 0:
+            return False, "Le nombre de points doit être positif."
+
+        if self.points < points_to_convert:
+            return False, "Pas assez de points pour la conversion."
+
+        # 🔹 Récupérer le taux de conversion (dernier enregistré)
+        try:
+            conversion = PointConversion.objects.latest('id')
+        except PointConversion.DoesNotExist:
+            return False, "Aucun taux de conversion défini."
+
+        # 🔹 Conversion en USD (sans arrondi forcé)
+        usd_amount = Decimal(points_to_convert) * conversion.conversion_rate
+
+        # 🔹 Déduire les points
+        self.points -= points_to_convert
+        self.spent_points += points_to_convert
+        self.save()
+
+        # 🔹 Ajouter au VisiteMoney
+        visite_money, _ = VisiteMoney.objects.get_or_create(user=self.user)
+        visite_money.total_gain_usd += usd_amount
+        visite_money.save()
+
+        return True, f"{points_to_convert} points convertis en {usd_amount} USD ajoutés dans VisiteMoney."
+
 
 from decimal import Decimal, ROUND_HALF_UP
 class PointConversion(models.Model):
@@ -1481,15 +1556,49 @@ class PointSharingGroup(models.Model):
 
 from decimal import Decimal
 
+# class VisiteMoney(models.Model):
+#     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="visite_money")
+#     total_gain_usd = models.DecimalField(default=Decimal('0.0'), max_digits=10, decimal_places=4)
+#     visited_stores = models.ManyToManyField('Store', blank=True)
+#     visited_links = models.ManyToManyField('InviteVisibilite', blank=True)  # Nouveau
+
+#     UNITE_VISITE = Decimal('0.002')
+#     GAIN_PAR_VISITE = UNITE_VISITE / Decimal('2')  # 0.0005 USD
+#     GAIN_PAR_LIEN = UNITE_VISITE / Decimal('2')    # Même valeur pour les liens externes
+
+#     def add_visite(self, store):
+#         """Ajoute une visite pour un store."""
+#         if store is None:
+#             return False
+#         if not self.visited_stores.filter(id=store.id).exists():
+#             self.visited_stores.add(store)
+#             self.total_gain_usd += self.GAIN_PAR_VISITE
+#             self.save()
+#             return True
+#         return False
+
+#     def add_visite_link(self, invite):
+#         """Ajoute une visite pour un lien externe."""
+#         if not self.visited_links.filter(id=invite.id).exists():
+#             self.visited_links.add(invite)
+#             self.total_gain_usd += self.GAIN_PAR_LIEN
+#             self.save()
+#             return True
+#         return False
+
+#     def __str__(self):
+#         return f"VisiteMoney({self.user.email}): {self.total_gain_usd} USD"
+from django.db import transaction
+
 class VisiteMoney(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="visite_money")
     total_gain_usd = models.DecimalField(default=Decimal('0.0'), max_digits=10, decimal_places=4)
     visited_stores = models.ManyToManyField('Store', blank=True)
     visited_links = models.ManyToManyField('InviteVisibilite', blank=True)  # Nouveau
 
-    UNITE_VISITE = Decimal('0.002')
-    GAIN_PAR_VISITE = UNITE_VISITE / Decimal('2')  # 0.0005 USD
-    GAIN_PAR_LIEN = UNITE_VISITE / Decimal('2')    # Même valeur pour les liens externes
+    UNITE_VISITE = Decimal('0.01')
+    GAIN_PAR_VISITE = UNITE_VISITE / Decimal('1')  # 0.0005 USD
+    GAIN_PAR_LIEN = UNITE_VISITE / Decimal('1')    # Même valeur pour les liens externes
 
     def add_visite(self, store):
         """Ajoute une visite pour un store."""
@@ -1511,8 +1620,40 @@ class VisiteMoney(models.Model):
             return True
         return False
 
+    def convert_usd_to_points(self, usd_amount):
+        """
+        Convertit un montant en USD vers des UserPoints.
+        """
+        if usd_amount <= 0:
+            return False, "Le montant doit être positif."
+
+        if self.total_gain_usd < usd_amount:
+            return False, "Solde insuffisant dans VisiteMoney."
+
+        try:
+            conversion = PointConversion.objects.latest('id')
+        except PointConversion.DoesNotExist:
+            return False, "Aucun taux de conversion défini."
+
+        # 🔹 Calcul des points (USD ÷ rate)
+        points = (Decimal(usd_amount) / conversion.conversion_rate).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
+
+        with transaction.atomic():
+            # Déduire du solde USD
+            self.total_gain_usd -= Decimal(usd_amount)
+            self.save()
+
+            # Ajouter aux UserPoints
+            user_points, _ = UserPoints.objects.get_or_create(user=self.user)
+            user_points.points += int(points)
+            user_points.save()
+
+        return True, f"{usd_amount} USD convertis en {points} points."
+
     def __str__(self):
         return f"VisiteMoney({self.user.email}): {self.total_gain_usd} USD"
+
+
 
 class TransferVisiteMoney(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_visite_money")

@@ -143,5 +143,6 @@ urlpatterns = [
     ),
     path('transfer_visite_money_insufficient/', views.transfer_visite_money_insufficient, name='transfer_visite_money_insufficient'),
     path('discover/', views.ads_and_invites_feed, name='ads_and_invites_feed'),
-    
+    path("convert_points/", views.convert_points_to_money, name="convert_points_to_money"),
+     path("convert_usd_to_points/", views.convert_usd_to_points_view, name="convert_usd_to_points"),
 ]

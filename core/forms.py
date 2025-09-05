@@ -565,7 +565,7 @@ from .models import LotteryParticipation
 #         return instance
 class LotteryParticipationForm(forms.ModelForm):
     PAYMENT_CHOICES = [
-        ('visitemoney', 'Payer avec VisiteMoney'),
+        ('visitemoney', 'Payer avec WinaMoney'),
         ('mobilemoney', 'Payer avec Mobile Money'),
     ]
 

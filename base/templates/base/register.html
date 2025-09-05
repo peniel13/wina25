@@ -45,6 +45,20 @@
         <p class="text-sm text-red-500">{{ form.confirm_password.errors|striptags }}</p>
       </div>
 
+      <!-- ✅ Champ pays -->
+      <div>
+        {{ form.country.label_tag }}
+        {{ form.country|add_class:"input-field w-full" }}
+        <p class="text-sm text-red-500">{{ form.country.errors|striptags }}</p>
+      </div>
+
+      <!-- ✅ Champ ville (dépendant du pays) -->
+      <div>
+        {{ form.city.label_tag }}
+        {{ form.city|add_class:"input-field w-full" }}
+        <p class="text-sm text-red-500">{{ form.city.errors|striptags }}</p>
+      </div>
+
       <!-- ✅ CAPTCHA -->
       <div>
         {{ form.captcha.label_tag }}
@@ -63,4 +77,97 @@
     </p>
   </div>
 </div>
+
+<!-- ✅ JS dynamique : pays → villes -->
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const countrySelect = document.getElementById("id_country");
+    const citySelect = document.getElementById("id_city");
+
+    if (countrySelect) {
+      countrySelect.addEventListener("change", function () {
+        const countryId = this.value;
+        fetch(`/ajax/load-cities/?country=${countryId}`)
+          .then(response => response.json())
+          .then(data => {
+            citySelect.innerHTML = "";
+            data.forEach(city => {
+              const option = document.createElement("option");
+              option.value = city.id;
+              option.textContent = city.name;
+              citySelect.appendChild(option);
+            });
+          });
+      });
+    }
+  });
+</script>
 {% endblock %}
+
+
+{% comment %} {% extends "base.html" %}
+{% load static form_tags %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+  <div class="bg-white shadow-lg rounded-xl w-full max-w-md p-8 space-y-6">
+    <div class="text-center">
+      <img src="{% static 'img/logoo.png' %}" alt="Logo" class="h-12 mx-auto mb-4">
+      <h2 class="text-3xl font-bold text-purple-700">Créer un compte</h2>
+    </div>
+
+    {% if messages %}
+      {% for message in messages %}
+        <p class="{% if message.tags == 'error' %}text-red-500{% else %}text-green-600{% endif %} text-center text-sm">
+          {{ message }}
+        </p>
+      {% endfor %}
+    {% endif %}
+
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+
+      <div>
+        {{ form.email.label_tag }}
+        {{ form.email|add_class:"input-field w-full" }}
+        <p class="text-sm text-red-500">{{ form.email.errors|striptags }}</p>
+      </div>
+
+      <div>
+        {{ form.username.label_tag }}
+        {{ form.username|add_class:"input-field w-full" }}
+        <p class="text-sm text-red-500">{{ form.username.errors|striptags }}</p>
+      </div>
+
+      <div>
+        {{ form.password.label_tag }}
+        {{ form.password|add_class:"input-field w-full" }}
+        <p class="text-sm text-red-500">{{ form.password.errors|striptags }}</p>
+      </div>
+
+      <div>
+        {{ form.confirm_password.label_tag }}
+        {{ form.confirm_password|add_class:"input-field w-full" }}
+        <p class="text-sm text-red-500">{{ form.confirm_password.errors|striptags }}</p>
+      </div>
+
+      <!-- ✅ CAPTCHA -->
+      <div>
+        {{ form.captcha.label_tag }}
+        {{ form.captcha|add_class:"input-field w-full" }}
+        <p class="text-sm text-red-500">{{ form.captcha.errors|striptags }}</p>
+      </div>
+
+      <button type="submit" class="w-full bg-purple-600 text-white font-semibold py-2 rounded-lg hover:bg-purple-700 transition duration-300">
+        S'inscrire
+      </button>
+    </form>
+
+    <p class="text-center text-sm text-gray-600">
+      Vous avez déjà un compte ?
+      <a href="{% url 'login' %}" class="text-purple-600 hover:underline">Connectez-vous</a>
+    </p>
+  </div>
+</div>
+{% endblock %} {% endcomment %}

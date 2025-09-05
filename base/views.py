@@ -670,19 +670,43 @@ def home_view(request):
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from core.forms import RegisterForm
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth import login
+from core.forms import RegisterForm
+from core.models import VisiteMoney  # importe bien ton modèle VisiteMoney
 
 def register(request):
     if request.method == 'POST':
         form = RegisterForm(request.POST)
         if form.is_valid():
-            form.save()
+            # Sauvegarde du nouvel utilisateur
+            user = form.save()
+
+            # Création automatique du compte VisiteMoney à 0.00
+            VisiteMoney.objects.create(user=user, total_gain_usd=0.00)
+
             messages.success(request, "✅ Compte créé avec succès. Veuillez vous connecter.")
             return redirect('login')
         else:
             messages.error(request, "❌ Veuillez corriger les erreurs ci-dessous.")
     else:
         form = RegisterForm()
+
     return render(request, 'base/register.html', {'form': form})
+
+# def register(request):
+#     if request.method == 'POST':
+#         form = RegisterForm(request.POST)
+#         if form.is_valid():
+#             form.save()
+#             messages.success(request, "✅ Compte créé avec succès. Veuillez vous connecter.")
+#             return redirect('login')
+#         else:
+#             messages.error(request, "❌ Veuillez corriger les erreurs ci-dessous.")
+#     else:
+#         form = RegisterForm()
+#     return render(request, 'base/register.html', {'form': form})
 
 
 

@@ -206,6 +206,11 @@ SIMPLE_JWT = {
     "BLACKLIST_AFTER_ROTATION": True,
 }
 
+REST_FRAMEWORK = {
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 10,  # nombre d’éléments par page
+}
+
 # ALLOWED_HOSTS = [
 #     "127.0.0.1",
 #     "61008",

@@ -1864,17 +1864,22 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from core.models import Store
 from core.serializers import StoreSerializer
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
+from rest_framework.pagination import PageNumberPagination
+from core.models import Store
+from core.serializers import StoreSerializer
+
 class StoreByTypestoreAPIView(APIView):
+    permission_classes = [AllowAny]
+
     def get(self, request, typestore_id):
         country = request.GET.get("country")
         city = request.GET.get("city")
         name = request.GET.get("name") or request.GET.get("search", "")
         name = name.strip()
-
-
-        # 🔍 Debug : affiche dans la console Django
-        print("🔍 Recherche reçue - typestore_id:", typestore_id)
-        print("📍 Pays:", country, "| 🏙️ Ville:", city, "| 🔎 Nom:", name)
 
         stores = Store.objects.filter(typestore_id=typestore_id, is_active=True)
 
@@ -1885,8 +1890,37 @@ class StoreByTypestoreAPIView(APIView):
         if name:
             stores = stores.filter(name__icontains=name)
 
-        serializer = StoreSerializer(stores, many=True)
-        return Response(serializer.data)
+        # ✅ Utilisation de la pagination DRF
+        paginator = PageNumberPagination()
+        paginator.page_size = 10  # tu peux ajuster ce nombre
+        result_page = paginator.paginate_queryset(stores, request)
+
+        serializer = StoreSerializer(result_page, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+# class StoreByTypestoreAPIView(APIView):
+#     def get(self, request, typestore_id):
+#         country = request.GET.get("country")
+#         city = request.GET.get("city")
+#         name = request.GET.get("name") or request.GET.get("search", "")
+#         name = name.strip()
+
+
+#         # 🔍 Debug : affiche dans la console Django
+#         print("🔍 Recherche reçue - typestore_id:", typestore_id)
+#         print("📍 Pays:", country, "| 🏙️ Ville:", city, "| 🔎 Nom:", name)
+
+#         stores = Store.objects.filter(typestore_id=typestore_id, is_active=True)
+
+#         if country:
+#             stores = stores.filter(country_id=country)
+#         if city:
+#             stores = stores.filter(city_id=city)
+#         if name:
+#             stores = stores.filter(name__icontains=name)
+
+#         serializer = StoreSerializer(stores, many=True)
+#         return Response(serializer.data)
 
 
 # views.py

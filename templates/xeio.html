@@ -535,3 +535,19 @@
 </script>
 </body>
 </html>
+
+
+
+{% comment %} from shop.models import Cart  # adapte selon ton app
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+user = User.objects.get(username=1)  # ou par id
+
+# Voir combien de paniers non commandés existent
+Cart.objects.filter(user=user, is_ordered=False)
+
+# Supprimer les doublons sauf 1
+carts = Cart.objects.filter(user=user, is_ordered=False)
+if carts.count() > 1:
+    carts.exclude(id=carts.first().id).delete() {% endcomment %}

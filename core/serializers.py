@@ -256,16 +256,19 @@ class ProductSerializer(serializers.ModelSerializer):
     store = serializers.PrimaryKeyRelatedField(read_only=True)
     category = serializers.PrimaryKeyRelatedField(read_only=True)
     currency = serializers.SerializerMethodField()
-    average_rating = serializers.SerializerMethodField()  # ✅ ajouté
+    average_rating = serializers.SerializerMethodField()  # ✅ existant
+    video_url = serializers.SerializerMethodField()       # ✅ nouveau
+    store_flag = serializers.SerializerMethodField()      # ✅ nouveau
 
     class Meta:
         model = Product
         fields = [
             'id', 'name', 'description', 'price', 'price_with_commission',
-            'stock', 'image', 'image_galerie', 'type_product', 'store',
-            'category', 'photos', 'created_at', 'currency', 'average_rating',  # ✅ ici
+            'stock', 'image', 'image_galerie', 'video', 'type_product', 'store',
+            'category', 'photos', 'created_at', 'currency', 'average_rating',
+            'video_url', 'store_flag',  # ajoutés
         ]
-        read_only_fields = ['price_with_commission', 'created_at']
+        read_only_fields = ['price_with_commission', 'created_at', 'video_url', 'store_flag']
 
     def get_currency(self, obj):
         try:
@@ -281,28 +284,17 @@ class ProductSerializer(serializers.ModelSerializer):
         average = total / testimonials.count()
         return round(average / 2, 1)
 
-    def create(self, validated_data):
-        store = self.context['request'].user.stores.first()
-        price = validated_data.get('price', Decimal('0.00'))
+    def get_video_url(self, obj):
+        if obj.video:
+            return obj.video.url
+        return None
 
-        if store and not store.apply_commission:
-            validated_data['price_with_commission'] = price
-        else:
-            validated_data['price_with_commission'] = price + (price * Decimal('0.30'))
+    def get_store_flag(self, obj):
+        try:
+            return obj.store.country.flag.url  # ou obj.store.country.flag si c’est une URL directe
+        except AttributeError:
+            return None
 
-        validated_data['store'] = store
-        return super().create(validated_data)
-
-    def update(self, instance, validated_data):
-        store = instance.store
-        price = validated_data.get('price', instance.price)
-
-        if store and store.apply_commission:
-            instance.price_with_commission = price + (price * Decimal('0.30'))
-        else:
-            instance.price_with_commission = price
-
-        return super().update(instance, validated_data)
 
 
 

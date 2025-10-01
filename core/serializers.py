@@ -250,15 +250,19 @@ from rest_framework import serializers
 from core.models import Product, TypeProduct
 from core.serializers import PhotoSerializer
 
+from rest_framework import serializers
+from core.models import Product, Category, TypeProduct, Store
+from core.serializers import PhotoSerializer
+
 class ProductSerializer(serializers.ModelSerializer):
     type_product = serializers.PrimaryKeyRelatedField(queryset=TypeProduct.objects.all(), required=False)
     photos = PhotoSerializer(many=True, read_only=True)
-    store = serializers.PrimaryKeyRelatedField(read_only=True)
-    category = serializers.PrimaryKeyRelatedField(read_only=True)
+    store = serializers.PrimaryKeyRelatedField(queryset=Store.objects.all(), required=False)
+    category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all(), required=False)
     currency = serializers.SerializerMethodField()
-    average_rating = serializers.SerializerMethodField()  # ✅ existant
-    video_url = serializers.SerializerMethodField()       # ✅ nouveau
-    store_flag = serializers.SerializerMethodField()      # ✅ nouveau
+    average_rating = serializers.SerializerMethodField()
+    video_url = serializers.SerializerMethodField()
+    store_flag = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -266,7 +270,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'id', 'name', 'description', 'price', 'price_with_commission',
             'stock', 'image', 'image_galerie', 'video', 'type_product', 'store',
             'category', 'photos', 'created_at', 'currency', 'average_rating',
-            'video_url', 'store_flag',  # ajoutés
+            'video_url', 'store_flag',
         ]
         read_only_fields = ['price_with_commission', 'created_at', 'video_url', 'store_flag']
 
@@ -291,9 +295,66 @@ class ProductSerializer(serializers.ModelSerializer):
 
     def get_store_flag(self, obj):
         try:
-            return obj.store.country.flag.url  # ou obj.store.country.flag si c’est une URL directe
+            return obj.store.country.flag.url
         except AttributeError:
             return None
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # Remplacer les IDs par des objets imbriqués pour la lecture
+        if 'store' in data:
+            data['store'] = StoreSerializer(instance.store).data
+        if 'category' in data:
+            data['category'] = CategorySerializer(instance.category).data
+        if 'type_product' in data:
+            data['type_product'] = TypeProductSerializer(instance.type_product).data
+        return data
+
+
+# class ProductSerializer(serializers.ModelSerializer):
+#     type_product = serializers.PrimaryKeyRelatedField(queryset=TypeProduct.objects.all(), required=False)
+#     photos = PhotoSerializer(many=True, read_only=True)
+#     store = serializers.PrimaryKeyRelatedField(read_only=True)
+#     category = serializers.PrimaryKeyRelatedField(read_only=True)
+#     currency = serializers.SerializerMethodField()
+#     average_rating = serializers.SerializerMethodField()  # ✅ existant
+#     video_url = serializers.SerializerMethodField()       # ✅ nouveau
+#     store_flag = serializers.SerializerMethodField()      # ✅ nouveau
+
+#     class Meta:
+#         model = Product
+#         fields = [
+#             'id', 'name', 'description', 'price', 'price_with_commission',
+#             'stock', 'image', 'image_galerie', 'video', 'type_product', 'store',
+#             'category', 'photos', 'created_at', 'currency', 'average_rating',
+#             'video_url', 'store_flag',  # ajoutés
+#         ]
+#         read_only_fields = ['price_with_commission', 'created_at', 'video_url', 'store_flag']
+
+#     def get_currency(self, obj):
+#         try:
+#             return obj.store.country.devise_info.devise
+#         except AttributeError:
+#             return ''
+
+#     def get_average_rating(self, obj):
+#         testimonials = obj.testimonials.all()
+#         if not testimonials.exists():
+#             return 0.0
+#         total = sum(t.rating for t in testimonials)
+#         average = total / testimonials.count()
+#         return round(average / 2, 1)
+
+#     def get_video_url(self, obj):
+#         if obj.video:
+#             return obj.video.url
+#         return None
+
+#     def get_store_flag(self, obj):
+#         try:
+#             return obj.store.country.flag.url  # ou obj.store.country.flag si c’est une URL directe
+#         except AttributeError:
+#             return None
 
 
 

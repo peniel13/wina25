@@ -197,6 +197,9 @@ urlpatterns = [
     path('api/products/by-city/<int:city_id>/grouped-by-type/', ProductsGroupedByTypeByCityAPIView.as_view()),
     path('api/smart-stores/', SmartStoreListAPIView.as_view(), name='smart_store_list'),
     path('api/stores/', StoreByTypeBusinessListAPIView.as_view(), name='api-stores-by-typebusiness'),
+    path('api/products/categories/', CategoryListAPIView.as_view(), name='product-category-list'),
+    # Liste des types de produits
+    path('api/products/types/', TypeProductListCreateAPIView.as_view(), name='product-type-list'),
     
     
     

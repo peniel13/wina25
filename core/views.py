@@ -2089,25 +2089,73 @@ from rest_framework.response import Response
 from core.models import Product
 from core.serializers import ProductSerializer
 
+# views.py ou api_views.py
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from core.models import Product, Category, TypeProduct, City
+from core.serializers import ProductSerializer, CategorySerializer, TypeProductSerializer, CitySerializer
+
+class CategoryListAPIView(APIView):
+    def get(self, request):
+        cats = Category.objects.all()
+        serializer = CategorySerializer(cats, many=True)
+        return Response(serializer.data)
+
+class TypeProductListCreateAPIView(APIView):
+    def get(self, request):
+        types = TypeProduct.objects.all()
+        serializer = TypeProductSerializer(types, many=True)
+        return Response(serializer.data)
+    # si tu veux POST pour créer type, ajoute la logique
+
+class CityListAPIView(APIView):
+    def get(self, request):
+        cities = City.objects.all()
+        serializer = CitySerializer(cities, many=True)
+        return Response(serializer.data)
+
+class ProductByCountryAPIView(APIView):
+    def get(self, request, country_id):
+        category = request.GET.get('category')
+        type_product = request.GET.get('type_product')
+        name = request.GET.get('name', '').strip()
+        city = request.GET.get('city')
+
+        products = Product.objects.filter(store__country_id=country_id)
+
+        if city:
+            products = products.filter(store__city_id=city)
+        if category:
+            products = products.filter(category_id=category)
+        if type_product:
+            products = products.filter(type_product_id=type_product)
+        if name:
+            products = products.filter(name__icontains=name)
+
+        products = products.select_related('store', 'category', 'type_product')
+        serializer = ProductSerializer(products, many=True)
+        return Response(serializer.data)
+
 class ProductByCityAPIView(APIView):
     def get(self, request, city_id):
         category = request.GET.get('category')
         type_product = request.GET.get('type_product')
         name = request.GET.get('name', '').strip()
 
-        queryset = Product.objects.filter(store__city_id=city_id)
+        products = Product.objects.filter(store__city_id=city_id)
 
-        if category and category.isdigit():
-            queryset = queryset.filter(category_id=int(category))
-        if type_product and type_product.isdigit():
-            queryset = queryset.filter(type_product_id=int(type_product))
+        if category:
+            products = products.filter(category_id=category)
+        if type_product:
+            products = products.filter(type_product_id=type_product)
         if name:
-            queryset = queryset.filter(name__icontains=name)
+            products = products.filter(name__icontains=name)
 
-        queryset = queryset.select_related('store', 'category', 'type_product')
+        products = products.select_related('store', 'category', 'type_product')
+        serializer = ProductSerializer(products, many=True)
+        return Response(serializer.data)
 
-        serializer = ProductSerializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 # api_views.py ou views.py

@@ -2037,6 +2037,12 @@ from rest_framework import status
 from core.models import Product
 from core.serializers import ProductSerializer
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from core.models import Product
+from core.serializers import ProductSerializer
+
 class ProductByCountryAPIView(APIView):
     def get(self, request, country_id):
         # Récupérer les filtres
@@ -2049,20 +2055,22 @@ class ProductByCountryAPIView(APIView):
         products = Product.objects.filter(store__country_id=country_id)
 
         # Appliquer les filtres
-        if city and city.isdigit():
-            products = products.filter(store__city_id=int(city))
-        if category and category.isdigit():
-            products = products.filter(category_id=int(category))
-        if type_product and type_product.isdigit():
-            products = products.filter(type_product_id=int(type_product))
+        if city:
+            products = products.filter(store__city_id=city)
+        if category:
+            products = products.filter(category_id=category)
+        if type_product:
+            products = products.filter(type_product_id=type_product)
         if name:
             products = products.filter(name__icontains=name)
 
         # Optionnel : optimiser les relations
         products = products.select_related('store', 'category', 'type_product')
 
+        # Sérialiser les données
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 
 from rest_framework.generics import ListAPIView

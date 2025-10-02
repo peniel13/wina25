@@ -2041,12 +2041,13 @@ class StoreProductCategoriesAPIView(APIView):
 class MyProductsAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request):
-        user = request.user
-        # On suppose que Product a un champ owner ou store owner
-        # Récupère les produits liés à ce user/store
-        products = Product.objects.filter(store__owner=user)  # adapte selon ton modèle
-        # On peut appliquer des filtres query params similaires
+    def get(self, request, store_id):
+        store = get_object_or_404(Store, id=store_id)
+
+        # On récupère uniquement les produits de ce store
+        products = Product.objects.filter(store=store)
+
+        # Filtres optionnels
         category = request.GET.get('category')
         type_product = request.GET.get('type_product')
         name = request.GET.get('name', '').strip()
@@ -2061,7 +2062,7 @@ class MyProductsAPIView(APIView):
         products = products.select_related('store', 'category', 'type_product')
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
+
     
 # core/api_views/product.py
 from rest_framework.views import APIView

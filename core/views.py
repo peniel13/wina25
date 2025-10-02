@@ -2029,12 +2029,20 @@ from rest_framework.response import Response
 from core.models import Product, Category, TypeProduct
 from core.serializers import CategorySerializer, TypeProductSerializer
 
+
+
 class StoreProductCategoriesAPIView(APIView):
+    permission_classes = [permissions.AllowAny]  # adapte si besoin
+
     def get(self, request, store_id):
-        # récupérer les catégories des produits du store
-        cats = Category.objects.filter(product__store_id=store_id).distinct()
-        serializer = CategorySerializer(cats, many=True)
-        return Response(serializer.data)
+        # Vérifie que le store existe
+        store = get_object_or_404(Store, pk=store_id)
+
+        # Récupère les catégories liées au store
+        categories = Category.objects.filter(store=store).order_by('name')
+
+        serializer = CategorySerializer(categories, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 

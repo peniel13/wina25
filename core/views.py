@@ -472,6 +472,8 @@ from rest_framework import generics, permissions
 from .models import Testimonial, Store
 from .serializers import TestimonialSerializer
 
+
+
 class StoreTestimonialsAPIView(generics.ListCreateAPIView):
     serializer_class = TestimonialSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
@@ -482,7 +484,7 @@ class StoreTestimonialsAPIView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         store_id = self.kwargs.get('store_id')
-        store = Store.objects.get(id=store_id)
+        store = get_object_or_404(Store, id=store_id)  # ✅ plus sûr
         serializer.save(user=self.request.user, store=store)
 
 from rest_framework.views import APIView

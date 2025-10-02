@@ -92,7 +92,9 @@ from .views import (
     ProductByCityAPIView,
     ProductsGroupedByTypeByCityAPIView,
     SmartStoreListAPIView,
-    StoreByTypeBusinessListAPIView
+    StoreByTypeBusinessListAPIView,
+    StoreProductCategoriesAPIView,
+    MyProductsAPIView
 )
 from rest_framework_simplejwt.views import (
     TokenRefreshView,
@@ -137,6 +139,7 @@ urlpatterns = [
     path('api/products/<int:pk>/', ProductDetailAPIView.as_view(), name='product-detail'),
     path('api/products/<int:product_id>/photos/', UploadProductPhotoAPIView.as_view(), name='upload_product_photo'),
     path('api/my-products/', StoreOwnerProductListAPIView.as_view(), name='my_products'),
+    path('api/mystore-products/', MyProductsAPIView.as_view(), name='my-products'),
     path('api/photos/<int:pk>/', DeleteProductPhotoAPIView.as_view(), name='delete_photo'),
     path('api/stores/<int:store_id>/categories/create/', CategoryCreateAPIView.as_view(), name='category-create'),
     path('api/stores/<int:store_id>/categories/', CategoryListAPIView.as_view(), name='category-list'),
@@ -190,6 +193,7 @@ urlpatterns = [
     path('api/stores/by-city/<int:city_id>/', StoreByCityAPIView.as_view(), name='stores-by-city'),
     path('api/stores/by-typebusiness/', StoreByTypeBusinessAPIView.as_view(), name='stores-by-typebusiness'),
     path('api/stores/by-city-or-all/', store_list_by_city_or_all, name='store-list-by-city-or-all'),
+    path('api/stores/<int:store_id>/product-categories/', StoreProductCategoriesAPIView.as_view(), name='store-product-categories'),
     path('api/products/by-country/<int:country_id>/', ProductByCountryAPIView.as_view(), name='products-by-country'),
     path('api/categories/', CategoryListAPIView.as_view(), name='category-list'),
     path('api/products/by-city/<int:city_id>/', ProductByCityAPIView.as_view(), name='products-by-city'),

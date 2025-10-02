@@ -2024,7 +2024,45 @@ def store_list_by_city_or_all(request):
     serializer = StoreSerializer(stores, many=True, context={'request': request})
     return Response(serializer.data)
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from core.models import Product, Category, TypeProduct
+from core.serializers import CategorySerializer, TypeProductSerializer
 
+class StoreProductCategoriesAPIView(APIView):
+    def get(self, request, store_id):
+        # récupérer les catégories des produits du store
+        cats = Category.objects.filter(product__store_id=store_id).distinct()
+        serializer = CategorySerializer(cats, many=True)
+        return Response(serializer.data)
+
+
+
+class MyProductsAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        # On suppose que Product a un champ owner ou store owner
+        # Récupère les produits liés à ce user/store
+        products = Product.objects.filter(store__owner=user)  # adapte selon ton modèle
+        # On peut appliquer des filtres query params similaires
+        category = request.GET.get('category')
+        type_product = request.GET.get('type_product')
+        name = request.GET.get('name', '').strip()
+
+        if category:
+            products = products.filter(category_id=category)
+        if type_product:
+            products = products.filter(type_product_id=type_product)
+        if name:
+            products = products.filter(name__icontains=name)
+
+        products = products.select_related('store', 'category', 'type_product')
+        serializer = ProductSerializer(products, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    
 # core/api_views/product.py
 from rest_framework.views import APIView
 from rest_framework.response import Response

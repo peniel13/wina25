@@ -440,7 +440,23 @@
       </script>
       
     
-    
+      <script>
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(function(position) {
+            fetch("{% url 'update_location' %}", {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+              },
+              body: JSON.stringify({
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+              })
+            });
+          });
+        }
+      </script>
     
     <script src="{% static 'js/script.js' %}"></script>
     <div id="add-to-cart-modal" class="hidden fixed top-5 right-5 bg-green-100 text-green-800 px-4 py-2 rounded shadow z-50">

@@ -22,6 +22,8 @@ django-storages==1.14.6
 django-tailwind==4.2.0
 djangorestframework==3.16.0
 djangorestframework_simplejwt==5.5.0
+geographiclib==2.1
+geopy==2.4.1
 gunicorn==23.0.0
 idna==3.10
 imageio==2.37.0

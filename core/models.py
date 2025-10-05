@@ -28,6 +28,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from .models import Country, City  # à adapter selon ton organisation
 
+
 class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)
     profile_pic = models.ImageField(upload_to="p_img", blank=True, null=True)
@@ -39,7 +40,8 @@ class CustomUser(AbstractUser):
     city = models.ForeignKey(City, on_delete=models.SET_NULL, null=True, blank=True)
     country = models.ForeignKey(Country, on_delete=models.SET_NULL, null=True, blank=True)
     interests = models.TextField(blank=True, null=True)
-
+    latitude = models.FloatField(null=True, blank=True) 
+    longitude = models.FloatField(null=True, blank=True)
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
 

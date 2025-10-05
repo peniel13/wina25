@@ -1,0 +1,27 @@
+<!-- utilisateurs_proches.html -->
+{% extends "base.html" %}
+{% block content %}
+<section class="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+  <div class="bg-white shadow-lg rounded-xl w-full max-w-md p-8 space-y-6">
+    <h2 class="text-3xl font-bold text-purple-700 text-center">Utilisateurs proches</h2>
+
+    <form method="get" action="{% url 'utilisateurs_proches' %}" class="space-y-4">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" class="w-full bg-purple-600 text-white font-semibold py-2 rounded-lg hover:bg-purple-700 transition duration-300">
+        Filtrer
+      </button>
+    </form>
+
+    {% if utilisateurs_proches %}
+      <p class="text-center text-lg text-gray-600 mt-4">
+        Il y a {{ utilisateurs_proches|length }} utilisateurs proches de vous.
+      </p>
+    {% else %}
+      <p class="text-center text-lg text-gray-600 mt-4">
+        Aucun utilisateur trouvé dans cette distance.
+      </p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

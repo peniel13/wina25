@@ -714,6 +714,46 @@ from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect
 from django.contrib import messages
 
+# views.py
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+
+@login_required
+def update_location(request):
+    if request.method == 'POST':
+        latitude = request.POST.get('latitude')
+        longitude = request.POST.get('longitude')
+        if latitude and longitude:
+            request.user.latitude = latitude
+            request.user.longitude = longitude
+            request.user.save()
+            return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'error'})
+
+
+
+
+
+# from geopy.distance import geodesic
+
+# def calculate_distance(user1, user2):
+#     coords_1 = (user1.latitude, user1.longitude)
+#     coords_2 = (user2.latitude, user2.longitude)
+#     return geodesic(coords_1, coords_2).km
+
+
+# from django.contrib.auth import get_user_model
+
+# def nearby_users_view(request):
+#     user = request.user
+#     nearby_users_count = 0
+#     for other_user in get_user_model().objects.exclude(id=user.id):
+#         distance = calculate_distance(user, other_user)
+#         if distance <= 5:  # 5 kilomètres
+#             nearby_users_count += 1
+#     return render(request, 'base/nearby_users.html', {'nearby_users_count': nearby_users_count})
+
 def login_view(request):
     if request.method == 'POST':
         email = request.POST.get("email")
@@ -725,6 +765,44 @@ def login_view(request):
         else:
             messages.error(request, "❌ Email ou mot de passe incorrect.")
     return render(request, 'base/login.html')
+
+
+# views.py
+# views.py
+from django.shortcuts import render
+from math import radians, sin, cos, sqrt, atan2
+from core.models import CustomUser
+from core.forms import DistanceFilterForm
+
+def calculer_distance(lat1, lon1, lat2, lon2):
+    if None in [lat1, lon1, lat2, lon2]:
+        return None  # Retourne None si l'une des coordonnées est manquante
+
+    R = 6371.0  # Rayon de la Terre en kilomètres
+    lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+    a = sin(dlat / 2)**2 + cos(lat1) * cos(lat2) * sin(dlon / 2)**2
+    c = 2 * atan2(sqrt(a), sqrt(1 - a))
+    return R * c * 1000  # Retourne la distance en mètres
+
+def utilisateurs_proches(request):
+    form = DistanceFilterForm(request.GET)
+    utilisateurs_proches = []
+    if form.is_valid():
+        distance_max = form.cleaned_data['distance']
+        utilisateur = request.user
+        latitude_utilisateur = utilisateur.latitude
+        longitude_utilisateur = utilisateur.longitude
+
+        utilisateurs = CustomUser.objects.all()
+        for user in utilisateurs:
+            if user != utilisateur:
+                distance = calculer_distance(latitude_utilisateur, longitude_utilisateur, user.latitude, user.longitude)
+                if distance is not None and distance <= distance_max:
+                    utilisateurs_proches.append(user)
+
+    return render(request, 'base/utilisateurs_proches.html', {'form': form, 'utilisateurs_proches': utilisateurs_proches})
 
 
 from django.contrib.auth import logout
@@ -6264,29 +6342,73 @@ from django.shortcuts import render, get_object_or_404, redirect
 from .models import Requete, Response
 from .forms import ResponseForm
 
+import base64
+from django.core.files.base import ContentFile
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib import messages
 
 def requete_detail(request, requete_id):
-    requete = get_object_or_404(Requete, pk=requete_id)  # Récupère la requête avec l'ID
-    responses = requete.responses.all()  # Récupère les réponses associées à cette requête
+    requete = get_object_or_404(Requete, pk=requete_id)
+    responses = requete.responses.all()
 
     if request.method == 'POST':
-        form = ResponseForm(request.POST, request.FILES)  # Formulaire pour la réponse avec l'audio
+        form = ResponseForm(request.POST, request.FILES)
         if form.is_valid():
             response = form.save(commit=False)
-            response.requete = requete  # Lier la réponse à la requête
+            response.requete = requete
+
+            # On gère ici l’audio si on l’a envoyé via base64
+            audio_data = request.POST.get('audio_blob')
+            if audio_data:
+                # audio_data est de la forme "data:audio/webm;base64,AAAA..."
+                try:
+                    header, encoded = audio_data.split(',', 1)
+                    data = base64.b64decode(encoded)
+                    # Tu peux déterminer l’extension selon le header (webm, wav, etc.)
+                    # Exemple pour webm :
+                    file_name = 'response_audio.webm'
+                    response.audio.save(file_name, ContentFile(data), save=False)
+                except Exception as e:
+                    # En cas d’erreur de décodage, tu peux logger ou ajouter un message d’erreur
+                    print("Erreur décodage audio :", e)
+
+            # Si un fichier audio a été uploadé via form.FILES, il a déjà été pris en compte par form.save()
             response.save()
-            messages.success(request, "Votre réponse a été soumise avec succès ! "
-                             "Nous vous contacterons pour vous mettre en liaison avec le client .")  # Message de succès
-            return redirect('requete_detail', requete_id=requete.id)  # Redirige vers le détail de la requête
+
+            messages.success(request, "Votre réponse a été soumise avec succès ! Nous vous contacterons pour vous mettre en liaison avec le client.")
+            return redirect('requete_detail', requete_id=requete.id)
     else:
         form = ResponseForm()
 
     return render(request, 'base/requete_detail.html', {
         'requete': requete,
         'responses': responses,
-        'responses_count': responses.count(),  # Nombre de réponses
+        'responses_count': responses.count(),
         'form': form
     })
+
+# def requete_detail(request, requete_id):
+#     requete = get_object_or_404(Requete, pk=requete_id)  # Récupère la requête avec l'ID
+#     responses = requete.responses.all()  # Récupère les réponses associées à cette requête
+
+#     if request.method == 'POST':
+#         form = ResponseForm(request.POST, request.FILES)  # Formulaire pour la réponse avec l'audio
+#         if form.is_valid():
+#             response = form.save(commit=False)
+#             response.requete = requete  # Lier la réponse à la requête
+#             response.save()
+#             messages.success(request, "Votre réponse a été soumise avec succès ! "
+#                              "Nous vous contacterons pour vous mettre en liaison avec le client .")  # Message de succès
+#             return redirect('requete_detail', requete_id=requete.id)  # Redirige vers le détail de la requête
+#     else:
+#         form = ResponseForm()
+
+#     return render(request, 'base/requete_detail.html', {
+#         'requete': requete,
+#         'responses': responses,
+#         'responses_count': responses.count(),  # Nombre de réponses
+#         'form': form
+#     })
 
 
 

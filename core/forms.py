@@ -1096,3 +1096,10 @@ class TransferVisiteMoneyForm(forms.Form):
         except User.DoesNotExist:
             raise forms.ValidationError("❌ Cet utilisateur n'existe pas.")
         return user
+
+
+# forms.py
+from django import forms
+
+class DistanceFilterForm(forms.Form):
+    distance = forms.IntegerField(min_value=1, label="Distance (en km)", required=True)

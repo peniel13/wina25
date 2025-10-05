@@ -57,6 +57,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'simplemathcaptcha',
     'storages',
+    'django.contrib.humanize',
+    'django_countries',
 ]
 
 TAILWIND_APP_NAME= 'theme'
@@ -209,6 +211,7 @@ SIMPLE_JWT = {
     "BLACKLIST_AFTER_ROTATION": True,
 }
 
+LANGUAGE_CODE = 'fr-fr'
 
 
 # ALLOWED_HOSTS = [

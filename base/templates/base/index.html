@@ -883,6 +883,15 @@
                   <h3 class="text-xl font-bold text-gray-800 mb-2">Recherche : {{ requete.type_bien }}</h3>
                   <p class="text-sm text-gray-500 mb-2">{{ requete.commune }}</p>
                   <p class="text-gray-600 mb-4">{{ requete.description|truncatewords:15 }}</p>
+                  {% if requete.audio %}
+                  <div class="mt-2">
+                    <p><strong>Écouter :</strong></p>
+                    <audio controls class="w-full mt-1">
+                      <source src="{{ requete.audio.url }}" type="audio/mpeg">
+                      Votre navigateur ne supporte pas l’élément audio.
+                    </audio>
+                  </div>
+                {% endif %} 
                   <div class="mt-4">
                       <a href="{% url 'requete_detail' requete.id %}" class="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                           Voir les détails

@@ -715,21 +715,21 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 
 # views.py
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+# from django.shortcuts import render
+# from django.contrib.auth.decorators import login_required
+# from django.http import JsonResponse
 
-@login_required
-def update_location(request):
-    if request.method == 'POST':
-        latitude = request.POST.get('latitude')
-        longitude = request.POST.get('longitude')
-        if latitude and longitude:
-            request.user.latitude = latitude
-            request.user.longitude = longitude
-            request.user.save()
-            return JsonResponse({'status': 'success'})
-    return JsonResponse({'status': 'error'})
+# @login_required
+# def update_location(request):
+#     if request.method == 'POST':
+#         latitude = request.POST.get('latitude')
+#         longitude = request.POST.get('longitude')
+#         if latitude and longitude:
+#             request.user.latitude = latitude
+#             request.user.longitude = longitude
+#             request.user.save()
+#             return JsonResponse({'status': 'success'})
+#     return JsonResponse({'status': 'error'})
 
 
 
@@ -6316,25 +6316,51 @@ from django.shortcuts import render, get_object_or_404, redirect
 from .models import Requete, Response
 from .forms import ResponseForm, RequeteForm
 
+import base64
+from django.core.files.base import ContentFile
+
 def requete_create(request):
     if request.method == 'POST':
         form = RequeteForm(request.POST, request.FILES)
         if form.is_valid():
-            requete = form.save()
+            requete = form.save(commit=False)
 
-            # Traiter l'audio si présent
-            if request.FILES.get('audio'):
-                # Logique pour gérer l'audio si nécessaire
-                pass
+            # 🔥 Gérer l’audio encodé en base64 (enregistré via micro)
+            audio_blob = request.POST.get('audio_blob')
+            if audio_blob and audio_blob.startswith("data:audio"):
+                # Extraire les données base64
+                format, audio_str = audio_blob.split(';base64,')
+                ext = format.split('/')[-1]  # ex: 'webm' ou 'wav'
+                audio_data = ContentFile(base64.b64decode(audio_str), name=f"audio_{requete.nom}.{ext}")
+                requete.audio = audio_data
 
-            # Ajouter un message de succès
+            requete.save()
+
             messages.success(request, "Votre requête a été soumise avec succès.")
-
-            # Rediriger après soumission du formulaire
             return redirect('index')
     else:
         form = RequeteForm()
     return render(request, 'base/requete_form.html', {'form': form})
+
+# def requete_create(request):
+#     if request.method == 'POST':
+#         form = RequeteForm(request.POST, request.FILES)
+#         if form.is_valid():
+#             requete = form.save()
+
+#             # Traiter l'audio si présent
+#             if request.FILES.get('audio'):
+#                 # Logique pour gérer l'audio si nécessaire
+#                 pass
+
+#             # Ajouter un message de succès
+#             messages.success(request, "Votre requête a été soumise avec succès.")
+
+#             # Rediriger après soumission du formulaire
+#             return redirect('index')
+#     else:
+#         form = RequeteForm()
+#     return render(request, 'base/requete_form.html', {'form': form})
 
 # Vue pour répondre à une requête
 

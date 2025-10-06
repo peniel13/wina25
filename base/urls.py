@@ -145,6 +145,6 @@ urlpatterns = [
     path('discover/', views.ads_and_invites_feed, name='ads_and_invites_feed'),
     path("convert_points/", views.convert_points_to_money, name="convert_points_to_money"),
     path("convert_usd_to_points/", views.convert_usd_to_points_view, name="convert_usd_to_points"),
-    path('update-location/', views.update_location, name='update_location'),
+    # path('update-location/', views.update_location, name='update_location'),
     path('utilisateurs-proches/', views.utilisateurs_proches, name='utilisateurs_proches'),
 ]

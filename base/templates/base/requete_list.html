@@ -81,6 +81,12 @@
             <p class="text-xs text-gray-400 mb-4">Publié {{ requete.created_at|naturaltime }}</p>
             <p class="text-gray-600 mb-4">{{ requete.description|truncatewords:15 }}</p>
             {% if requete.audio %}
+  <p>✅ Audio présent : {{ requete.audio.url }}</p>
+{% else %}
+  <p>❌ Pas d'audio</p>
+{% endif %}
+
+            {% comment %} {% if requete.audio %}
   <div class="mt-2">
     <p><strong>Écouter :</strong></p>
     <audio controls class="w-full mt-1">
@@ -88,7 +94,7 @@
       Votre navigateur ne supporte pas l’élément audio.
     </audio>
   </div>
-{% endif %}
+{% endif %} {% endcomment %}
 
             <div class="mt-4">
               <a href="{% url 'requete_detail' requete.id %}" class="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">

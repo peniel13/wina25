@@ -81,3 +81,61 @@ class ResponseForm(forms.ModelForm):
         fields = ['nom', 'post_nom', 'email', 'telephone', 'message', 'audio']
     audio = forms.FileField(required=False, widget=forms.ClearableFileInput(attrs={'accept': 'audio/*'}))
 
+
+
+# forms.py
+from django import forms
+from .models import Immobusiness, ImmobusinessGallery, ImmobusinessResponse
+
+class ImmobusinessForm(forms.ModelForm):
+    class Meta:
+        model = Immobusiness
+        fields = [
+            'nom', 'email', 'telephone', 'country', 'city',
+            'commune', 'description', 'objectif', 'type_bien', 
+            'image_principale', 'prix', 'devise'  # 🔹 Ajout des nouveaux champs ici
+        ]
+        widgets = {
+            'nom': forms.TextInput(attrs={'class': 'border rounded px-2 py-1 w-full'}),
+            'email': forms.EmailInput(attrs={'class': 'border rounded px-2 py-1 w-full'}),
+            'telephone': forms.TextInput(attrs={'class': 'border rounded px-2 py-1 w-full'}),
+            'country': forms.Select(attrs={'class': 'border rounded px-2 py-1 w-full'}),
+            'city': forms.Select(attrs={'class': 'border rounded px-2 py-1 w-full'}),
+            'commune': forms.TextInput(attrs={'class': 'border rounded px-2 py-1 w-full'}),
+            'description': forms.Textarea(attrs={'rows': 4, 'class': 'border rounded px-2 py-1 w-full'}),
+            'objectif': forms.Select(attrs={'class': 'border rounded px-2 py-1 w-full'}),
+            'type_bien': forms.Select(attrs={'class': 'border rounded px-2 py-1 w-full'}),
+            'image_principale': forms.ClearableFileInput(attrs={'class': 'border rounded px-2 py-1 w-full'}),
+            'prix': forms.NumberInput(attrs={'class': 'border rounded px-2 py-1 w-full', 'placeholder': 'Ex : 150000'}),
+            'devise': forms.TextInput(attrs={'class': 'border rounded px-2 py-1 w-full', 'placeholder': 'Ex : USD'}),
+        }
+
+
+# Formset pour la galerie
+class ImmobusinessGalleryForm(forms.ModelForm):
+    class Meta:
+        model = ImmobusinessGallery
+        fields = ['image']
+        widgets = {
+            'image': forms.ClearableFileInput(attrs={'class': 'border rounded px-2 py-1 w-full'})
+        }
+
+ImmobusinessGalleryFormSet = forms.inlineformset_factory(
+    Immobusiness, ImmobusinessGallery, form=ImmobusinessGalleryForm,
+    extra=3, max_num=10, can_delete=True
+)
+
+
+class ImmobusinessResponseForm(forms.ModelForm):
+    class Meta:
+        model = ImmobusinessResponse
+        fields = ['nom', 'post_nom', 'email', 'telephone', 'message', 'audio']
+        widgets = {
+            'nom': forms.TextInput(attrs={'class': 'border rounded px-2 py-1 w-full'}),
+            'post_nom': forms.TextInput(attrs={'class': 'border rounded px-2 py-1 w-full'}),
+            'email': forms.EmailInput(attrs={'class': 'border rounded px-2 py-1 w-full'}),
+            'telephone': forms.TextInput(attrs={'class': 'border rounded px-2 py-1 w-full'}),
+            'message': forms.Textarea(attrs={'rows': 4, 'class': 'border rounded px-2 py-1 w-full'}),
+            'audio': forms.ClearableFileInput(attrs={'class': 'border rounded px-2 py-1 w-full'}),
+        }
+

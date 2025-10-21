@@ -62,23 +62,32 @@
                 </div>
             </div>
              <!-- Bloc audio (facultatif) -->
-  <div class="mt-4 space-y-2">
-    <label class="block text-sm font-medium text-gray-700">Votre description audio (facultative)</label>
-    <div class="flex space-x-2 items-center">
-      <button type="button" id="record-btn" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">🎤 Enregistrer</button>
-      <button type="button" id="stop-btn" class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600" disabled>⏹ Arrêter</button>
-      <button type="button" id="play-btn" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600" disabled>▶ Réécouter</button>
-      <button type="button" id="delete-btn" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600" disabled>🗑 Supprimer</button>
-    </div>
-    <audio id="audio-preview" controls style="display: none; width: 100%; margin-top: 8px;"></audio>
-    <!-- Champ caché pour envoyer l’audio encodé en base64 -->
-    <input type="hidden" name="audio_blob" id="audio-blob-input">
-    <!-- On garde aussi le champ audio normal, pour upload si l’utilisateur veut uploader un fichier -->
-    <div>
-      <label for="id_audio" class="block text-sm font-medium text-gray-700">Ou téléchargez un fichier audio</label>
-      {{ form.audio }}
-    </div>
+  <!-- Bloc audio (facultatif) -->
+<div class="mt-4 space-y-2">
+  <label class="block text-sm font-medium text-gray-700">Votre description audio (facultative)</label>
+
+  <!-- Indicateur d'enregistrement -->
+  <div id="recording-indicator" class="hidden mb-2 text-red-600 font-semibold flex items-center gap-2">
+    <span class="animate-pulse">●</span> Enregistrement en cours…
   </div>
+
+  <div class="flex flex-wrap gap-2">
+    <button type="button" id="record-btn" class="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm sm:text-base">🎤 Enregistrer</button>
+    <button type="button" id="stop-btn" class="flex-1 px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 text-sm sm:text-base" disabled>⏹ Arrêter</button>
+    <button type="button" id="play-btn" class="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm sm:text-base" disabled>▶ Réécouter</button>
+    <button type="button" id="delete-btn" class="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm sm:text-base" disabled>🗑 Supprimer</button>
+  </div>
+
+  <audio id="audio-preview" controls class="hidden w-full mt-2"></audio>
+  <input type="hidden" name="audio_blob" id="audio-blob-input">
+
+  <!-- Upload audio classique -->
+  <div>
+    <label for="id_audio" class="block text-sm font-medium text-gray-700">Ou téléchargez un fichier audio</label>
+    {{ form.audio }}
+  </div>
+</div>
+
             <div class="flex justify-between items-center mt-4">
                 <button type="submit" class="w-full py-2 px-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     Soumettre la requête
@@ -88,70 +97,80 @@
     </div>
 </section>
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      let mediaRecorder;
-      let audioChunks = [];
-    
-      const recordBtn = document.getElementById('record-btn');
-      const stopBtn = document.getElementById('stop-btn');
-      const playBtn = document.getElementById('play-btn');
-      const deleteBtn = document.getElementById('delete-btn');
-      const audioPreview = document.getElementById('audio-preview');
-      const audioBlobInput = document.getElementById('audio-blob-input');
-    
-      recordBtn.addEventListener('click', async () => {
-        audioChunks = [];
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          mediaRecorder = new MediaRecorder(stream);
-          mediaRecorder.ondataavailable = e => {
-            if (e.data && e.data.size > 0) {
-              audioChunks.push(e.data);
-            }
+  document.addEventListener('DOMContentLoaded', function () {
+    let mediaRecorder;
+    let audioChunks = [];
+  
+    const recordBtn = document.getElementById('record-btn');
+    const stopBtn = document.getElementById('stop-btn');
+    const playBtn = document.getElementById('play-btn');
+    const deleteBtn = document.getElementById('delete-btn');
+    const audioPreview = document.getElementById('audio-preview');
+    const audioBlobInput = document.getElementById('audio-blob-input');
+    const recordingIndicator = document.getElementById('recording-indicator');
+  
+    recordBtn.addEventListener('click', async () => {
+      audioChunks = [];
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+  
+        mediaRecorder.ondataavailable = e => {
+          if (e.data && e.data.size > 0) {
+            audioChunks.push(e.data);
+          }
+        };
+  
+        mediaRecorder.onstart = () => {
+          recordingIndicator.classList.remove('hidden'); // montre l’indicateur
+        };
+  
+        mediaRecorder.onstop = () => {
+          recordingIndicator.classList.add('hidden'); // cache l’indicateur
+          const blob = new Blob(audioChunks, { type: 'audio/webm' });
+          const url = URL.createObjectURL(blob);
+          audioPreview.src = url;
+          audioPreview.classList.remove('hidden');
+          playBtn.disabled = false;
+          deleteBtn.disabled = false;
+  
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            audioBlobInput.value = reader.result; // base64
           };
-          mediaRecorder.onstop = () => {
-            const blob = new Blob(audioChunks, { type: 'audio/webm' });
-            const url = URL.createObjectURL(blob);
-            audioPreview.src = url;
-            audioPreview.style.display = 'block';
-            playBtn.disabled = false;
-            deleteBtn.disabled = false;
-    
-            const reader = new FileReader();
-            reader.onloadend = () => {
-              audioBlobInput.value = reader.result;  // base64
-            };
-            reader.readAsDataURL(blob);
-          };
-          mediaRecorder.start();
-          recordBtn.disabled = true;
-          stopBtn.disabled = false;
-        } catch (err) {
-          console.error('Erreur d’accès au micro :', err);
-          alert("Impossible d'accéder au micro.");
-        }
-      });
-    
-      stopBtn.addEventListener('click', () => {
-        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-          mediaRecorder.stop();
-        }
-        stopBtn.disabled = true;
-        recordBtn.disabled = false;
-      });
-    
-      playBtn.addEventListener('click', () => {
-        audioPreview.play();
-      });
-    
-      deleteBtn.addEventListener('click', () => {
-        audioPreview.src = '';
-        audioPreview.style.display = 'none';
-        audioBlobInput.value = '';
-        playBtn.disabled = true;
-        deleteBtn.disabled = true;
-      });
+          reader.readAsDataURL(blob);
+        };
+  
+        mediaRecorder.start();
+        recordBtn.disabled = true;
+        stopBtn.disabled = false;
+      } catch (err) {
+        console.error('Erreur d’accès au micro :', err);
+        alert("Impossible d'accéder au micro.");
+      }
     });
+  
+    stopBtn.addEventListener('click', () => {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
+      stopBtn.disabled = true;
+      recordBtn.disabled = false;
+    });
+  
+    playBtn.addEventListener('click', () => {
+      audioPreview.play();
+    });
+  
+    deleteBtn.addEventListener('click', () => {
+      audioPreview.src = '';
+      audioPreview.classList.add('hidden');
+      audioBlobInput.value = '';
+      playBtn.disabled = true;
+      deleteBtn.disabled = true;
+    });
+  });
+  
     </script>
     
 {% endblock %}

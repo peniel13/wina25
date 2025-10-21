@@ -6946,3 +6946,170 @@ def convert_points_to_money(request):
 
     return redirect("user_dashboard")
 
+
+
+def immo(request):
+    ad_popup = get_targeted_popup(request.user) 
+    return render(request, 'base/immo.html', {
+        
+        'ad_popup': ad_popup,
+    })
+
+
+# views.py
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from .forms import ImmobusinessForm, ImmobusinessGalleryForm
+from .models import ImmobusinessGallery
+
+@login_required
+def immobusiness_create(request):
+    if request.method == 'POST':
+        form = ImmobusinessForm(request.POST, request.FILES)
+        gallery_files = request.FILES.getlist('gallery')  # pour plusieurs images
+        if form.is_valid():
+            immobusiness = form.save(commit=False)
+            immobusiness.owner = request.user
+            immobusiness.actif = False  # Par défaut désactivé, admin active après
+            immobusiness.save()
+
+            # Gestion des images de la galerie
+            for f in gallery_files:
+                ImmobusinessGallery.objects.create(immobusiness=immobusiness, image=f)
+
+            messages.success(request, "Votre publication immobilière a été créée avec succès. Elle sera activée après validation de l'admin.")
+            # return redirect('immobusiness_detail', pk=immobusiness.pk)  # ou une autre page
+            return redirect('immobusiness_create')
+        else:
+            messages.error(request, "Veuillez corriger les erreurs dans le formulaire.")
+    else:
+        form = ImmobusinessForm()
+
+    return render(request, 'base/immobusiness_create.html', {'form': form})
+
+
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.shortcuts import render
+from .models import Immobusiness, Country, City
+
+
+def immobusiness_list(request):
+    user = request.user
+
+    # 🔎 Paramètres GET pour filtrage
+    type_bien = request.GET.get('type_bien', '').strip()
+    objectif = request.GET.get('objectif', '').strip()
+    commune = request.GET.get('commune', '').strip()
+    country_id = request.GET.get('country', '').strip()
+    city_id = request.GET.get('city', '').strip()
+
+    # 🌍 Requête de base : seulement les biens actifs
+    immobusinesses = Immobusiness.objects.filter(actif=True)
+    ad_popup = get_targeted_popup(request.user)  # si tu utilises les popups
+
+    # 🌍 Filtrage automatique par user connecté
+    if user.is_authenticated:
+        if hasattr(user, 'country') and user.country and not country_id:
+            country_id = str(user.country.id)
+        if hasattr(user, 'city') and user.city and not city_id:
+            city_id = str(user.city.id)
+
+    # 🔍 Filtrage par GET
+    if country_id:
+        immobusinesses = immobusinesses.filter(country__id=country_id)
+
+    if city_id:
+        immobusinesses = immobusinesses.filter(city__id=city_id)
+
+    if type_bien:
+        immobusinesses = immobusinesses.filter(type_bien=type_bien)
+
+    if objectif:
+        immobusinesses = immobusinesses.filter(objectif=objectif)
+
+    if commune:
+        immobusinesses = immobusinesses.filter(commune__icontains=commune)
+
+    # ⬇️ Tri décroissant par date
+    immobusinesses = immobusinesses.order_by('-created_at')
+
+    # 🔁 Pagination
+    paginator = Paginator(immobusinesses, 6)
+    page = request.GET.get('page')
+    try:
+        immobusinesses = paginator.page(page)
+    except PageNotAnInteger:
+        immobusinesses = paginator.page(1)
+    except EmptyPage:
+        immobusinesses = paginator.page(paginator.num_pages)
+
+    # 🔽 Données pour les filtres
+    types_bien = Immobusiness.TYPE_BIEN_CHOICES
+    countries = Country.objects.all()
+    cities = City.objects.all()
+    objectifs = [('vente', 'Vente'), ('location', 'Location')]
+
+    return render(request, 'base/immobusiness_list.html', {
+        'immobusinesses': immobusinesses,
+        'types_bien': types_bien,
+        'type_bien': type_bien,
+        'objectif': objectif,
+        'commune': commune,
+        'country': country_id,
+        'city': city_id,
+        'countries': countries,
+        'cities': cities,
+        'objectifs': objectifs,
+        'paginator': paginator,
+        'ad_popup': ad_popup,
+    })
+
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+from django.core.files.base import ContentFile
+import base64
+
+from .models import Immobusiness, ImmobusinessResponse
+from .forms import ImmobusinessResponseForm
+
+def immobusiness_detail(request, immobusiness_id):
+    # On récupère le bien immobilier
+    immobusiness = get_object_or_404(Immobusiness, pk=immobusiness_id)
+
+    # On récupère les réponses existantes
+    responses = immobusiness.responses.all()
+
+    if request.method == 'POST':
+        form = ImmobusinessResponseForm(request.POST, request.FILES)
+        if form.is_valid():
+            response = form.save(commit=False)
+            response.immobusiness = immobusiness
+
+            # Gestion du fichier audio si envoyé via base64
+            audio_data = request.POST.get('audio_blob')
+            if audio_data:
+                try:
+                    header, encoded = audio_data.split(',', 1)
+                    data = base64.b64decode(encoded)
+                    file_name = 'response_audio.webm'  # tu peux changer l'extension selon le format
+                    response.audio.save(file_name, ContentFile(data), save=False)
+                except Exception as e:
+                    print("Erreur décodage audio :", e)
+
+            # Sauvegarde de la réponse
+            response.save()
+            messages.success(request, "Votre réponse a été soumise avec succès !")
+            return redirect('immobusiness_detail', immobusiness_id=immobusiness.id)
+    else:
+        form = ImmobusinessResponseForm()
+
+    context = {
+        'immobusiness': immobusiness,
+        'responses': responses,
+        'responses_count': responses.count(),
+        'form': form
+    }
+
+    return render(request, 'base/immobusiness_detail.html', context)

@@ -85,3 +85,43 @@ class ResponseAdmin(admin.ModelAdmin):
 
 # Enregistrement de Response avec son admin personnalisé
 admin.site.register(Response, ResponseAdmin)
+
+
+
+from django.contrib import admin
+from .models import Immobusiness, ImmobusinessGallery, ImmobusinessResponse
+from django.utils.html import format_html
+# Inline pour afficher les images de la galerie dans Immobusiness
+class ImmobusinessGalleryInline(admin.TabularInline):  # ou StackedInline pour plus grand affichage
+    model = ImmobusinessGallery
+    extra = 1  # Nombre de formulaires vides supplémentaires
+    readonly_fields = ('image_preview',)
+
+    # Afficher un aperçu de l'image
+    def image_preview(self, obj):
+        if obj.image:
+            return format_html('<img src="{}" style="width: 100px; height:auto;" />', obj.image.url)
+        return "-"
+    image_preview.short_description = 'Aperçu'
+
+@admin.register(Immobusiness)
+class ImmobusinessAdmin(admin.ModelAdmin):
+    list_display = (
+        'nom', 'type_bien', 'objectif', 'prix', 'devise',  # 🔹 Champs ajoutés ici
+        'commune', 'city', 'country', 'actif', 'created_at'
+    )
+    list_filter = ('type_bien', 'objectif', 'actif', 'country', 'devise')  # 🔹 ajout de 'devise'
+    search_fields = (
+        'nom', 'commune', 'city__name', 'country__name', 
+        'type_bien', 'objectif', 'devise'  # 🔹 ajout de 'devise' ici aussi
+    )
+    readonly_fields = ('created_at',)
+    inlines = [ImmobusinessGalleryInline]
+ # <-- Ajout de l'inline ici
+
+@admin.register(ImmobusinessResponse)
+class ImmobusinessResponseAdmin(admin.ModelAdmin):
+    list_display = ('nom', 'post_nom', 'email', 'telephone', 'immobusiness', 'created_at')
+    list_filter = ('immobusiness', 'created_at')
+    search_fields = ('nom', 'post_nom', 'email', 'immobusiness__nom')
+    readonly_fields = ('created_at',)

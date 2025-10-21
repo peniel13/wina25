@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% load static %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-10 max-w-3xl">
+  <h1 class="text-2xl font-bold text-center text-gray-800 mb-6">
+    Publier un bien immobilier
+  </h1>
+
+  {% if messages %}
+    <div class="mb-6">
+      {% for message in messages %}
+        <div class="{% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %} p-4 rounded-lg mb-2">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <form method="POST" enctype="multipart/form-data" class="space-y-6 bg-white p-6 rounded-xl shadow-md">
+    {% csrf_token %}
+
+    <!-- Informations principales -->
+    <div class="grid grid-cols-1 gap-4">
+      <div>
+        <label class="block text-gray-700 font-medium mb-1">Nom du bien</label>
+        {{ form.nom|add_class:"w-full border border-gray-300 rounded px-4 py-2" }}
+      </div>
+      <div>
+        <label class="block text-gray-700 font-medium mb-1">Email</label>
+        {{ form.email|add_class:"w-full border border-gray-300 rounded px-4 py-2" }}
+      </div>
+      <div>
+        <label class="block text-gray-700 font-medium mb-1">Téléphone</label>
+        {{ form.telephone|add_class:"w-full border border-gray-300 rounded px-4 py-2" }}
+      </div>
+    </div>
+
+    <!-- Localisation -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+      <div>
+        <label class="block text-gray-700 font-medium mb-1">Pays</label>
+        {{ form.country|add_class:"w-full border border-gray-300 rounded px-4 py-2" }}
+      </div>
+      <div>
+        <label class="block text-gray-700 font-medium mb-1">Ville</label>
+        {{ form.city|add_class:"w-full border border-gray-300 rounded px-4 py-2" }}
+      </div>
+    </div>
+    <div class="mt-4">
+      <label class="block text-gray-700 font-medium mb-1">Commune</label>
+      {{ form.commune|add_class:"w-full border border-gray-300 rounded px-4 py-2" }}
+    </div>
+
+    <!-- Type et objectif -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+      <div>
+        <label class="block text-gray-700 font-medium mb-1">Type de bien</label>
+        {{ form.type_bien|add_class:"w-full border border-gray-300 rounded px-4 py-2" }}
+      </div>
+      <div>
+        <label class="block text-gray-700 font-medium mb-1">Objectif</label>
+        {{ form.objectif|add_class:"w-full border border-gray-300 rounded px-4 py-2" }}
+      </div>
+    </div>
+
+    <!-- Description -->
+    <div class="mt-4">
+      <label class="block text-gray-700 font-medium mb-1">Description</label>
+      {{ form.description|add_class:"w-full border border-gray-300 rounded px-4 py-2" }}
+    </div>
+
+    <!-- Image principale -->
+    <div class="mt-4">
+      <label class="block text-gray-700 font-medium mb-1">Image principale</label>
+      {{ form.image_principale|add_class:"w-full" }}
+      <img id="mainImagePreview" class="mt-2 w-48 h-48 object-cover rounded-lg hidden" />
+    </div>
+
+    <!-- Galerie multiple -->
+    <div class="mt-4">
+      <label class="block text-gray-700 font-medium mb-1">Galerie d'images</label>
+      <input id="galleryInput" name="gallery" type="file" multiple 
+             class="form-control-file bg-gray-200 border border-gray-300 rounded-md p-2 w-full">
+      <p class="text-gray-500 text-sm mt-1">Vous pouvez sélectionner plusieurs fichiers.</p>
+      <div id="galleryPreview" class="flex flex-wrap mt-4 gap-2"></div>
+    </div>
+
+    <div class="text-center mt-6">
+      <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-semibold">
+        Publier le bien
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Scripts de prévisualisation -->
+<script>
+function previewImage(input, previewId) {
+  const preview = document.getElementById(previewId);
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      preview.src = e.target.result;
+      preview.classList.remove('hidden');
+    }
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+document.getElementById('{{ form.image_principale.id_for_label }}').addEventListener('change', function() {
+  previewImage(this, 'mainImagePreview');
+});
+
+// Prévisualisation multiple pour la galerie
+// Prévisualisation multiple pour la galerie
+document.getElementById('galleryInput').addEventListener('change', function() {
+  const previewContainer = document.getElementById('galleryPreview');
+  previewContainer.innerHTML = ''; // reset
+  Array.from(this.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = document.createElement('img');
+      img.src = e.target.result;
+      img.className = 'w-16 h-16 object-cover rounded-lg border border-gray-300 p-1';
+      previewContainer.appendChild(img);
+    }
+    reader.readAsDataURL(file);
+  });
+});
+
+</script>
+{% endblock %}

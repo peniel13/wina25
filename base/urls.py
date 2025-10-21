@@ -147,4 +147,9 @@ urlpatterns = [
     path("convert_usd_to_points/", views.convert_usd_to_points_view, name="convert_usd_to_points"),
     # path('update-location/', views.update_location, name='update_location'),
     path('utilisateurs-proches/', views.utilisateurs_proches, name='utilisateurs_proches'),
+    path('immo/', views.immo, name='immo'),
+    path('immobilier/publier/', views.immobusiness_create, name='immobusiness_create'),
+    path('immobusiness/', views.immobusiness_list, name='immobusiness_list'),
+    path('immobusiness/<int:immobusiness_id>/', views.immobusiness_detail, name='immobusiness_detail'),
+
 ]

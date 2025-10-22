@@ -289,13 +289,7 @@
 
     glide01.mount();
 </script>
-<!-- Popup pour afficher l'image agrandie -->
-<div id="imagePopup" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center hidden">
-    <div class="bg-white p-4 rounded-xl max-w-lg">
-        <span class="absolute top-0 right-0 p-3 cursor-pointer text-white bg-red-600 rounded-full text-3xl flex justify-center items-center" onclick="hideImagePopup()">X</span>
-        <img id="popupImage" src="" alt="Image agrandie" class="w-full h-auto rounded-lg">
-    </div>
-</div>
+
 {% if ad_popup and ad_popup.is_active %}
 <div id="popupAd" class="modal show d-block" tabindex="-1"
      style="background: rgba(0,0,0,0.5); position: fixed; top: 0; left: 0;

@@ -1036,12 +1036,20 @@
 {% endif %}
 
 <!-- Popup pour afficher l'image agrandie -->
-<div id="imagePopup" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center hidden">
+<div id="imagePopup" class="fixed inset-0 bg-gray-800 bg-opacity-75 items-center justify-center hidden" onclick="hideImagePopup()">
+  <div class="bg-white p-4 rounded-xl max-w-lg relative" onclick="event.stopPropagation()">
+      <span class="absolute top-0 right-0 p-3 cursor-pointer text-white bg-red-600 rounded-full text-3xl flex justify-center items-center" onclick="hideImagePopup()">×</span>
+      <img id="popupImage" src="" alt="Image agrandie" class="w-full h-auto rounded-lg">
+  </div>
+</div>
+
+{% comment %} <div id="imagePopup" class="fixed inset-0 bg-gray-800 bg-opacity-75 items-center justify-center hidden">
+
   <div class="bg-white p-4 rounded-xl max-w-lg">
       <span class="absolute top-0 right-0 p-3 cursor-pointer text-white bg-red-600 rounded-full text-3xl flex justify-center items-center" onclick="hideImagePopup()">X</span>
       <img id="popupImage" src="" alt="Image agrandie" class="w-full h-auto rounded-lg">
   </div>
-  </div>
+  </div> {% endcomment %}
  <!-- Glide.js Script -->
  <script src="https://cdnjs.cloudflare.com/ajax/libs/Glide.js/3.0.2/glide.js"></script>
  <script>
@@ -1093,4 +1101,22 @@
       document.getElementById('modal-' + id).classList.remove('flex');
   }
 </script>
+
+<script>
+  function showImagePopup(imageUrl) {
+      const popup = document.getElementById('imagePopup');
+      const popupImage = document.getElementById('popupImage');
+      popupImage.src = imageUrl;
+      popup.classList.remove('hidden');
+      popup.classList.add('flex');
+  }
+
+  function hideImagePopup() {
+      const popup = document.getElementById('imagePopup');
+      popup.classList.remove('flex');
+      popup.classList.add('hidden');
+  }
+</script>
+
+
 {% endblock %}

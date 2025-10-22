@@ -181,7 +181,7 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATICFILES_DIRS= [BASE_DIR/'static']
 STATIC_ROOT = BASE_DIR/'assets'
-# STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 MEDIA_URL = '/media/'  # ← toujours mettre le slash au début et à la fin
 MEDIA_ROOT = BASE_DIR / 'media'
 
@@ -246,3 +246,4 @@ STORAGES = {
         "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
     },
 }
+
